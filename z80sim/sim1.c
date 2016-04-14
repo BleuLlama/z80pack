@@ -26,6 +26,7 @@
  * 24-JAN-14 Release 1.18 bug fixes and improvements
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
+ * 29-MAR-14 Release 1.21 many improvements
  */
 
 #include <unistd.h>
@@ -434,10 +435,9 @@ void cpu(void)
 #endif
 
 #ifdef WANT_INT		/* CPU interrupt handling */
-		if (int_type)
+		if (int_type) {
 			switch (int_type) {
 			case INT_NMI:	/* non maskable interrupt */
-				int_type = INT_NONE;
 				IFF <<= 1;
 #ifdef WANT_SPC
 				if (STACK <= ram)
@@ -457,9 +457,47 @@ void cpu(void)
 				IFF = 0;
 				switch (int_mode) {
 				case 0:
+#ifdef WANT_SPC
+					if (STACK <= ram)
+						STACK =	ram + 65536L;
+#endif
+					*--STACK = (PC - ram) >> 8;
+#ifdef WANT_SPC
+					if (STACK <= ram)
+						STACK =	ram + 65536L;
+#endif
+					*--STACK = (PC - ram);
+					switch (int_code) {
+					case 0xc7: /* RST 00H */
+						PC = ram + 0;
+						break;
+					case 0xcf: /* RST 08H */
+						PC = ram + 8;
+						break;
+					case 0xd7: /* RST 10H */
+						PC = ram + 0x10;
+						break;
+					case 0xdf: /* RST 18H */
+						PC = ram + 0x18;
+						break;
+					case 0xe7: /* RST 20H */
+						PC = ram + 0x20;
+						break;
+					case 0xef: /* RST 28H */
+						PC = ram + 0x28;
+						break;
+					case 0xf7: /* RST 30H */
+						PC = ram + 0x30;
+						break;
+					case 0xff: /* RST 38H */
+						PC = ram + 0x38;
+						break;
+					default:
+						PC = ram + 0;
+						break;
+					}
 					break;
 				case 1:
-					int_type = INT_NONE;
 #ifdef WANT_SPC
 					if (STACK <= ram)
 						STACK =	ram + 65536L;
@@ -477,6 +515,8 @@ void cpu(void)
 				}
 				break;
 			}
+			int_type = INT_NONE;
+		}
 #endif
 
 #ifdef WANT_TIM

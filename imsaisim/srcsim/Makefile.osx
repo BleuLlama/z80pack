@@ -1,17 +1,8 @@
 CC = gcc
 
-# Platform independend compiler optimization
 CFLAGS = -O3 -c -Wall
-
-# Intel Pentium M (Centrino) and gcc 4.1.1
-#CFLAGS = -O3 -march=i686 -minline-all-stringops -funroll-loops -c -Wall
-
-# AMD Opteron and gcc 3.3.5
-#CFLAGS = -O3 -mcpu=i686 -minline-all-stringops -c -Wall
-
-# Linux, BSD
-LFLAGS = -s -L../../frontpanel -lfrontpanel -ljpeg -lGL -lGLU \
-	 -lXext -lXmu -lXt -lX11 -lm -lpthread
+LFLAGS = -L../../frontpanel -L/usr/local/lib -L/opt/X11/lib \
+	-lfrontpanel -ljpeg -lGL -lGLU -lX11
 
 OBJ =   sim0.o \
 	sim1.o \
@@ -28,16 +19,16 @@ OBJ =   sim0.o \
 	simglb.o \
 	unix_terminal.o \
 	io_config.o \
-	altair-88-2sio.o \
-	tarbell.o
+	imsai-sio2.o \
+	imsai-fif.o
 
-FP =    ../../frontpanel/libfrontpanel.so
+FP =	../../frontpanel/libfrontpanel.so
 
-all:  ../altairsim
+all:  ../imsaisim
 	@echo "done."
 
-../altairsim : $(OBJ) $(FP)
-	$(CC) $(OBJ) $(LFLAGS) -o ../altairsim
+../imsaisim : $(OBJ) $(FP)
+	$(CC) $(OBJ) $(LFLAGS) -o ../imsaisim
 
 sim0.c:
 	./lnsrc
@@ -87,18 +78,18 @@ unix_terminal.o : ../../iodevices/unix_terminal.c
 io_config.o : ../../iodevices/io_config.c
 	$(CC) $(CFLAGS) ../../iodevices/io_config.c
 
-altair-88-2sio.o: ../../iodevices/altair-88-2sio.c
-	$(CC) $(CFLAGS) -I./ ../../iodevices/altair-88-2sio.c
+imsai-sio2.o: ../../iodevices/imsai-sio2.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/imsai-sio2.c
 
-tarbell.o: ../../iodevices/tarbell.c
-	$(CC) $(CFLAGS) -I./ ../../iodevices/tarbell.c
+imsai-fif.o: ../../iodevices/imsai-fif.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/imsai-fif.c
 
 clean:
 	rm -f *.o
 	./ulnsrc
 
 allclean:
-	make clean
-	rm -f ../altairsim ../altairsim.exe
+	make -f Makefile.osx clean
+	rm -f ../imsaisim
 	rm -f ../disks/drive*.dsk
 	rm -f ../printer.cpm

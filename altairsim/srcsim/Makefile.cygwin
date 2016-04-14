@@ -1,15 +1,7 @@
 CC = gcc
 
-# Platform independend compiler optimization
 CFLAGS = -O3 -c -Wall
-
-# Linux, BSD
-LFLAGS = -s -L../../frontpanel -lfrontpanel -ljpeg -lGL -lGLU \
-	 -lXext -lXmu -lXt -lX11 -lm -lpthread
-
-# Solaris 10
-#LFLAGS = -s -L../../frontpanel -L/opt/csw/X11/lib -lfrontpanel -ljpeg \
-#	-lGL -lGLU -lXext -lXmu -lXt -lX11 -lm -lpthread -lrt
+LFLAGS = -s -lfrontpanel
 
 OBJ =   sim0.o \
 	sim1.o \
@@ -26,16 +18,16 @@ OBJ =   sim0.o \
 	simglb.o \
 	unix_terminal.o \
 	io_config.o \
-	imsai-sio2.o \
-	imsai-fif.o
+	altair-88-2sio.o \
+	tarbell.o
 
-FP =	../../frontpanel/libfrontpanel.so
+FP =    libfrontpanel.dll
 
-all:  ../imsaisim
+all:  ../altairsim
 	@echo "done."
 
-../imsaisim : $(OBJ) $(FP)
-	$(CC) $(OBJ) $(LFLAGS) -o ../imsaisim
+../altairsim : $(OBJ) $(FP)
+	$(CC) $(OBJ) $(LFLAGS) -o ../altairsim
 
 sim0.c:
 	./lnsrc
@@ -85,18 +77,18 @@ unix_terminal.o : ../../iodevices/unix_terminal.c
 io_config.o : ../../iodevices/io_config.c
 	$(CC) $(CFLAGS) ../../iodevices/io_config.c
 
-imsai-sio2.o: ../../iodevices/imsai-sio2.c
-	$(CC) $(CFLAGS) -I./ ../../iodevices/imsai-sio2.c
+altair-88-2sio.o: ../../iodevices/altair-88-2sio.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/altair-88-2sio.c
 
-imsai-fif.o: ../../iodevices/imsai-fif.c
-	$(CC) $(CFLAGS) -I./ ../../iodevices/imsai-fif.c
+tarbell.o: ../../iodevices/tarbell.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/tarbell.c
 
 clean:
 	rm -f *.o
 	./ulnsrc
 
 allclean:
-	make clean
-	rm -f ../imsaisim ../imsaisim.exe
+	make -f Makefile.cygwin clean
+	rm -f ../altairsim.exe
 	rm -f ../disks/drive*.dsk
 	rm -f ../printer.cpm

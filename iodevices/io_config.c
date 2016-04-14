@@ -3,7 +3,7 @@
  *
  * Common I/O devices used by various simulated machines
  *
- * Copyright (C) 2008 by Udo Munk
+ * Copyright (C) 2008-2014 by Udo Munk
  *
  * This module reads the I/O configuration file and sets
  * global variables for the I/O device emulations, so
@@ -11,6 +11,7 @@
  *
  * History:
  * 20-OCT-08 first version finished
+ * 20-MAR-14 ignore carriage return too, neccessary for the Windows port
  */
 
 #include <stdio.h>
@@ -30,7 +31,7 @@ void io_config(void)
 	if ((fp = fopen("conf/iodev.conf", "r")) != NULL) {
 		s = &buf[0];
 		while (fgets(s, BUFSIZE, fp) != NULL) {
-			if ((*s == '\n') || (*s == '#'))
+			if ((*s == '\n') || (*s == '\r') || (*s == '#'))
 				continue;
 			t1 = strtok(s, " \t");
 			t2 = strtok(NULL, " \t");

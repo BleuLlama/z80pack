@@ -1,5 +1,6 @@
 #!/bin/sh
 
-rm -f disks/drivea.dsk
+rm -f disks/drive[ab].dsk
 ln disks/library/cpm22.dsk disks/drivea.dsk
+ln ../disks/tools.dsk disks/driveb.dsk
 ./altairsim -xbootromt.hex

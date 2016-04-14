@@ -64,7 +64,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.20"
+#define RELEASE	"1.21"
 
 #define LENCMD		80		/* length of command buffers etc */
 

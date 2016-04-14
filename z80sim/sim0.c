@@ -26,6 +26,7 @@
  * 24-JAN-14 Release 1.18 bug fixes and improvements
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
+ * 29-MAR-14 Release 1.21 many improvements
  */
 
 /*

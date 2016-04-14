@@ -10,6 +10,7 @@
  * History:
  * 13-MAR-2014 first fully working version
  * 15-MAR-2014 some improvements for CP/M 1.3 & 1.4
+ * 17-MAR-2014 close(fd) was missing in write sector lseek error case
  */
 
 #include <unistd.h>
@@ -246,7 +247,7 @@ BYTE tarbell_data_in(void)
 
 		/* last byte? */
 		if (dcnt == 5) {
-			state = FDC_IDLE;		/* reset DRQ */
+			state = FDC_IDLE;	/* reset DRQ */
 			fdc_stat = 0;
 		}
 
@@ -266,7 +267,7 @@ BYTE tarbell_data_in(void)
  */
 void tarbell_data_out(BYTE data)
 {
-	long pos;		/* seek position */
+	long pos;			/* seek position */
 
 	switch (state) {
 	case FDC_WRITE:			/* write data to disk sector */
@@ -302,6 +303,7 @@ void tarbell_data_out(BYTE data)
 				state = FDC_IDLE;	/* abort command */
 				fdc_stat = 0x10;	/* record not found */
 				//printf("tarbell write: seek error\r\n");
+				close(fd);
 				return;
 			}
 		}

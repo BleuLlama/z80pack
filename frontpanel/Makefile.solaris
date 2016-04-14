@@ -10,7 +10,7 @@ CC = g++
 INCLUDE =
 DEFINES = 
 
-CFLAGS = -c -O3 -fPIC -Wno-deprecated $(INCLUDE) $(DEFINES) $(LIB)
+CFLAGS = -c -O3 -fPIC -Wno-deprecated $(INCLUDE) $(DEFINES)
 LDFLAGS = -shared
 
 default: $(OBJS) 
@@ -47,7 +47,7 @@ clean:
 	rm -f *.o
 
 allclean:
-	make clean
+	gmake -f Makefile.solaris clean
 	rm -f libfrontpanel.so
 
 all: clean default

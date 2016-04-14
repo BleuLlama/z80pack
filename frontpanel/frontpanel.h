@@ -18,7 +18,7 @@
 */
 
 #ifndef _FP_API_DEFS
-#define _FP_API__DEFS
+#define _FP_API_DEFS
 
 #ifdef __cplusplus
  extern "C" {

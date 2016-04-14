@@ -5,6 +5,7 @@
 
 
    Copyright (c) 2007-2008, John Kichury
+   Windows port is Copyright (c) 2014, Stefano Bodrato
 
    This software is freely distributable free of charge and without license fees with the 
    following conditions:
@@ -29,8 +30,17 @@ Dependencies:
  libpthread
 
 
+Windows port dependencies :
+
+ libjpeg
+ OpenGL32 (-lopengl32 -lgdi32 -lglu32)
+ c++ compiler (g++)
+ libpthread
+
+
    For more information consult the user manual in the doc directory.
 
 
  - John Kichury  <jjk439 at gmail dot com>
+ - Stefano Bodrato  <stefano dot bodrato at hotmail dot com>
 

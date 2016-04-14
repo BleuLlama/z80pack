@@ -4,7 +4,7 @@ z80asm -ofile -f[b|m|h] -l[file] -s[n|a] -x -v -dsymbol ... file ...
 
 A maximum of 512 source files is allowed. If the filename of a source
 doesn't have an extension the default extension ".asm" will be
-concated. Source file names may have a path, the maximum length of
+concatenated. Source file names may have a path, the maximum length of
 a full qualified filename is 2048 characters.
 For relative paths the extension must be used, because all characters
 after a "." would be used as extension!
@@ -35,8 +35,8 @@ together with option -l.
 
 Option x:
 Don't output data in pass 2 into object file for DEFS. This only works
-if unallocated data isn't followed by any code or initialized data!
-Usefull for CP/M BIOS's, where unallocated data doesn't need to be
+if unallocated data isn't followed by any code or initialised data!
+Useful for CP/M BIOS's, where unallocated data doesn't need to be
 part of the system image, if the complete image won't fit on the system
 tracks.
 

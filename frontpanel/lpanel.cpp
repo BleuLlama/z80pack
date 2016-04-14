@@ -229,9 +229,12 @@ Lpanel::Lpanel(void)		 // constructor
 {
  int i;
 
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+#else
  window = 0;
  cx = 0;
  dpy = 0;
+#endif
 
  num_lights = 0;
  max_lights = 0;
@@ -562,7 +565,7 @@ Lpanel::bindLight8invert(char *name, void *loc, int start_bit_number, uint8 mask
 
      if(light)
       {
-	if( mask & (0x1 << bitnum-1))
+	if( mask & (0x1 << (bitnum-1)))
          light->bindData8invert( (uint8 *) loc);
         else
          light->bindData8( (uint8 *) loc);
@@ -649,7 +652,7 @@ Lpanel::bindLight16invert(char *name, void *loc, int start_bit_number, uint16 ma
 
      if(light)
       {
-	if( mask & (0x1 << bitnum-1))
+	if( mask & (0x1 << (bitnum-1)))
          light->bindData16invert( (uint16 *) loc);
         else
          light->bindData16( (uint16 *) loc);
@@ -738,7 +741,7 @@ Lpanel::bindLight32invert(char *name, void *loc, int start_bit_number, uint32 ma
 
      if(light)
       {
-	if( mask & (0x1 << bitnum-1))
+	if( mask & (0x1 << (bitnum-1)))
          light->bindData32invert( (uint32 *) loc);
         else
          light->bindData32( (uint32 *) loc);
@@ -849,7 +852,12 @@ Lpanel::draw(void)
    glDisable(GL_POLYGON_OFFSET_LINE);
   }
  if(do_stats) draw_stats();
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+ SwapBuffers(hDC);
+ //UpdateWindow(hWnd);
+#else
  glXSwapBuffers(dpy, window);
+#endif
 }
 
 

@@ -25,7 +25,11 @@
 
 #include <pthread.h>
 #include <sys/types.h>
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+#include <windows.h>
+#else
 #include <sys/signal.h>
+#endif
 #ifdef __linux__
 #include <sys/prctl.h>
 #endif
@@ -195,6 +199,9 @@ void fp_framerate(float v)
 int fp_init(char *cfg_fname)
 {
  printf("\nFrontPanel Simulator v2.0 Copyright (C) 2007-2008 by John Kichury\n");
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+ printf("Windows version Copyright (C) 2014 by Stefano Bodrato\n");
+#endif
 
  if(panel == NULL) panel = new Lpanel;
 
@@ -265,7 +272,11 @@ void fp_quit(void)
 	break;
      }
   pthread_mutex_unlock(&data_lock);
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+    Sleep(1000);
+#else
     sleep(1);
+#endif
   }
 
  if(!okay) fprintf(stderr, "Error. lightpanel draw thread did not terminate\n");

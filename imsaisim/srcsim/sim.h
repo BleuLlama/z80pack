@@ -8,6 +8,7 @@
  * History:
  * 20-OCT-08 first version finished
  * 02-MAR-14 source cleanup and improvements
+ * 23-MAR-14 enabled interrupts, 10ms timer added to iosim
  */
 
 /*
@@ -16,7 +17,7 @@
  */
 #define CPU_SPEED 2	/* default CPU speed */
 /*#define Z80_UNDOC*/	/* compile undocumented Z80 instructions */
-/*#define WANT_INT*/	/* interrupt for MP/M */
+#define WANT_INT	/* interrupt for stuff */
 #define WANT_SPC	/* activate SP over-/underrun handling 0000<->FFFF */
 #define WANT_PCC	/* activate PC overrun handling FFFF->0000 */
 /*#define CNTL_C*/	/* don't abort simulation with cntl-c */
@@ -37,10 +38,10 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.20"
+#define RELEASE	"1.21"
 
 #define USR_COM	"IMSAI 8080 Simulation"
-#define USR_REL	"1.2"
+#define USR_REL	"1.3"
 #define USR_CPR	"Copyright (C) 2008-2014 by Udo Munk"
 
 #define LENCMD		80		/* length of command buffers etc */

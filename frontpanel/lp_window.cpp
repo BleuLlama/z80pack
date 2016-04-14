@@ -18,19 +18,29 @@
 */
 
 #include <GL/glu.h>
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+#include <windows.h>
+#include <Commctrl.h>
+#include <GL/gl.h>
+#else
 #include <GL/glx.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
+#endif
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "lpanel.h"
 #include "lp_materials.h"
 #include "lp_font.h"
 
 
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+const char FPClassName[] = "FrontPanel 2.0";
+
+#else
 static int RGBA_DB_attributes[] = {
   GLX_RGBA,
   GLX_RED_SIZE, 1,
@@ -40,6 +50,7 @@ static int RGBA_DB_attributes[] = {
   GLX_DEPTH_SIZE, 1,
   None,
 };
+#endif
 
 // OpenGL Light source
 
@@ -57,6 +68,264 @@ static GLfloat mtl_emission[] = { 0.0, 0.0, 0.0, 1.0 };
 static int mousex, mousey, omx, omy, lmouse, mmouse, rmouse;
 
 
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+
+
+static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
+
+    if (LONG_PTR user_data = GetWindowLongPtr(hWnd, GWLP_USERDATA)) {
+      Lpanel * this_window = reinterpret_cast<Lpanel *>(user_data);
+      return this_window->WndProc(hWnd, Msg, wParam, lParam);
+    }
+    return DefWindowProc(hWnd, Msg, wParam, lParam);
+}
+
+
+//
+LRESULT CALLBACK 
+Lpanel::WndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
+{
+	unsigned int kcode;
+
+    switch(msg)
+    {
+
+	  case WM_KEYUP:
+		if (LOWORD (wParam) == VK_SHIFT) {
+		  shift_key_pressed=0;
+		  return 0;
+		}
+		return 0;
+		break;
+
+
+	  case WM_KEYDOWN:
+		kcode=LOWORD (wParam);
+		switch(kcode)
+		{
+		  case VK_SHIFT:
+			  shift_key_pressed=1;
+			  return 0;
+			  break;
+
+		  case VK_UP:
+			if(do_cursor)
+			  inc_cursor(0.,cursor_inc );
+			else
+			  { 
+				if(shift_key_pressed)
+				  view.pan[1] += -0.1;
+				else
+				  view.rot[0] += -1.;
+
+				view.redo_projections = 1;
+			  }
+			break;
+		  case VK_DOWN:
+			if(do_cursor)
+			   inc_cursor(0.,-cursor_inc );
+			else
+			  { 
+				if(shift_key_pressed)
+				  view.pan[1] += 0.1;
+				else
+				  view.rot[0] += 1.;
+
+				view.redo_projections = 1;
+			  }
+			break;
+		  case VK_RIGHT:
+			if(do_cursor)
+			   inc_cursor(cursor_inc, 0.);
+			else
+			  { 
+				if(shift_key_pressed)
+				  view.pan[0] += -.1;
+				else
+				  view.rot[1] += 1.;
+
+				view.redo_projections = 1;
+			  }
+			break;
+		  case VK_LEFT:
+			if(do_cursor)
+			  inc_cursor(-cursor_inc, 0.);
+			else
+			  { 
+				if(shift_key_pressed)
+				  view.pan[0] += .1;
+				else
+				  view.rot[1] += -1.;
+
+				view.redo_projections = 1;
+			  }
+			break;
+		}
+		return 0;
+		break;
+
+
+	  case WM_CHAR:
+		kcode=LOWORD (wParam);
+	   
+		switch (kcode) 
+		{
+		  case VK_ESCAPE:
+			//exit(0);
+			break;
+		  case 'c':
+		  case 'C':
+			do_cursor = !do_cursor;
+			break;
+		  case 'd':
+		  case 'D':
+			view.pan[1] -= 0.1;
+			view.redo_projections = 1;
+			break;
+		  case 's':
+		  case 'S':
+			do_stats = !do_stats ;
+			break;
+
+		  case 'l':
+		  case 'L':
+			view.rot[1] += -1.;
+			view.redo_projections = 1;
+			break;
+
+		  case 'r':
+		  case 'R':
+			view.rot[1] -= -1.;
+			view.redo_projections = 1;
+			break;
+
+		  case 'u':
+		  case 'U':
+			view.pan[1] += 0.1;
+			view.redo_projections = 1;
+			break;
+
+		  case 'v':
+		  case 'V':
+			if( view.projection == LP_ORTHO)
+				view.projection = LP_PERSPECTIVE;
+			else
+				view.projection = LP_ORTHO;
+
+			view.redo_projections = 1;
+			break;
+
+		  case 'z':
+			view.pan[2] -= .1;
+			view.redo_projections = 1;
+			break;
+
+		  case 'Z':
+			view.pan[2] += .1;
+			view.redo_projections = 1;
+			break;
+	////
+		  case '1':
+				break;
+		}
+		return 0;
+		break;
+
+
+	  case WM_MOUSEWHEEL:
+			view.pan[2] += (float)GET_WHEEL_DELTA_WPARAM(wParam)/250.0;
+		view.redo_projections = 1;
+		return 0;
+		break;
+
+
+	  case WM_LBUTTONDOWN:
+		   if(!pick(0, 1, LOWORD (lParam), HIWORD (lParam)))
+		   {
+		     mousex = LOWORD (lParam);
+		     mousey = HIWORD (lParam);
+		     lmouse = 1;
+		   }
+		   return 0;
+		   break;
+
+
+	  case WM_LBUTTONUP:
+		   if(!pick(0, 0, LOWORD (lParam), HIWORD (lParam)))
+		     lmouse = 0;
+		   return 0;
+		   break;
+
+
+	  case WM_MOUSEMOVE:
+			if(lmouse)
+			{
+				omx = mousex;
+				omy = mousey;
+
+				if(shift_key_pressed)
+				 {
+				view.pan[0] +=  ((float) LOWORD (lParam) - (float) omx) *.02;
+				view.pan[1] -=  ((float) HIWORD (lParam) - (float) omy) *.02;
+
+				 }
+				else
+				 {
+				view.rot[1] +=  ((float) LOWORD (lParam) - (float) omx) *.2;
+				view.rot[0] +=  ((float) HIWORD (lParam) - (float) omy) *.2;
+				 }
+
+				 mousex = LOWORD (lParam);
+				 mousey = HIWORD (lParam);
+				 view.redo_projections = 1;
+			}
+		   return 0;
+		   break;
+
+
+	  case WM_SIZE:
+		   window_xsize  = (GLsizei) LOWORD (lParam);
+		   window_ysize = (GLsizei) HIWORD (lParam);
+		   view.aspect = (GLdouble)window_xsize/(GLdouble)window_ysize;
+
+		   glViewport( 0, 0, window_xsize, window_ysize );
+		   glGetIntegerv (GL_VIEWPORT, viewport);
+		   setProjection(0);
+		   setModelview(0);
+		   
+		   return 0;
+		   break;
+
+	  case WM_QUIT:
+	  case WM_CLOSE:
+			if (hRC) {
+			  wglMakeCurrent(NULL,NULL);
+			  wglDeleteContext( hRC );
+			}
+			if (hDC) {
+			  ReleaseDC(hWnd,hDC);
+			}
+			DestroyWindow(hWnd);
+			return 0;
+		   break;
+
+	  case WM_DESTROY:
+			UnregisterClass(FPClassName,hInstance);
+			PostQuitMessage( 0 );
+			   if(quit_callbackfunc) 
+				(*quit_callbackfunc)();
+			   else
+				  exit(0);
+			return 0;  
+		   break;
+
+	  default:
+			return DefWindowProc( hWnd, msg, wParam, lParam );
+    }
+}
+
+
+#else
 static Bool WaitForMapNotify(Display *d, XEvent *e, char *arg)
 {
   if ((e->type == MapNotify) && (e->xmap.window == (Window)arg)) {
@@ -64,10 +333,22 @@ static Bool WaitForMapNotify(Display *d, XEvent *e, char *arg)
   }
   return GL_FALSE;
 }
+#endif
 
 void
 Lpanel::procEvents(void)
 {
+
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+
+MSG msg;
+
+  if ( PeekMessage(&msg, hWnd,  0, 0, PM_REMOVE) ) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  }
+
+#else
 
   XEvent event;
   char buffer[5];
@@ -296,11 +577,112 @@ Lpanel::procEvents(void)
       }
 
    } // end while
+#endif
 } // end procEvents()
 
 int 
 Lpanel::openWindow(const char *title)
 {
+
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+
+    BOOL err;
+     
+    float geom_aspect = (bbox.xyz_max[0] - bbox.xyz_min[0]) / (bbox.xyz_max[1] - bbox.xyz_min[1]);
+    window_ysize = (int) ( (float) window_xsize / geom_aspect);
+    view.aspect = (GLdouble)window_xsize/(GLdouble)window_ysize;
+
+    hInstance = GetModuleHandle( NULL );
+    
+    wc.cbSize        = sizeof(WNDCLASSEX);
+    wc.style         = 0;
+    wc.lpfnWndProc   =  StaticWndProc;
+    wc.cbClsExtra    = 0;
+    wc.cbWndExtra    = 0;
+    wc.hInstance     = hInstance;
+    wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
+    wc.hCursor       = LoadCursor(NULL, IDC_HAND);
+    //wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW);
+    wc.lpszMenuName  = NULL;
+    wc.lpszClassName = FPClassName;
+    wc.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
+
+    if(!RegisterClassEx(&wc))
+    {
+        MessageBox(NULL, "Window registration failed!", "Error!",
+            MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
+    hWnd = CreateWindowEx(
+        WS_EX_CLIENTEDGE,
+        FPClassName,
+        title,
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT, window_xsize, window_ysize,
+        NULL, NULL, hInstance, NULL);
+
+    if(hWnd == NULL)
+    {
+        MessageBox(NULL, "Window creation failed!", "Error!",
+            MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+    
+    // We put in the window user data area a ponter to the windowproc for its instance
+	SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)reinterpret_cast<Lpanel *>(this));
+
+	hDC = GetDC (hWnd);
+
+	memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
+	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+	pfd.nVersion = 1;
+	pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
+	pfd.iPixelType = PFD_TYPE_RGBA;
+	pfd.cColorBits = 24;
+	pfd.cDepthBits = 32;
+	pfd.iLayerType = PFD_MAIN_PLANE;
+
+	int pixelFormat = ChoosePixelFormat(hDC, &pfd);
+	if (pixelFormat == 0) {
+		return 0;
+	}
+
+	err = SetPixelFormat (hDC, pixelFormat, &pfd);
+	if (!err) {
+		return 0;
+	}
+
+	hRC = wglCreateContext(hDC);
+	if (!hRC) {
+        MessageBox(NULL, "lightpanel: Can't create window context", "Error!",
+            MB_ICONEXCLAMATION | MB_OK);
+		return 0;
+	}
+
+	err = wglMakeCurrent(hDC, hRC);
+	if (!err) {
+        MessageBox(NULL, "lightpanel: Can't make window current to context", "Error!",
+            MB_ICONEXCLAMATION | MB_OK);
+		//ReleaseDC (hWnd, hDC);
+		return 0;
+	}
+
+    ShowWindow(hWnd, SW_SHOWNORMAL );
+
+    SetForegroundWindow(hWnd);
+    SetFocus(hWnd);
+    initGraphics();
+    UpdateWindow(hWnd);
+
+ cursor[0] = (bbox.xyz_max[0] + bbox.xyz_min[0]) * .5;
+ cursor[1] = (bbox.xyz_max[1] + bbox.xyz_min[1]) * .5;
+ makeRasterFont();
+ make_cursor_text();
+
+//
+#else
 
   int status;
   
@@ -381,6 +763,7 @@ Lpanel::openWindow(const char *title)
  makeRasterFont();
  make_cursor_text();
 
+#endif
  return 1;
 }
 
@@ -390,6 +773,13 @@ Lpanel::destroyWindow(void)
 
  glFlush();
  glFinish();
+
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+//
+	wglMakeCurrent(NULL,NULL);
+	ReleaseDC (hWnd, hDC);
+
+#else
 
   if (!glXMakeCurrent(dpy, None, None)) {
     printf("lightpanel: destroyWindow: Can't release context\n");
@@ -402,6 +792,7 @@ Lpanel::destroyWindow(void)
  cx = 0;
  window = 0;
 
+#endif
 
 
 }
@@ -475,6 +866,9 @@ Lpanel::setProjection(int dopick)
 }
 
 
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+//
+#else
 void
 Lpanel::resizeWindow(void)
 {
@@ -493,6 +887,7 @@ Lpanel::resizeWindow(void)
   setModelview(0);
 
 }
+#endif
 
 void
 Lpanel::doPickProjection(void)
@@ -545,7 +940,15 @@ Lpanel::initGraphics(void)
 
  glEnable(GL_NORMALIZE);
  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+//
+//UpdateWindow(hWnd);
+//Sleep(100);
+ SwapBuffers(hDC);
+#else
  glXSwapBuffers(dpy, window);
+#endif
 
  // download any textures that may have been read in 
 

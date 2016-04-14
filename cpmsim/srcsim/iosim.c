@@ -2597,6 +2597,7 @@ static BYTE speedh_in(void)
 static void int_timer(int sig)
 {
 	int_type = INT_INT;
+	int_code = 0xff;	/* RST 38H for IM 0 */
 }
 
 #if defined(NETWORKING) && defined(TCPASYNC)

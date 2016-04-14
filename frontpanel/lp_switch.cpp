@@ -531,7 +531,7 @@ printf("setupData: invalid switch type %d\n", type);
 // the low order 31 bits are used to store the switch number (index within the array of
 // switches). The high order bit indicates the target (1=up 0=down).
 
-select_up_name = (uint32) sw_num & LP_SW_PICK_IDMASK | LP_SW_PICK_UP_BIT;
+select_up_name = ((uint32) sw_num & LP_SW_PICK_IDMASK) | LP_SW_PICK_UP_BIT;
 select_dn_name = (uint32) sw_num & LP_SW_PICK_IDMASK;
 
   switch(type)

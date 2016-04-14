@@ -13,6 +13,7 @@
  * History:
  * 18-JAN-14 first working version finished
  * 02-MAR-14 improvements
+ * 23-MAR-14 got all 4 disk drives working
  */
 
 #include <unistd.h>
@@ -187,11 +188,17 @@ void disk_io(int addr)
 		disk = 1;
 		break;
 
-	default: /* fatal error for all other drives */
-		 /* IMDOS sends odd unit/cmd for drive C: & D: */
-		 /* for now we use only 2 working drives */
-		//printf("FIF: disk unit no. is %02x?\r\n", unit);
-		*(ram + addr + DD_RESULT) = 2;
+	case 4: /* IMDOS drive C: */
+		disk = 2;
+		break;
+
+	case 8: /* IMDOS drive D: */
+		disk = 3;
+		break;
+
+	default: /* ignore all other drives */
+		 /* IMDOS sends unit 3 intermediant for drive C: & D: */
+		*(ram + addr + DD_RESULT) = 0;
 		return;
 	}
 

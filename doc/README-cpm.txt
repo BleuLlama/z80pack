@@ -1,8 +1,8 @@
 	Quickstart to run CP/M and MP/M on the Z80-CPU simulation
 
 1. Change to directory ~/z80pack-x.y/cpmsim/srcsim
-   make
-   make clean
+   make -f Makefile.operating-system
+   make -f Makefile.operating-system clean
 This compiles the CPU and hardware emulation needed to run CP/M and MP/M.
 
 2. Change to directory ~/z80pack-x.y/cpmsim/srctools
@@ -54,11 +54,6 @@ send:
 	Under CP/M 2 type pip file=RDR: to read the data send from
 	the process on the UNIX host. Under CP/M 3 the device name
 	is AUX: for both directions.
-
-On Windows systems both programs are not used because named pipes work
-different under UNIX. Instead the files auxiliaryout.cpm and
-auxiliaryin.cpm are written/read, when the puncher and reader devices
-are accessed via I/O port 5.
 
 If you use PIP to transfer files between the host system and the
 simulator, you can only use ASCII files, because pip uses CNTL-Z

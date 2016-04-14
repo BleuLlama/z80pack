@@ -22,9 +22,14 @@
 
 
 #include <stdio.h>
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+#include <GL/gl.h>
+#include <windows.h>
+#else
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
+#endif
 
 
 typedef unsigned char uint8;
@@ -87,6 +92,9 @@ typedef struct
 #include "lp_gfx.h"
 #include "lp_switch.h"
 
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+#endif
 
 // light panel class
 // -----------------
@@ -108,10 +116,19 @@ class Lpanel
   int		num_switches,
 		max_switches;
 
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+  HINSTANCE hInstance;
+  HWND hWnd;
+  WNDCLASSEX wc;
+  HDC hDC;
+  HGLRC hRC;
+  PIXELFORMATDESCRIPTOR pfd;
+#else
   Display	*dpy;		// Xwindows display
   Window	window;		// Xwindows window
   GLXContext	cx;
   Atom		wmDeleteMessage; // for processing window close event
+#endif
 
   view_t	view;
 
@@ -206,7 +223,15 @@ class Lpanel
   void destroyWindow(void);
   void doPickProjection(void);
   void doPickModelview(void);
+
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+
+  LRESULT CALLBACK WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+
+#else
   void resizeWindow(void);
+#endif
+
   void initGraphics();
   void procEvents(void);
   void resolveObjectInstances(void);

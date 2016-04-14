@@ -1,19 +1,7 @@
 CC = gcc
 
-# Platform independend compiler optimization
-CFLAGS = -O3 -c -Wall
-
-# Use this to build 64 bit version under Solaris 10
-#CFLAGS = -O3 -m64 -c -Wall
-
-# Linux, BSD
-LFLAGS = -s
-
-# Solaris 9, Soaris 10
-#LFLAGS = -s -lrt
-
-# Soaris 10 64 bit version
-#LFLAGS = -m64 -s -lrt
+CFLAGS = -O3 -m64 -c -Wall
+LFLAGS = -m64 -s -lrt
 
 OBJ =	sim0.o \
 	sim1.o \

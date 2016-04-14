@@ -10,6 +10,7 @@
  * 20-OCT-08 first version finished
  * 19-JAN-14 unused I/O ports need to return 00 and not FF
  * 02-MAR-14 source cleanup and improvements
+ * 23-MAR-14 added 10ms timer interrupt for Kildalls timekeeper PL/M program
  */
 
 #include <unistd.h>
@@ -18,6 +19,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <sys/time.h>
 #include "sim.h"
 #include "simglb.h"
 #include "../../iodevices/io_config.h"
@@ -679,18 +681,47 @@ static void fp_out(BYTE data)
 }
 
 /*
+ *	timer interrupt causes RST 38 in IM 0 and IM 1
+ */
+static void int_timer(int sig)
+{
+	int_type = INT_INT;
+	int_code = 0xff;	/* RST 38H for IM 0 */
+}
+
+/*
  *	Virtual hardware control output.
- *	Doesn't exist in the real machine, used to shutdown.
+ *	Doesn't exist in the real machine, used to shutdown
+ *	and for RST 38H interrupts every 10ms.
  *
+ *	bit 0 = 1	start interrupt timer
  *	bit 7 = 1	halt emulation via I/O
  */
 static void hwctl_out(BYTE data)
 {
+	static struct itimerval tim;
+	static struct sigaction newact;
+
         if (data & 128) {
                 cpu_error = IOHALT;
                 cpu_state = STOPPED;
                 return;
-        }
+        } else if (data & 1) {
+		//printf("\r\n*** ENABLE TIMER ***\r\n");
+		newact.sa_handler = int_timer;
+		sigaction(SIGALRM, &newact, NULL);
+		tim.it_value.tv_sec = 0;
+		tim.it_value.tv_usec = 10000;
+		tim.it_interval.tv_sec = 0;
+		tim.it_interval.tv_usec = 10000;
+		setitimer(ITIMER_REAL, &tim, NULL);
+	} else if (data == 0) {
+		newact.sa_handler = SIG_IGN;
+		sigaction(SIGALRM, &newact, NULL);
+		tim.it_value.tv_sec = 0;
+		tim.it_value.tv_usec = 0;
+		setitimer(ITIMER_REAL, &tim, NULL);
+	}
 }
 
 /*

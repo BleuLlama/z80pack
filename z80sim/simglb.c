@@ -26,6 +26,7 @@
  * 24-JAN-14 Release 1.18 bug fixes and improvements
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
+ * 29-MAR-14 Release 1.21 many improvements
  */
 
 /*
@@ -122,6 +123,7 @@ int cpu_error;			/* error status of CPU emulation */
 int int_type;			/* type	of interrupt */
 int tmax;			/* max t-stats to execute in 10ms */
 int int_mode;			/* CPU interrupt mode (IM 0, IM 1, IM 2) */
+BYTE int_code;			/* instruction for IM 0 */
 int cntl_c;			/* flag	for cntl-c entered */
 int cntl_bs;			/* flag	for cntl-\ entered */
 

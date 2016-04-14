@@ -29,6 +29,7 @@
  * 24-JAN-14 Release 1.18 bug fixes and improvements
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
+ * 29-MAR-14 Release 1.21 many improvements
  */
 
 /*
@@ -937,8 +938,16 @@ static void cpu_err_msg(void)
 		printf("HALT Op-Code reached at %04x\n",
 		       (unsigned int)(PC - ram - 1));
 		break;
-	case IOTRAP:
-		printf("I/O Trap at %04x\n", (unsigned int)(PC - ram));
+	case IOTRAPIN:
+		printf("I/O input Trap at %04x, port %02x\n",
+		       (unsigned int)(PC - ram), io_port);
+		break;
+	case IOTRAPOUT:
+		printf("I/O output Trap at %04x, port %02x\n",
+		       (unsigned int)(PC - ram), io_port);
+		break;
+	case IOHALT:
+		printf("\nSystem halted, bye.\n");
 		break;
 	case IOERROR:
 		printf("Fatal I/O Error at %04x\n", (unsigned int)(PC - ram));
