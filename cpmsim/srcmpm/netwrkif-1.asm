@@ -173,7 +173,7 @@ NtwrkIP1:
 	dw	UQCBNtwrkQI1	; HL
 	dw	UQCBNtwrkQO1	; DE
 	dw	BufferQ1	; BC
-	dw	0		; AF, A = ntwkif console dev #
+	dw	0100h		; AF, A = ntwkif console dev #
 	ds	2		; scratch
 
 NtwrkIS1:
@@ -262,7 +262,7 @@ NtwrkIP2:
 	dw	UQCBNtwrkQI2	; HL
 	dw	UQCBNtwrkQO2	; DE
 	dw	BufferQ2	; BC
-	dw	0		; AF, A = ntwkif console dev #
+	dw	0200h		; AF, A = ntwkif console dev #
 	ds	2		; scratch
 
 NtwrkIS2:
@@ -347,7 +347,7 @@ NtwrkIP3:
 	dw	UQCBNtwrkQI3	; HL
 	dw	UQCBNtwrkQO3	; DE
 	dw	BufferQ3	; BC
-	dw	0		; AF, A = ntwkif console dev #
+	dw	0300h		; AF, A = ntwkif console dev #
 	ds	2		; scratch
 
 NtwrkIS3:

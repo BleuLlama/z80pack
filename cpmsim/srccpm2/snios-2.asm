@@ -1,10 +1,10 @@
-	title	'Slave Network I/O System for CP/NET 1.1'
-	page	60
+	title	'Requester Network I/O System for CP/NET 1.2'
+	page	54
 
 ;***************************************************************
 ;***************************************************************
 ;**                                                           **
-;**      S l a v e   N e t w o r k   I / O   S y s t e m      **
+;**  R e q u e s t e r   N e t w o r k   I / O   S y s t e m  **
 ;**                                                           **
 ;***************************************************************
 ;***************************************************************
@@ -15,7 +15,7 @@
 ;  P.O. Box 579
 ;  Pacific Grove, CA 93950
 ;
-;  Revised:  April 24, 1982
+;  Revised:  October 5, 1982
 ;
 ;  Modified December 2006 for Z80SIM by Udo Munk
 ;*/
@@ -49,7 +49,7 @@ NIOS:
 	jmp	ntwrkerror	; network error
 	jmp	ntwrkwboot	; network warm boot
 
-slave$ID	equ	11h
+slave$ID	equ	11h	; slave processor ID number
 
 	if	cpnos
 ;	Initial Slave Configuration Table
@@ -82,28 +82,15 @@ Initconfigtbl:
 initcfglen equ	$-initconfigtbl
 	endif
 
-	if	not cpnos	; see ntwrkwboot routine for why this
-defaultmaster	equ	00h	;   won't go in cp/nos
+defaultmaster	equ	00h
 
 wboot$msg:			; data for warm boot routine
 	db	'<Warm Boot>'
 	db	'$'
 
 networkerrmsg:
-	db	'Network access failed.'
+	db	'Network Error'
 	db	'$'
-
-rcvmsgerrmsg:
-	db	'Illegal RCVMAIL command.'
-	db	'$'
-
-rcvmsgfailedmsg:
-	db	'Mailbox empty or not logged in to master.'
-	db	'$'
-
-HexASCIItbl:
-	db	'0123456789ABCDEF'
-	endif
 
 	page
 	DSEG
@@ -151,14 +138,6 @@ max$retries equ	10		; send message max of 10 times
 retry$count:
 	ds	1
 
-Mailmsg:			; Mail box message area
-	db	0		; msg.fmt = 0
-	db	$-$		; msg.did
-	db	$-$		; msg.sid
-	db	$-$		; msg.fnc
-	db	$-$		; msg.siz
-	ds	256		; msg.msg(0) ... msg.msg(255)
-
 FirstPass:
 	db	0ffh
 
@@ -194,8 +173,6 @@ dprti	equ	51
 stato	equ	50
 msko	equ	02
 dprto	equ	51
-
-delay	equ	28
 
 	page
 	CSEG
@@ -263,15 +240,18 @@ Char$in:			; return byte in A register
 				;  carry set on rtn if timeout
 	mvi	b,10
 Char$in0:
+	in	stati		; busy wait forever, no reasonable
+	ani	mski		; delay implemented yet
+	jz	Char$in0
 Char$in1:
-	in	stati
-	ani	mski
-	jnz	Char$in2
-	out	delay
-	dcr	b
-	jnz	Char$in0
-	stc			; carry set for err cond = timeout
-	ret
+;	in	stati
+;	ani	mski
+;	jnz	Char$in2
+;	out	delay
+;	dcr	b
+;	jnz	Char$in0
+;	stc			; carry set for err cond = timeout
+;	ret
 Char$in2:
 	in	dprti
 	ret			; rtn with raw char and carry cleared
@@ -311,6 +291,7 @@ Msg$in:				; HL = destination address
 
 Net$in:				; byte returned in A register
 				; D  = checksum accumulator
+
 	if	ASCII
 	call	Nib$in
 	rc
@@ -379,6 +360,7 @@ initloop:
 initok:
 	xra	a			; return code is 0=success
 	ret
+
 
 	page
 ;	Network Status
@@ -588,133 +570,12 @@ ntwrkwboot:
 
 ;	This procedure is called each time the CCP is
 ;  	reloaded from disk.  This version prints "<WARM BOOT>"
-;  	on the console and then checks for mail at the master,
-;  	but anything necessary for restart can be put here.
-
-	if	not cpnos	
-	
-;	NOTE:  The following code will not fit in a
-;	4K ROM.  Consequently, we do not include it
-;	in the CP/NOS version CPNIOS.ASM.  It would
-;	fit in 5K if it needs to be included in CP/NOS.
+;  	on the console and then returns, but anything necessary 
+;       for restart can be put here.
 
  	mvi	c,9
 	lxi	d,wboot$msg
-	call	BDOS
-
-getmail:
-	lda	0ffh
-	sta	firstpass
-restart:
-	lda	configtbl+1	; get slave ID
-	sta	Mailmsg+2 	; Mailmsg.sid = configtbl.slaveID
-	mvi	c, defaultmaster
-
-dorcvmsg:
-	xra	a
-	lxi	d, Mailmsg
-	stax	d		; MSG.FMT = 0
-	inx	d
-	mov	a,c
-	stax	d		; msg.did = [xx]
-	inx	d
-	inx	d
-	mvi	a,rcvmsg
-	stax	d		; msg.fnc = rcvmsg
-	inx	d
-	xra	a
-	stax	d
-	lxi	b,Mailmsg
-	call	sendmsg		; send message to network
-	inr	a
-	jz	networkerr
-	lxi	b,Mailmsg
-	call	receivemsg	; receive message from network
-	inr	a
-	jz	networkerr
-	lda	Mailmsg+4
-	ora	a
-	jnz	displaymsg
-	lda	Mailmsg+5
-	inr	a
-	jz	rcvmsgfailed
-displaymsg:
-	lxi	h,FirstPass
-	inr	m
-	jz	noCRLF
-	mvi	c,conout
-	mvi	e,CR
-	call	BDOS
-	mvi	c,conout
-	mvi	e,LF
-	call	BDOS
-noCRLF:
-	lxi	h,Mailmsg
-	mvi	m,'['
-	inx	h
-	xchg
-	lda	Mailmsg+5
-	lxi	h,HexASCIItbl
-	push	psw
-	push	h
-	ani	0f0h
-	rrc
-	rrc
-	rrc
-	rrc
-	mov	c,a
-	mvi	b,0
-	dad	b
-	mov	a,m
-	stax	d
-	inx	d
-	pop	h
-	pop	psw
-	ani	0fh
-	mov	c,a
-	dad	b
-	mov	a,m
-	stax	d
-	xchg
-	inx	h
-	mvi	m,']'
-	inx	h
-	mov	e,m
-	mvi	m,' '
-	inx	h
-	mvi	m,'"'
-	inx	h
-	mvi	d,0
-	dad	d
-	mvi	m,'"'
-	inx	h
-	mvi	m,'$'
-	mvi	c,print
-	lxi	d,Mailmsg
-	call	BDOS
-	jmp	restart
-
-rcvmsgfailed:
-	lda	FirstPass
-	inr	a
-	jnz	Exit
-	lxi	d,rcvmsgfailedmsg
-	jmp	prntmsg
-
-networkerr:
-	lxi	d,networkerrmsg
-	jmp	prntmsg
-
-rcvmsgerr:
-	lxi	d,rcvmsgerrmsg
-prntmsg:
-	mvi	c,print
-	call	BDOS
-;	jmp	Exit
-	endif
-
-Exit:
-	ret
+	jmp	BDOS
 
 	page
 	if	cpnos
@@ -851,7 +712,7 @@ loginOK:
 ;
 loginmsg:
 	db	cr,lf
-	db	'LOGIN = '
+	db	'LOGIN='
 	db	'$'
 
 initpasswordmsg:
@@ -863,14 +724,15 @@ initpasswordmsg:
 	db	'PASSWORD' ; password
 initpasswordmsglen equ	$-initpasswordmsg
 
+
 loginerrmsg:
 	db	lf
-	db	'Illegal LOGIN command.'
+	db	'Invalid LOGIN'
 	db	'$'
 
 loginfailedmsg:
 	db	lf
-	db	'LOGIN failed.'
+	db	'LOGIN Failed'
 	db	'$'
 
 	DSEG
