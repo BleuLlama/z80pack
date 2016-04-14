@@ -10,11 +10,17 @@ CC = g++
 INCLUDE =
 DEFINES = 
 
-CFLAGS = -c -O3 -fPIC -Wno-deprecated $(INCLUDE) $(DEFINES)
+# Development
+#CFLAGS = -c -O3 -fPIC -Wno-deprecated -fstack-protector-all -D_FORTIFY_SOURCE=2 $(INCLUDE) $(DEFINES)
+
+# Production
+CFLAGS = -c -O3 -fPIC -Wno-deprecated -U_FORTIFY_SOURCE $(INCLUDE) $(DEFINES)
+
 LDFLAGS = -shared
 
 default: $(OBJS) 
 	$(CC) $(LDFLAGS) $(OBJS) -o libfrontpanel.so
+	@echo -e "\nBe sure to copy libfrontpanel.so to a shared library path!\n"
 
 jpeg.o: jpeg.cpp cdjpeg.h
 	$(CC) $(CFLAGS) jpeg.cpp -o jpeg.o

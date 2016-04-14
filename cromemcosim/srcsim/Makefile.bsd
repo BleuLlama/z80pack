@@ -6,7 +6,8 @@ CC = gcc
 # Production
 CFLAGS = -O3 -c -Wall -Wextra -U_FORTIFY_SOURCE
 
-LFLAGS = -s
+LFLAGS = -L../../frontpanel -L/usr/local/lib \
+	-lfrontpanel -ljpeg -lGL -lGLU -lX11 -lpthread
 
 OBJ =   sim0.o \
 	sim1.o \
@@ -22,19 +23,18 @@ OBJ =   sim0.o \
 	iosim.o \
 	simfun.o \
 	simglb.o \
-	unix_terminal.o
+	unix_terminal.o \
+	unix_network.o \
+	cromemco-tu-art.o \
+	cromemco-fdc.o
 
-all: ../auxin ../auxout ../cpmsim
+FP =	../../frontpanel/libfrontpanel.so
+
+all:  ../cromemcosim
 	@echo "done."
 
-../auxin:
-	test -f ../auxin || mkfifo ../auxin
-
-../auxout:
-	test -f ../auxout || mkfifo ../auxout
-
-../cpmsim : $(OBJ)
-	$(CC) $(OBJ) $(LFLAGS) -o ../cpmsim
+../cromemcosim : $(OBJ) $(FP)
+	$(CC) $(OBJ) $(LFLAGS) -o ../cromemcosim
 
 sim0.c:
 	./lnsrc
@@ -84,12 +84,21 @@ simglb.o : simglb.c sim.h
 unix_terminal.o : ../../iodevices/unix_terminal.c
 	$(CC) $(CFLAGS) ../../iodevices/unix_terminal.c
 
+unix_network.o : ../../iodevices/unix_network.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/unix_network.c
+
+cromemco-tu-art.o : ../../iodevices/cromemco-tu-art.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/cromemco-tu-art.c
+
+cromemco-fdc.o : ../../iodevices/cromemco-fdc.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/cromemco-fdc.c
+
 clean:
 	rm -f *.o
 	./ulnsrc
 
 allclean:
-	make -f Makefile.bsd clean
-	rm -f ../auxin ../auxout ../cpmsim
-	rm -f ../auxiliaryin.cpm ../auxiliaryout.cpm ../printer.cpm
-	rm -f ../disks/drive*.cpm
+	make -f Makefile.osx clean
+	rm -f ../cromemcosim
+	rm -f ../disks/drive*.dsk
+	rm -f ../lpt[12]

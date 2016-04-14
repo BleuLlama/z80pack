@@ -34,6 +34,7 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 /*
@@ -50,6 +51,7 @@
 #include <memory.h>
 #include <ctype.h>
 #include <signal.h>
+#include <sys/time.h>
 #include "sim.h"
 #include "simglb.h"
 
@@ -690,6 +692,7 @@ static void print_reg(void)
 static void do_break(char *s)
 {
 #ifndef	SBSIZE
+	s = s;	/* to avoid compiler warning */
 	puts("Sorry, no breakpoints available");
 	puts("Please recompile with SBSIZE defined in sim.h");
 #else
@@ -743,6 +746,7 @@ static void do_break(char *s)
 static void do_hist(char *s)
 {
 #ifndef	HISIZE
+	s = s;	/* to avoid compiler warning */
 	puts("Sorry, no history available");
 	puts("Please recompile with HISIZE defined in sim.h");
 #else
@@ -809,7 +813,8 @@ static void do_hist(char *s)
  */
 static void do_count(char *s)
 {
-#ifndef	WANT_TIM
+#ifndef WANT_TIM
+	s = s;	/* to avoid compiler warning */
 	puts("Sorry, no t-state count available");
 	puts("Please recompile with WANT_TIM defined in sim.h");
 #else
@@ -847,7 +852,9 @@ static void do_count(char *s)
  */
 static void do_clock(void)
 {
-	static BYTE save[3];
+	BYTE save[3];
+	static struct sigaction newact;
+	static struct itimerval tim;
 
 	save[0]	= *(ram	+ 0x0000);	/* save memory locations */
 	save[1]	= *(ram	+ 0x0001);	/* 0000H - 0002H */
@@ -859,8 +866,15 @@ static void do_clock(void)
 	R = 0L;				/* clear refresh register */
 	cpu_state = CONTIN_RUN;		/* initialise CPU */
 	cpu_error = NONE;
-	signal(SIGALRM,	timeout);	/* initialise timer interrupt handler */
-	alarm(3);			/* start 3 second timer */
+	newact.sa_handler = timeout;	/* set timer interrupt handler */
+	memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
+	newact.sa_flags = 0;
+	sigaction(SIGALRM, &newact, NULL);
+	tim.it_value.tv_sec = 3;	/* start 3 second timer */
+	tim.it_value.tv_usec = 0;
+	tim.it_interval.tv_sec = 0;
+	tim.it_interval.tv_usec = 0;
+	setitimer(ITIMER_REAL, &tim, NULL);
 	switch(cpu) {			/* start CPU */
 	case Z80:
 		cpu_z80();
@@ -869,6 +883,8 @@ static void do_clock(void)
 		cpu_8080();
 		break;
 	}
+	newact.sa_handler = SIG_DFL;	/* reset timer interrupt handler */
+	sigaction(SIGALRM, &newact, NULL);
 	*(ram +	0x0000)	= save[0];	/* restore memory locations */
 	*(ram +	0x0001)	= save[1];	/* 0000H - 0002H */
 	*(ram +	0x0002)	= save[2];
@@ -884,6 +900,8 @@ static void do_clock(void)
  */
 static void timeout(int sig)
 {
+	sig = sig;	/* to avoid compiler warning */
+
 	cpu_state = STOPPED;
 }
 
@@ -908,7 +926,7 @@ static void do_show(void)
 #endif
 	printf("No. of software breakpoints: %d\n", i);
 #ifdef Z80_UNDOC
-	i = z_flag;
+	i = u_flag;
 #else
 	i = 1;
 #endif
@@ -930,19 +948,7 @@ static void do_show(void)
 #else
 	i = 0;
 #endif
-	printf("T-State counting %spossible\n",	i ? "" : "im");
-#ifdef CNTL_C
-	i = 1;
-#else
-	i = 0;
-#endif
-	printf("CPU simulation %sstopped on cntl-c\n", i ? "" :	"not ");
-#ifdef CNTL_BS
-	i = 1;
-#else
-	i = 0;
-#endif
-	printf("CPU simulation %sstopped on cntl-\\\n",	i ? "" : "not ");
+	printf("T-State counting %spossible\n", i ? "" : "im");
 }
 
 /*

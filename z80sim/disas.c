@@ -32,6 +32,7 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 #include <stdio.h>
@@ -398,6 +399,8 @@ void disass(unsigned char **p, int adr)
  */
 static int opout(char *s, char **p)
 {
+	p = p;	/* to avoid compiler warning */
+
 	sprintf(Disass_Str, "%s\n", s);
 	return(1);
 }
@@ -462,6 +465,8 @@ static int cbop(char *s, unsigned char **p)
 {
 	register int b2;
 
+	s = s;	/* to avoid compiler warning */
+
 	b2 = *(*p + 1);
 	if (b2 >= 0x00 && b2 <= 0x07) {
 		sprintf(Disass_Str, "RLC\t%s\n",
@@ -524,6 +529,8 @@ static int edop(char *s, unsigned char **p)
 {
 	register int b2, i;
 	int len	= 2;
+
+	s = s;	/* to avoid compiler warning */
 
 	Disass_Str[0] = 0;
 	b2 = *(*p + 1);
@@ -722,6 +729,8 @@ static int ddfd(char *s, unsigned char **p)
 	register int b2;
 	register char *ireg;
 	int len	= 3;
+
+	s = s;	/* to avoid compiler warning */
 
 	if (**p	== 0xdd)
 		ireg = regix;

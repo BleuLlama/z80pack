@@ -12,6 +12,7 @@
  * 19-JUN-14 added config parameter for droping nulls after CR/LF
  * 18-JUL-14 don't block on read from terminal
  * 09-OCT-14 modified to support SIO 2
+ * 23-MAR-15 drop only null's
  */
 
 #include <unistd.h>
@@ -58,7 +59,7 @@ BYTE imsai_sio1_status_in(void)
  */
 void imsai_sio1_status_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -93,13 +94,12 @@ BYTE imsai_sio1_data_in(void)
  */
 void imsai_sio1_data_out(BYTE data)
 {
-	/* often send after CR/LF to give tty printer some time */
-	if (sio1_drop_nulls)
-		if ((data == 127) || (data == 255) || (data == 0))
-			return;
-
 	if (sio1_strip_parity)
 		data &= 0x7f;
+
+	if (sio1_drop_nulls)
+		if (data == 0)
+			return;
 
 again:
 	if (write(fileno(stdout), (char *) &data, 1) != 1) {

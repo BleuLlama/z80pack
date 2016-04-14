@@ -31,6 +31,7 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 /*
@@ -330,11 +331,7 @@ int op_ed_handel(void)
 		trap_ed				/* 0xff */
 	};
 
-#ifdef WANT_TIM
 	t = (*op_ed[*PC++]) ();		/* execute next opcode */
-#else
-	(*op_ed[*PC++]) ();
-#endif
 
 #ifdef WANT_PCC
 		if (PC > ram + 65535)	/* correct PC overrun */

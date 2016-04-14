@@ -20,36 +20,27 @@
  */
 #define CPU_SPEED 2	/* default CPU speed */
 /*#define Z80_UNDOC*/	/* don't compile undocumented Z80 instructions */
-#define WANT_INT	/* interrupt for stuff */
 #define WANT_SPC	/* activate SP over-/underrun handling 0000<->FFFF */
 #define WANT_PCC	/* activate PC overrun handling FFFF->0000 */
-/*#define WANT_FASTM*/	/* much faster but not accurate Z80 block moves */
-/*#define CNTL_C*/	/* don't abort simulation with cntl-c */
-#define CNTL_BS		/* emergency exit with cntl-\ :-) */
-#define WANT_TIM	/* run length measurement needed to adjust CPU speed */
+#define WANT_FASTM	/* much faster but not accurate Z80 block moves */
+/*#define WANT_TIM*/	/* don't count t-states */
 /*#define HISIZE  1000*//* no history */
 /*#define SBSIZE  10*/	/* no breakpoints */
 #define FRONTPANEL	/* emulate a machines frontpanel */
 #define BUS_8080	/* emulate 8080 bus status for front panel */
-/*#define PIPES*/	/* use named pipes for auxiliary device */
-/*#define NETWORKING*/	/* TCP/IP networked serial ports */
-/*#define NUMSOC 4 */	/* number of server sockets */
-/*#define TCPASYNC*/	/* tcp/ip server can use async I/O */
-/*#define CNETDEBUG*/	/* client network protocol debugger */
-/*#define SNETDEBUG*/	/* server network protocol debugger */
 
 /*
  *	Default CPU
  */
-#define Z80             1
-#define I8080           2
-#define DEFAULT_CPU     I8080
+#define Z80		1
+#define I8080		2
+#define DEFAULT_CPU	I8080
 
 /*
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2015 by Udo Munk"
-#define RELEASE	"1.25"
+#define RELEASE	"1.26"
 
 #define USR_COM	"Altair 8800 Simulation"
 #define USR_REL	"1.7"

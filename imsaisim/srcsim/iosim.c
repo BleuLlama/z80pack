@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -29,11 +30,8 @@
 #include "../../iodevices/imsai-sio2.h"
 #include "../../iodevices/imsai-fif.h"
 
-static int printer;		/* fd for file "printer.cpm" */
-
 /*
- *	Forward declarations of the I/O functions
- *	for all used port addresses.
+ *	Forward declarations for I/O functions
  */
 static BYTE io_trap_in(void), io_no_card_in(void);
 static void io_trap_out(BYTE), io_no_card_out(BYTE);
@@ -43,6 +41,8 @@ static void hwctl_out(BYTE);
 static BYTE lpt_in(void);
 static void lpt_out(BYTE);
 static BYTE io_pport_in(void);
+
+static int printer;		/* fd for file "printer.cpm" */
 
 /*
  *	This array contains function pointers for every
@@ -654,7 +654,7 @@ static BYTE io_no_card_in(void)
  */
 static void io_trap_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 
 	if (i_flag) {
 		cpu_error = IOTRAPOUT;
@@ -669,7 +669,7 @@ static void io_trap_out(BYTE data)
  */
 static void io_no_card_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -693,6 +693,8 @@ static void fp_out(BYTE data)
  */
 static void int_timer(int sig)
 {
+	sig = sig;	/* to avoid compiler warning */
+
 	int_int = 1;
 	int_data = 0xff;	/* RST 38H for IM 0 */
 }
@@ -718,6 +720,8 @@ static void hwctl_out(BYTE data)
         } else if (data & 1) {
 		//printf("\r\n*** ENABLE TIMER ***\r\n");
 		newact.sa_handler = int_timer;
+		memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
+		newact.sa_flags = 0;
 		sigaction(SIGALRM, &newact, NULL);
 		tim.it_value.tv_sec = 0;
 		tim.it_value.tv_usec = 10000;
@@ -727,6 +731,8 @@ static void hwctl_out(BYTE data)
 	} else if (data == 0) {
 		//printf("\r\n*** DISABLE TIMER ***\r\n");
 		newact.sa_handler = SIG_IGN;
+		memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
+		newact.sa_flags = 0;
 		sigaction(SIGALRM, &newact, NULL);
 		tim.it_value.tv_sec = 0;
 		tim.it_value.tv_usec = 0;

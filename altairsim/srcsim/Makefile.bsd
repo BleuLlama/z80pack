@@ -1,6 +1,11 @@
 CC = gcc
 
-CFLAGS = -O3 -c -Wall
+# Development
+#CFLAGS = -O3 -c -Wall -Wextra -fstack-protector-all -D_FORTIFY_SOURCE=2
+
+# Production
+CFLAGS = -O3 -c -Wall -Wextra -U_FORTIFY_SOURCE
+
 LFLAGS = -L../../frontpanel -L/usr/local/lib \
 	-lfrontpanel -ljpeg -lGL -lGLU -lX11
 
@@ -93,7 +98,7 @@ clean:
 	./ulnsrc
 
 allclean:
-	make -f Makefile.osx clean
+	make -f Makefile.bsd clean
 	rm -f ../altairsim
 	rm -f ../disks/drive*.dsk
 	rm -f ../printer.cpm

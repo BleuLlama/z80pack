@@ -31,11 +31,13 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
+#include <sys/time.h>
 #include "sim.h"
 #include "simglb.h"
 
@@ -387,13 +389,12 @@ void cpu_8080(void)
 		op_rst7				/* 0xff */
 	};
 
-#ifdef WANT_TIM
 	register int t = 0;
-	struct timespec timer;
-#ifdef FRONTPANEL
 	register int states;
-#endif
-#endif
+	struct timespec timer;
+	struct timeval t1, t2, tdiff;
+
+	gettimeofday(&t1, NULL);
 
 	do {
 
@@ -426,14 +427,15 @@ void cpu_8080(void)
 		}
 #endif
 
-#ifdef WANT_TIM		/* check for start address of runtime measurement */
+#ifdef WANT_TIM
+		/* check for start address of runtime measurement */
 		if (PC == t_start && !t_flag) {
 			t_flag = 1;	/* switch measurement on */
 			t_states = 0L;	/* initialise counted T-states */
 		}
 #endif
 
-#ifdef WANT_INT		/* CPU interrupt handling */
+		/* CPU interrupt handling */
 		if (int_int) {
 			if (IFF != 3)
 				goto leave;
@@ -502,27 +504,30 @@ void cpu_8080(void)
 			int_int = 0;
 		}
 leave:
-#endif
 
-#ifdef WANT_TIM
-#ifdef FRONTPANEL
 		states = (*op_sim[*PC++]) ();	/* execute next opcode */
 		t += states;
+#ifdef FRONTPANEL
 		fp_clock += states;
-#else
-		t += (*op_sim[*PC++]) ();
 #endif
 		if (f_flag) {		/* adjust CPU speed */
-			if (t > tmax) {
-				timer.tv_sec = 0;
-				timer.tv_nsec = 10000000L;
-				nanosleep(&timer, NULL);
+			if (t >= tmax) {
+				gettimeofday(&t2, NULL);
+                                tdiff.tv_sec = t2.tv_sec - t1.tv_sec;
+                                tdiff.tv_usec = t2.tv_usec - t1.tv_usec;
+                                if (tdiff.tv_usec < 0) {
+                                        --tdiff.tv_sec;
+                                        tdiff.tv_usec += 1000000;
+                                }
+				if ((tdiff.tv_sec == 0) && (tdiff.tv_usec < 10000)) {
+					timer.tv_sec = 0;
+					timer.tv_nsec = (long) ((10000 - tdiff.tv_usec) * 1000);
+					nanosleep(&timer, NULL);
+				}
 				t = 0;
+				gettimeofday(&t1, NULL);
 			}
 		}
-#else
-		(*op_sim[*PC++]) ();
-#endif
 
 #ifdef WANT_PCC
 		if (PC > ram + 65535)	/* check for PC overrun */
@@ -531,9 +536,10 @@ leave:
 
 		R++;			/* increment refresh register */
 
-#ifdef WANT_TIM				/* do runtime measurement */
+					/* do runtime measurement */
+#ifdef WANT_TIM
 		if (t_flag) {
-			t_states += t;	/* add T-states for this opcode */
+			t_states += states; /* add T-states for this opcode */
 			if (PC == t_end) /* check for end address */
 				t_flag = 0; /* if reached, switch off */
 		}

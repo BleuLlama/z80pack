@@ -31,6 +31,7 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 20-JUL-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 #include <unistd.h>

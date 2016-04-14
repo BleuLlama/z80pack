@@ -15,6 +15,8 @@
  * 12-JAN-15 fdc and tu-art improvements, implemented banked memory
  * 02-FEB-15 modified MMU, implemented timers and interrupts
  * 20-FEB-15 bug fix for release 1.25
+ * 10-MAR-15 added support for two parallel port lpt devices on TU-ART
+ * 26-MAR-15 added support for two serial port tty devices on TU-ART
  */
 
 #include <pthread.h>
@@ -30,12 +32,12 @@
 #include <sys/time.h>
 #include "sim.h"
 #include "simglb.h"
+#include "../../iodevices/unix_network.h"
 #include "../../iodevices/cromemco-tu-art.h"
 #include "../../iodevices/cromemco-fdc.h"
 
 /*
- *	Forward declarations of the I/O functions
- *	for all used port addresses.
+ *	Forward declarations for I/O functions
  */
 static BYTE io_trap_in(void);
 static void io_trap_out(BYTE);
@@ -59,16 +61,20 @@ static BYTE *mmu[MAXSEG];	/* MMU with pointers to memory banks */
 static int common;		/* flag for common writes to all banks */
 
 static int rtc;			/* flag for 512ms RTC interrupt */
+       int lpt1, lpt2;		/* fds for lpt printer files */
+
+/* network connections for serial ports on the TU-ART's */
+struct connectors netcons[NUMSOC];
 
 /*
  *	This array contains function pointers for every
  *	input I/O port (0 - 255), to do the required I/O.
  */
 static BYTE (*port_in[256]) (void) = {
-	cromemco_tuart_a_status_in,	/* port 0 */
-	cromemco_tuart_a_data_in,	/* port 1 */
+	cromemco_tuart_0a_status_in,	/* port 0 */
+	cromemco_tuart_0a_data_in,	/* port 1 */
 	io_trap_in,			/* port 2 */
-	cromemco_tuart_a_interrupt_in,	/* port 3 */
+	cromemco_tuart_0a_interrupt_in,	/* port 3 */
 	cromemco_fdc_aux_in,		/* port 4 */
 	io_trap_in,			/* port 5 */
 	io_trap_in,			/* port 6 */
@@ -97,11 +103,11 @@ static BYTE (*port_in[256]) (void) = {
 	io_trap_in,			/* port 29 */
 	io_trap_in,			/* port 30 */
 	io_trap_in,			/* port 31 */
-	io_trap_in,			/* port 32 */
-	io_trap_in,			/* port 33 */
+	cromemco_tuart_1a_status_in,	/* port 32 */
+	cromemco_tuart_1a_data_in,	/* port 33 */
 	io_trap_in,			/* port 34 */
-	io_trap_in,			/* port 35 */
-	io_trap_in,			/* port 36 */
+	cromemco_tuart_1a_interrupt_in,	/* port 35 */
+	cromemco_tuart_1a_parallel_in,	/* port 36 */
 	io_trap_in,			/* port 37 */
 	io_trap_in,			/* port 38 */
 	io_trap_in,			/* port 39 */
@@ -145,11 +151,11 @@ static BYTE (*port_in[256]) (void) = {
 	io_trap_in,			/* port 77 */
 	io_trap_in,			/* port 78 */
 	io_trap_in,			/* port 79 */
-	io_trap_in,			/* port 80 */
-	io_trap_in,			/* port 81 */
+	cromemco_tuart_1b_status_in,	/* port 80 */
+	cromemco_tuart_1b_data_in,	/* port 81 */
 	io_trap_in,			/* port 82 */
-	io_trap_in,			/* port 83 */
-	io_trap_in,			/* port 84 */
+	cromemco_tuart_1b_interrupt_in,	/* port 83 */
+	cromemco_tuart_1b_parallel_in,	/* port 84 */
 	io_trap_in,			/* port 85 */
 	io_trap_in,			/* port 86 */
 	io_trap_in,			/* port 87 */
@@ -328,16 +334,16 @@ static BYTE (*port_in[256]) (void) = {
  *	output I/O port (0 - 255), to do the required I/O.
  */
 static void (*port_out[256]) (BYTE) = {
-	cromemco_tuart_a_baud_out,	/* port 0 */
-	cromemco_tuart_a_data_out,	/* port 1 */
-	cromemco_tuart_a_command_out,	/* port 2 */
-	cromemco_tuart_a_interrupt_out,	/* port 3 */
+	cromemco_tuart_0a_baud_out,	/* port 0 */
+	cromemco_tuart_0a_data_out,	/* port 1 */
+	cromemco_tuart_0a_command_out,	/* port 2 */
+	cromemco_tuart_0a_interrupt_out,/* port 3 */
 	cromemco_fdc_aux_out,		/* port 4 */
-	cromemco_tuart_a_timer1_out,	/* port 5 */
-	cromemco_tuart_a_timer2_out,	/* port 6 */
-	cromemco_tuart_a_timer3_out,	/* port 7 */
-	cromemco_tuart_a_timer4_out,	/* port 8 */
-	cromemco_tuart_a_timer5_out,	/* port 9 */
+	cromemco_tuart_0a_timer1_out,	/* port 5 */
+	cromemco_tuart_0a_timer2_out,	/* port 6 */
+	cromemco_tuart_0a_timer3_out,	/* port 7 */
+	cromemco_tuart_0a_timer4_out,	/* port 8 */
+	cromemco_tuart_0a_timer5_out,	/* port 9 */
 	io_trap_out,			/* port 10 */
 	io_trap_out,			/* port 11 */
 	io_trap_out,			/* port 12 */
@@ -360,11 +366,11 @@ static void (*port_out[256]) (BYTE) = {
 	io_trap_out,			/* port 29 */
 	io_trap_out,			/* port 30 */
 	io_trap_out,			/* port 31 */
-	io_trap_out,			/* port 32 */
-	io_trap_out,			/* port 33 */
-	io_trap_out,			/* port 34 */
-	io_trap_out,			/* port 35 */
-	io_trap_out,			/* port 36 */
+	cromemco_tuart_1a_baud_out,	/* port 32 */
+	cromemco_tuart_1a_data_out,	/* port 33 */
+	cromemco_tuart_1a_command_out,	/* port 34 */
+	cromemco_tuart_1a_interrupt_out,/* port 35 */
+	cromemco_tuart_1a_parallel_out,	/* port 36 */
 	io_trap_out,			/* port 37 */
 	io_trap_out,			/* port 38 */
 	io_trap_out,			/* port 39 */
@@ -408,11 +414,11 @@ static void (*port_out[256]) (BYTE) = {
 	io_trap_out,			/* port 77 */
 	io_trap_out,			/* port 78 */
 	io_trap_out,			/* port 79 */
-	io_trap_out,			/* port 80 */
-	io_trap_out,			/* port 81 */
-	io_trap_out,			/* port 82 */
-	io_trap_out,			/* port 83 */
-	io_trap_out,			/* port 84 */
+	cromemco_tuart_1b_baud_out,	/* port 80 */
+	cromemco_tuart_1b_data_out,	/* port 81 */
+	cromemco_tuart_1b_command_out,	/* port 82 */
+	cromemco_tuart_1b_interrupt_out,/* port 83 */
+	cromemco_tuart_1b_parallel_out,	/* port 84 */
 	io_trap_out,			/* port 85 */
 	io_trap_out,			/* port 86 */
 	io_trap_out,			/* port 87 */
@@ -595,8 +601,8 @@ void init_io(void)
 {
 	register int i;
 	pthread_t thread;
-	struct itimerval tim;
-	struct sigaction newact;
+	static struct itimerval tim;
+	static struct sigaction newact;
 
 	/* initialize MMU */
 	for (i = 0; i < MAXSEG; i++) {
@@ -608,8 +614,22 @@ void init_io(void)
 	}
 	selbnk = common = 0;
 
-	/* TU-ART device A interrupt address */
-	uarta_int = 0xff;
+	/* initialize TCP/IP networking */
+	printf("\n");
+	newact.sa_handler = sigio_server_socket;
+	memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
+	newact.sa_flags = 0;
+	sigaction(SIGIO, &newact, NULL);
+	for (i = 0; i < NUMSOC; i++) {
+		netcons[i].port = SERVERPORT + i;
+		netcons[i].telnet = 1;
+		init_server_socket(&netcons[i]);
+	}
+
+	/* initial TU-ART device interrupt address */
+	uart0a_int = 0xff;
+	uart1a_int = 0xff;
+	uart1b_int = 0xff;
 
 	/* create the thread for timer and interrupt handling */
 	if (pthread_create(&thread, NULL, timing, (void *) NULL)) {
@@ -634,14 +654,31 @@ void init_io(void)
  */
 void exit_io(void)
 {
-	struct itimerval tim;
-	struct sigaction newact;
+	register int i;
+	static struct itimerval tim;
+	static struct sigaction newact;
+
+	/* close line printer files */
+	if (lpt1 != 0)
+		close(lpt1);
+	if (lpt2 != 0)
+		close(lpt2);
+
+	/* close network connections */
+	for (i = 0; i < NUMSOC; i++) {
+		if (netcons[i].ssc)
+			close(netcons[i].ssc);
+	}
 
 	/* stop 10ms interrupt timer */
 	newact.sa_handler = SIG_IGN;
+	memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
+	newact.sa_flags = 0;
 	sigaction(SIGALRM, &newact, NULL);
 	tim.it_value.tv_sec = 0;
 	tim.it_value.tv_usec = 0;
+	tim.it_interval.tv_sec = 0;
+	tim.it_interval.tv_usec = 0;
 	setitimer(ITIMER_REAL, &tim, NULL);
 }
 
@@ -695,7 +732,7 @@ static BYTE io_trap_in(void)
  */
 static void io_trap_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 
 	//printf("I/O trap out port %02x\r\n", io_port);
 
@@ -821,60 +858,54 @@ void memwrt(BYTE *addr, BYTE data)
 void *timing(void *arg)
 {
 	struct timespec timer;	/* sleep timer */
+	struct timeval t1, t2, tdiff;
 
+	arg = arg;	/* to avoid compiler warning */
 	//printf("timing thread started\r\n");
+	gettimeofday(&t1, NULL);
 
-	while (1) {	/* assume ca. 1 msec per loop iteration */
-
-next:
-		/* sleep for 0.5 msec */
-		timer.tv_sec = 0;
-		timer.tv_nsec = 500000L;
-		nanosleep(&timer, NULL);
+	while (1) {	/* 1 msec per loop iteration */
 
 		/* count down the timers */
 		/* 64 usec steps, so 15*64 usec per loop iteration */
-		if (uarta_timer1 > 0) {
-			uarta_timer1 -= 15;
-			if (uarta_timer1 <= 0) {
-				uarta_timer1 = -1; /* interrupt pending */
-				//printf("UART-A timer1 went off\r\n");
+		if (uart0a_timer1 > 0) {
+			uart0a_timer1 -= 15;
+			if (uart0a_timer1 <= 0) {
+				uart0a_timer1 = -1; /* interrupt pending */
+				//printf("UART 0a timer1 went off\r\n");
 			}
 		}
-		if (uarta_timer2 > 0) {
-			uarta_timer2 -= 15;
-			if (uarta_timer2 <= 0) {
-				uarta_timer2 = -1; /* interrupt pending */
-				//printf("UART-A timer2 went off\r\n");
+		if (uart0a_timer2 > 0) {
+			uart0a_timer2 -= 15;
+			if (uart0a_timer2 <= 0) {
+				uart0a_timer2 = -1; /* interrupt pending */
+				//printf("UART 0a timer2 went off\r\n");
 			}
 		}
-		if (uarta_timer3 > 0) {
-			uarta_timer3 -= 15;
-			if (uarta_timer3 <= 0) {
-				uarta_timer3 = -1; /* interrupt pending */
-				//printf("UART-A timer3 went off\r\n");
+		if (uart0a_timer3 > 0) {
+			uart0a_timer3 -= 15;
+			if (uart0a_timer3 <= 0) {
+				uart0a_timer3 = -1; /* interrupt pending */
+				//printf("UART 0a timer3 went off\r\n");
 			}
 		}
-		if (uarta_timer4 > 0) {
-			uarta_timer4 -= 15;
-			if (uarta_timer4 <= 0) {
-				uarta_timer4 = -1; /* interrupt pending */
-				//printf("UART-A timer4 went off\r\n");
+		if (uart0a_timer4 > 0) {
+			uart0a_timer4 -= 15;
+			if (uart0a_timer4 <= 0) {
+				uart0a_timer4 = -1; /* interrupt pending */
+				//printf("UART 0a timer4 went off\r\n");
 			}
 		}
-		if (uarta_timer5 > 0) {
-			uarta_timer5 -= 15;
-			if (uarta_timer5 <= 0) {
-				uarta_timer5 = -1; /* interrupt pending */
-				//printf("UART-A timer5 went off\r\n");
+		if (uart0a_timer5 > 0) {
+			uart0a_timer5 -= 15;
+			if (uart0a_timer5 <= 0) {
+				uart0a_timer5 = -1; /* interrupt pending */
+				//printf("UART 0a timer5 went off\r\n");
 			}
 		}
 
 		/* reset disk index pulse */
 		index_pulse = 0;
-
-		/* set UART TBE */
-		uarta_tbe = 1;
 
 		/* check for interrupts from highest priority to lowest */
 
@@ -882,110 +913,212 @@ next:
 		if (int_int)
 			goto next;
 
-		/* UART A timer 1 */
-		if ((uarta_timer1 == -1) && (uarta_int_mask & 1)) {
-			uarta_int = 0xc7;
-			uarta_int_pending = 1;
+		/* UART 0A timer 1 */
+		if ((uart0a_timer1 == -1) && (uart0a_int_mask & 1)) {
+			uart0a_int = 0xc7;
+			uart0a_int_pending = 1;
 			int_data = 0xc7;
 			int_int = 1;
-			uarta_timer1 = 0;
-			//printf("UART-A timer 1 interrupt\r\n"); fflush(stdout);
+			uart0a_timer1 = 0;
+			//printf("UART 0a timer 1 interrupt\r\n");
 			goto next;
 		}
 
-		/* UART A timer 2 */
-		if ((uarta_timer2 == -1) && (uarta_int_mask & 2)) {
-			uarta_int = 0xcf;
-			uarta_int_pending = 1;
+		/* UART 0A timer 2 */
+		if ((uart0a_timer2 == -1) && (uart0a_int_mask & 2)) {
+			uart0a_int = 0xcf;
+			uart0a_int_pending = 1;
 			int_data = 0xcf;
 			int_int = 1;
-			uarta_timer2 = 0;
-			//printf("UART-A timer 2 interrupt\r\n"); fflush(stdout);
+			uart0a_timer2 = 0;
+			//printf("UART 0a timer 2 interrupt\r\n");
 			goto next;
 		}
 
 		/* EOJ from disk */
-		if ((fdc_flags & 1) && (uarta_int_mask & 4)) {
-			uarta_int = 0xd7;
-			uarta_int_pending = 1;
+		if ((fdc_flags & 1) && (uart0a_int_mask & 4)) {
+			uart0a_int = 0xd7;
+			uart0a_int_pending = 1;
 			int_data = 0xd7;
 			int_int = 1;
-			//printf("UART-A EOJ interrupt\r\n"); fflush(stdout);
+			//printf("UART 0a EOJ interrupt\r\n");
 			goto next;
 		}
 
-		/* UART A timer 3 */
-		if ((uarta_timer3 == -1) && (uarta_int_mask & 8)) {
-			uarta_int = 0xdf;
-			uarta_int_pending = 1;
+		/* UART 0A timer 3 */
+		if ((uart0a_timer3 == -1) && (uart0a_int_mask & 8)) {
+			uart0a_int = 0xdf;
+			uart0a_int_pending = 1;
 			int_data = 0xdf;
 			int_int = 1;
-			uarta_timer3 = 0;
-			//printf("UART-A timer 3 interrupt\r\n"); fflush(stdout);
+			uart0a_timer3 = 0;
+			//printf("UART 0a timer 3 interrupt\r\n");
 			goto next;
 		}
 
-		/* UART A receive data available */
-		if ((uarta_rda) && (uarta_int_mask & 16)) {
-			uarta_int = 0xe7;
-			uarta_int_pending = 1;
+		/* UART 0A receive data available */
+		if ((uart0a_rda) && (uart0a_int_mask & 16)) {
+			uart0a_int = 0xe7;
+			uart0a_int_pending = 1;
 			int_data = 0xe7;
 			int_int = 1;
-			//printf("UART-A RDA interrupt\r\n"); fflush(stdout);
+			//printf("UART 0a RDA interrupt\r\n");
 			goto next;
 		}
 
-		/* UART A transmit buffer empty */
-		if ((uarta_tbe) && (uarta_int_mask & 32)) {
-			uarta_int = 0xef;
-			uarta_int_pending = 1;
-			int_data = 0xef;
-			int_int = 1;
-			//printf("UART-A TBE interrupt\r\n"); fflush(stdout);
-			goto next;
-		}
-
-		/* UART A timer 4 */
-		if ((uarta_timer4 == -1) && (uarta_int_mask & 64)) {
-			uarta_int = 0xf7;
-			uarta_int_pending = 1;
-			int_data = 0xf7;
-			int_int = 1;
-			uarta_timer4 = 0;
-			//printf("UART-A timer 4 interrupt\r\n"); fflush(stdout);
-			goto next;
-		}
-
-		/* UART A timer 5 */
-		if ((uarta_timer5 == -1) && (uarta_int_mask & 128) && !uarta_rst7) {
-			uarta_int = 0xff;
-			uarta_int_pending = 1;
-			int_data = 0xff;
-			int_int = 1;
-			uarta_timer5 = 0;
-			//printf("UART-A timer 5 interrupt\r\n"); fflush(stdout);
-			goto next;
-		}
-
-		/* 512ms RTC */
-		if (rtc && uarta_rst7) {
-			rtc = 0;
-			if (uarta_int_mask & 128) {
-				uarta_int = 0xff;
-				uarta_int_pending = 1;
-				int_data = 0xff;
+		/* UART 0A transmit buffer empty */
+		if (uart0a_tbe == 0) {
+			uart0a_tbe = 1;
+			if (uart0a_int_mask & 32) {
+				uart0a_int = 0xef;
+				uart0a_int_pending = 1;
+				int_data = 0xef;
 				int_int = 1;
-				//printf("UART-A RTC interrupt\r\n"); fflush(stdout);
+				//printf("UART 0a TBE interrupt\r\n");
 				goto next;
 			}
 		}
 
-		/* no pending interrupt */
-		uarta_int = 0xff;
-		uarta_int_pending = 0;
+		/* UART 0A timer 4 */
+		if ((uart0a_timer4 == -1) && (uart0a_int_mask & 64)) {
+			uart0a_int = 0xf7;
+			uart0a_int_pending = 1;
+			int_data = 0xf7;
+			int_int = 1;
+			uart0a_timer4 = 0;
+			//printf("UART 0a timer 4 interrupt\r\n");
+			goto next;
+		}
+
+		/* UART 0A timer 5 */
+		if ((uart0a_timer5 == -1) && (uart0a_int_mask & 128) && !uart0a_rst7) {
+			uart0a_int = 0xff;
+			uart0a_int_pending = 1;
+			int_data = 0xff;
+			int_int = 1;
+			uart0a_timer5 = 0;
+			//printf("UART 0a timer 5 interrupt\r\n");
+			goto next;
+		}
+
+		/* 512ms RTC */
+		if (rtc && uart0a_rst7) {
+			rtc = 0;
+			if (uart0a_int_mask & 128) {
+				uart0a_int = 0xff;
+				uart0a_int_pending = 1;
+				int_data = 0xff;
+				int_int = 1;
+				//printf("UART 0a RTC interrupt\r\n");
+				goto next;
+			}
+		}
+
+		/* UART 0A no pending interrupt */
+		uart0a_int = 0xff;
+		uart0a_int_pending = 0;
+
+		/* UART 1A parallel port sense */
+		uart1a_lpt_busy = 0;
+		if (uart1a_sense != 0) {
+			uart1a_int_pending = 1;
+			uart1a_int = 0xd7;
+			if (uart1a_int_mask & 4) {
+				uart1a_sense = 0;
+				int_data = 0x24;
+				int_int = 1;
+				goto next;
+			}
+		}
+
+		/* UART 1A receive data available */
+		if ((uart1a_rda) && (uart1a_int_mask & 16)) {
+			uart1a_int = 0xe7;
+			uart1a_int_pending = 1;
+			int_data = 0x28;
+			int_int = 1;
+			//printf("UART 1a RDA interrupt\r\n");
+			goto next;
+		}
+
+		/* UART 1A transmit buffer empty */
+		if (uart1a_tbe == 0) {
+			uart1a_tbe = 1;
+			if (uart1a_int_mask & 32) {
+				uart1a_int = 0xef;
+				uart1a_int_pending = 1;
+				int_data = 0x2a;
+				int_int = 1;
+				//printf("UART 1a TBE interrupt\r\n");
+				goto next;
+			}
+		}
+
+		/* UART 1A no pending interrupt */
+		uart1a_int_pending = 0;
+		uart1a_int = 0xff;
+
+		/* UART 1B parallel port sense */
+		uart1b_lpt_busy = 0;
+		if (uart1b_sense != 0) {
+			uart1b_int_pending = 1;
+			uart1b_int = 0xd7;
+			if (uart1b_int_mask & 4) {
+				uart1b_sense = 0;
+				int_data = 0x34;
+				int_int = 1;
+				goto next;
+			}
+		}
+
+		/* UART 1B receive data available */
+		if ((uart1b_rda) && (uart1b_int_mask & 16)) {
+			uart1b_int = 0xe7;
+			uart1b_int_pending = 1;
+			int_data = 0x38;
+			int_int = 1;
+			//printf("UART 1b RDA interrupt\r\n");
+			goto next;
+		}
+
+		/* UART 1B transmit buffer empty */
+		if (uart1b_tbe == 0) {
+			uart1b_tbe = 1;
+			if (uart1b_int_mask & 32) {
+				uart1b_int = 0xef;
+				uart1b_int_pending = 1;
+				int_data = 0x3a;
+				int_int = 1;
+				//printf("UART 1b TBE interrupt\r\n");
+				goto next;
+			}
+		}
+
+		/* UART 1B no pending interrupt */
+		uart1b_int_pending = 0;
+		uart1b_int = 0xff;
+
+next:
+		/* compute time used for processing */
+		gettimeofday(&t2, NULL);
+		tdiff.tv_sec = t2.tv_sec - t1.tv_sec;
+		tdiff.tv_usec = t2.tv_usec - t1.tv_usec;
+		if (tdiff.tv_usec < 0) {
+			--tdiff.tv_sec;
+			tdiff.tv_usec += 1000000;
+		}
+	
+		/* sleep for the difference to 1 msec */
+		if ((tdiff.tv_sec == 0) && (tdiff.tv_usec < 1000)) {
+			timer.tv_sec = 0;
+			timer.tv_nsec = (long) ((1000 - tdiff.tv_usec) * 1000);
+			nanosleep(&timer, NULL);
+		}
+
+		gettimeofday(&t1, NULL);
 	}
 
-	/* never reached, thread is running endless */
+	/* never reached, this thread is running endless */
 	pthread_exit(NULL);
 }
 
@@ -996,6 +1129,8 @@ void interrupt(int sig)
 {
 	static unsigned long counter = 0L;
 	struct pollfd p[1];
+
+	sig = sig;	/* to avoid compiler warning */
 
 	counter++;
 
@@ -1024,7 +1159,39 @@ void interrupt(int sig)
 	p[0].revents = 0;
 	poll(p, 1, 0);
 	if (p[0].revents & POLLIN)
-		uarta_rda = 1;
+		uart0a_rda = 1;
 	else
-		uarta_rda = 0;
+		uart0a_rda = 0;
+
+	if (netcons[0].ssc != 0) {
+		p[0].fd = netcons[0].ssc;
+		p[0].events = POLLIN;
+		p[0].revents = 0;
+		poll(p, 1, 0);
+		if (p[0].revents & POLLHUP) {
+			close(netcons[0].ssc);
+			netcons[0].ssc = 0;
+			uart1a_rda = 0;
+		} else if (p[0].revents & POLLIN) {
+			uart1a_rda = 1;
+		} else {
+			uart1a_rda = 0;
+		}
+	}
+
+	if (netcons[1].ssc != 0) {
+		p[0].fd = netcons[1].ssc;
+		p[0].events = POLLIN;
+		p[0].revents = 0;
+		poll(p, 1, 0);
+		if (p[0].revents & POLLHUP) {
+			close(netcons[1].ssc);
+			netcons[1].ssc = 0;
+			uart1b_rda = 0;
+		} else if (p[0].revents & POLLIN) {
+			uart1b_rda = 1;
+		} else {
+			uart1b_rda = 0;
+		}
+	}
 }

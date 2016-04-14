@@ -34,21 +34,19 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 /*
  *	The following defines may be activated, commented or modified
  *	by user for her/his own purpose.
  */
-#define CPU_SPEED 0	/* default CPU speed */
-/*#define Z80_UNDOC*/	/* compile undocumented Z80 instructions */
-/*#define WANT_INT*/	/* activate CPU's interrupts */
+#define CPU_SPEED 0	/* default CPU speed 0=unlimited */
+/*#define Z80_UNDOC*/	/* don't compile undocumented Z80 instructions */
 /*#define WANT_SPC*/	/* activate SP over-/underrun handling 0000<->FFFF */
 /*#define WANT_PCC*/	/* activate PC overrun handling FFFF->0000 */
 #define WANT_FASTM	/* much faster but not accurate Z80 block moves */
-#define CNTL_C		/* cntl-c will stop running emulation */
-#define CNTL_BS		/* cntl-\ will stop running emulation */
-/*#define WANT_TIM*/	/* activate runtime measurement */
+/*#define WANT_TIM*/	/* count t-states */
 /*#define HISIZE 100*/	/* number of entries in history */
 /*#define SBSIZE 4*/	/* number of software breakpoints */
 /*#define FRONTPANEL*/	/* no frontpanel emulation */
@@ -76,7 +74,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2015 by Udo Munk"
-#define RELEASE	"1.25"
+#define RELEASE	"1.26"
 
 #define LENCMD		80		/* length of command buffers etc */
 
@@ -105,7 +103,7 @@
 
 					/* causes of error */
 #define NONE		0		/* no error */
-#define OPHALT		1		/* HALT	op-code	trap */
+#define OPHALT		1		/* HALT op-code trap */
 #define IOTRAPIN	2		/* I/O trap input */
 #define IOTRAPOUT	3		/* I/O trap output */
 #define IOHALT		4		/* halt system via I/O register */
@@ -113,7 +111,7 @@
 #define OPTRAP1		6		/* illegal 1 byte op-code trap */
 #define OPTRAP2		7		/* illegal 2 byte op-code trap */
 #define OPTRAP4		8		/* illegal 4 byte op-code trap */
-#define USERINT		9		/* user	interrupt */
+#define USERINT		9		/* user interrupt */
 #define POWEROFF	255		/* CPU off, no error */
 
 typedef unsigned short WORD;		/* 16 bit unsigned */
@@ -142,4 +140,8 @@ struct softbreak {			/* structure of a breakpoint */
 	int	sb_passcount;		/* pass counter of breakpoint */
 	int	sb_pass;		/* no. of pass to break */
 };
+#endif
+
+#ifndef isxdigit
+#define isxdigit(c) ((c<='f'&&c>='a')||(c<='F'&&c>='A')||(c<='9'&&c>='0'))
 #endif

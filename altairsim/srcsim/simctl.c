@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <termios.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -56,8 +57,8 @@ static void quit_callback(void);
  */
 void mon(void)
 {
-	struct timespec timer;
-	struct sigaction newact;
+	static struct timespec timer;
+	static struct sigaction newact;
 
 	/*load memory from file */
 	if (load())
@@ -127,6 +128,8 @@ void mon(void)
 
 	/* timer interrupts off */
 	newact.sa_handler = SIG_IGN;
+	memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
+	newact.sa_flags = 0;
 	sigaction(SIGALRM, &newact, NULL);
 
 	/* reset terminal */
@@ -259,6 +262,8 @@ void step_cpu(void)
  */
 void run_clicked(int state, int val)
 {
+	val = val;	/* to avoid compiler warning */
+
 	if (!power)
 		return;
 
@@ -285,6 +290,8 @@ void run_clicked(int state, int val)
  */
 void step_clicked(int state, int val)
 {
+	val = val;	/* to avoid compiler warning */
+
 	if (!power)
 		return;
 
@@ -308,6 +315,8 @@ void step_clicked(int state, int val)
  */
 void reset_clicked(int state, int val)
 {
+	val = val;	/* to avoid compiler warning */
+
 	if (!power)
 		return;
 
@@ -346,6 +355,8 @@ void reset_clicked(int state, int val)
  */
 void examine_clicked(int state, int val)
 {
+	val = val;	/* to avoid compiler warning */
+
 	if (!power)
 		return;
 
@@ -373,6 +384,8 @@ void examine_clicked(int state, int val)
  */
 void deposit_clicked(int state, int val)
 {
+	val = val;	/* to avoid compiler warning */
+
 	if (!power)
 		return;
 
@@ -398,6 +411,8 @@ void deposit_clicked(int state, int val)
  */
 void protect_clicked(int state, int val)
 {
+	val = val;	/* to avoid compiler warning */
+
 	if (!power)
 		return;
 
@@ -421,6 +436,8 @@ void protect_clicked(int state, int val)
  */
 void power_clicked(int state, int val)
 {
+	val = val;	/* to avoid compiler warning */
+
 	switch (state) {
 	case FP_SW_DOWN:
 		if (power)

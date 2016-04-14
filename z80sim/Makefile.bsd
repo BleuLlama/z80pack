@@ -1,6 +1,11 @@
 CC = gcc
 
-CFLAGS = -O3 -c -Wall
+# Development
+#CFLAGS = -O3 -c -Wall -Wextra -fstack-protector-all -D_FORTIFY_SOURCE=2
+
+# Production
+CFLAGS = -O3 -c -Wall -Wextra -U_FORTIFY_SOURCE
+
 LFLAGS = -s
 
 OBJ =	sim0.o \

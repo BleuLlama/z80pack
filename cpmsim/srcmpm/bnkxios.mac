@@ -400,9 +400,21 @@ SYS1:	DEC	B
 	LD	A,0C3H		;jp instruction
 	LD	(0),A
 	LD	(38H),A
+	PUSH	HL
+	LD	L,C		;rst # > HL
+	LD	H,0
+	ADD	HL,HL
+	ADD	HL,HL
+	ADD	HL,HL		;rst address in HL
+	LD	(HL),A		;debugger entry for configured rst
+	INC	HL
+	LD	(HL),E
+	INC	HL
+	LD	(HL),D
+	POP	HL
 	LD	(1),HL
 	PUSH	HL
-	LD	HL,INTHND
+	LD	HL,INTHND	;interrupt routine at rst 38
 	LD	(39H),HL
 	POP	HL
 	JP	NZ,SYS1
@@ -583,7 +595,7 @@ WAITIO: OUT	(FDCOP),A	;start i/o operation
 ;	XIOS data segment
 ;
 SIGNON:	DEFB	13,10
-	DEFM	'MP/M 2 XIOS V1.7-HD, '
+	DEFM	'MP/M 2 XIOS V1.8-HD, '
 	DEFM	'Copyright 1989-2015 by Udo Munk'
 	DEFB	13,10,0
 ;

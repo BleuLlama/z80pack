@@ -102,7 +102,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <strings.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <time.h>
@@ -139,7 +138,7 @@ struct dskdef {
 
 static BYTE drive;		/* current drive A..P (0..15) */
 static BYTE track;		/* current track (0..255) */
-static int sector;		/* current sector (0..65535) */
+static unsigned int sector;	/* current sector (0..65535) */
 static BYTE status;		/* status of last I/O operation on FDC */
 static BYTE dmadl;		/* current DMA address destination low */
 static BYTE dmadh;		/* current DMA address destination high */
@@ -163,7 +162,6 @@ static int driven;		/* fd for file "driven.cpm" */
 static int driveo;		/* fd for file "driveo.cpm" */
 static int drivep;		/* fd for file "drivep.cpm" */
 static int printer;		/* fd for file "printer.cpm" */
-static char last_char;		/* buffer for 1 character (console status) */
 static int speed;		/* to reset CPU speed */
 
 #ifdef PIPES
@@ -897,7 +895,7 @@ void init_io(void)
 
 #ifdef TCPASYNC
 	newact.sa_handler = int_io;
-	bzero((char *)&newact.sa_mask, sizeof(newact.sa_mask));
+	memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
 	newact.sa_flags = 0;
 	sigaction(SIGIO, &newact, NULL);
 #endif
@@ -925,7 +923,7 @@ static void init_server_socket(int n)
 		perror("create server socket");
 		exit(1);
 	}
-	if (setsockopt(ss[n], SOL_SOCKET, SO_REUSEADDR, (void *)&on,
+	if (setsockopt(ss[n], SOL_SOCKET, SO_REUSEADDR, (void *) &on,
 	    sizeof(on)) == -1) {
 		perror("setsockopt SO_REUSEADDR on server socket");
 		exit(1);
@@ -934,15 +932,15 @@ static void init_server_socket(int n)
 	fcntl(ss[n], F_SETOWN, getpid());
 	i = fcntl(ss[n], F_GETFL, 0);
 	if (fcntl(ss[n], F_SETFL, i | FASYNC) == -1) {
-		perror("fcntl FASYNC server socket");
+		perror("fcntl FASYNC on server socket");
 		exit(1);
 	}
 #endif
-	bzero((char *)&sin, sizeof(sin));
+	memset((void *) &sin, 0, sizeof(sin));
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = INADDR_ANY;
 	sin.sin_port = htons(ss_port[n]);
-	if (bind(ss[n], (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+	if (bind(ss[n], (struct sockaddr *) &sin, sizeof(sin)) == -1) {
 		perror("bind server socket");
 		exit(1);
 	}
@@ -1131,7 +1129,7 @@ static BYTE io_trap_in(void)
  */
 static void io_trap_out(BYTE data)
 {
-	data++;	/* to avoid compiler warning */
+	data = data;	/* to avoid compiler warning */
 
 	if (i_flag) {
 		cpu_error = IOTRAPOUT;
@@ -1146,32 +1144,25 @@ static void io_trap_out(BYTE data)
  */
 static BYTE cons_in(void)
 {
-	register int flags, readed;
+	struct pollfd p[1];
+	struct timespec timer;
 
-	if (last_char)
-		return((BYTE) 0xff);
-	if (cntl_c)
-		return((BYTE) 0xff);
-	if (cntl_bs)
-		return((BYTE) 0xff);
-	else {
-		if (++busy_loop_cnt[0] >= MAX_BUSY_COUNT) {
-			struct timespec timer;
-
-			timer.tv_sec = 0;
-			timer.tv_nsec = 1000000L;
-			nanosleep(&timer, NULL);
-			busy_loop_cnt[0] = 0;
-			//putchar('~'); fflush(stdout);
-		}
-		flags = fcntl(0, F_GETFL, 0);
-		fcntl(0, F_SETFL, flags | O_NDELAY);
-		readed = read(0, &last_char, 1);
-		fcntl(0, F_SETFL, flags);
-		if (readed == 1)
-			return((BYTE) 0xff);
+	if (++busy_loop_cnt[0] >= MAX_BUSY_COUNT) {
+		timer.tv_sec = 0;
+		timer.tv_nsec = 1000000L;
+		nanosleep(&timer, NULL);
+		busy_loop_cnt[0] = 0;
+		//putchar('~'); fflush(stdout);
 	}
-	return((BYTE) 0);
+
+	p[0].fd = fileno(stdin);
+	p[0].events = POLLIN;
+	p[0].revents = 0;
+	poll(p, 1, 0);
+	if (p[0].revents & POLLIN)
+		return((BYTE) 0xff);
+	else
+		return((BYTE) 0x00);
 }
 
 /*
@@ -1190,6 +1181,9 @@ static BYTE cons1_in(void)
 	struct sockaddr_in fsin;
 	int go_away;
 	int on = 1;
+
+	if (ss[0] == 0)
+		return(status);
 
 	p[0].fd = ss[0];
 	p[0].events = POLLIN;
@@ -1260,6 +1254,9 @@ static BYTE cons2_in(void)
 	int go_away;
 	int on = 1;
 
+	if (ss[1] == 0)
+		return(status);
+
 	p[0].fd = ss[1];
 	p[0].events = POLLIN;
 	p[0].revents = 0;
@@ -1329,6 +1326,9 @@ static BYTE cons3_in(void)
 	int go_away;
 	int on = 1;
 
+	if (ss[2] == 0)
+		return(status);
+
 	p[0].fd = ss[2];
 	p[0].events = POLLIN;
 	p[0].revents = 0;
@@ -1397,6 +1397,9 @@ static BYTE cons4_in(void)
 	struct sockaddr_in fsin;
 	int go_away;
 	int on = 1;
+
+	if (ss[3] == 0)
+		return(status);
 
 	p[0].fd = ss[3];
 	p[0].events = POLLIN;
@@ -1472,11 +1475,11 @@ static BYTE nets1_in(void)
 			cpu_state = STOPPED;
 			return((BYTE) 0);
 		}
-		bzero((char *)&sin, sizeof(sin));
-		bcopy(host->h_addr, (char *)&sin.sin_addr, host->h_length);
+		memset((void *) &sin, 0, sizeof(sin));
+		memcpy((void *) &sin.sin_addr, (void *) host->h_addr, host->h_length);
 		sin.sin_family = AF_INET;
 		sin.sin_port = htons(cs_port);
-		if (connect(cs, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+		if (connect(cs, (struct sockaddr *) &sin, sizeof(sin)) == -1) {
 			perror("connect client socket");
 			cpu_error = IOERROR;
 			cpu_state = STOPPED;
@@ -1513,7 +1516,7 @@ static BYTE nets1_in(void)
  */
 static void cons_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -1522,7 +1525,7 @@ static void cons_out(BYTE data)
  */
 static void cons1_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -1531,7 +1534,7 @@ static void cons1_out(BYTE data)
  */
 static void cons2_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -1540,7 +1543,7 @@ static void cons2_out(BYTE data)
  */
 static void cons3_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -1549,7 +1552,7 @@ static void cons3_out(BYTE data)
  */
 static void cons4_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -1558,38 +1561,23 @@ static void cons4_out(BYTE data)
  */
 static void nets1_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
- *	I/O handler for read console 0 data:
- *	read one character from the terminal without echo
- *	and character transformations
+ *	I/O handler for read console 0 data
  */
 static BYTE cond_in(void)
 {
 	char c;
 
 	busy_loop_cnt[0] = 0;
-
-	aborted:
-	if (last_char) {
-		c = last_char;
-		last_char = '\0';
-	} else if (cntl_c) {
-		cntl_c--;
-		c = 0x03;
-	} else if (cntl_bs) {
-		cntl_bs--;
-		c = 0x1c;
-	} else if (read(0, &c, 1) != 1) {
-		goto aborted;
-	}
+	read(0, &c, 1);
 	return((BYTE) c);
 }
 
 /*
- *	I/O handler for read console 1 data:
+ *	I/O handler for read console 1 data
  */
 static BYTE cond1_in(void)
 {
@@ -1601,6 +1589,7 @@ static BYTE cond1_in(void)
 		if ((errno == EAGAIN) || (errno == EINTR)) {
 			close(ssc[0]);
 			ssc[0] = 0;
+			return((BYTE) 0);
 		} else {
 			perror("read console 1");
 			cpu_error = IOERROR;
@@ -1624,7 +1613,7 @@ static BYTE cond1_in(void)
 }
 
 /*
- *	I/O handler for read console 2 data:
+ *	I/O handler for read console 2 data
  */
 static BYTE cond2_in(void)
 {
@@ -1636,6 +1625,7 @@ static BYTE cond2_in(void)
 		if ((errno == EAGAIN) || (errno == EINTR)) {
 			close(ssc[1]);
 			ssc[1] = 0;
+			return((BYTE) 0);
 		} else {
 			perror("read console 2");
 			cpu_error = IOERROR;
@@ -1659,7 +1649,7 @@ static BYTE cond2_in(void)
 }
 
 /*
- *	I/O handler for read console 3 data:
+ *	I/O handler for read console 3 data
  */
 static BYTE cond3_in(void)
 {
@@ -1671,6 +1661,7 @@ static BYTE cond3_in(void)
 		if ((errno == EAGAIN) || (errno == EINTR)) {
 			close(ssc[2]);
 			ssc[2] = 0;
+			return((BYTE) 0);
 		} else {
 			perror("read console 3");
 			cpu_error = IOERROR;
@@ -1694,7 +1685,7 @@ static BYTE cond3_in(void)
 }
 
 /*
- *	I/O handler for read console 4 data:
+ *	I/O handler for read console 4 data
  */
 static BYTE cond4_in(void)
 {
@@ -1706,6 +1697,7 @@ static BYTE cond4_in(void)
 		if ((errno == EAGAIN) || (errno == EINTR)) {
 			close(ssc[3]);
 			ssc[3] = 0;
+			return((BYTE) 0);
 		} else {
 			perror("read console 4");
 			cpu_error = IOERROR;
@@ -1729,7 +1721,7 @@ static BYTE cond4_in(void)
 }
 
 /*
- *	I/O handler for read client socket 1 data:
+ *	I/O handler for read client socket 1 data
  */
 static BYTE netd1_in(void)
 {
@@ -1924,7 +1916,7 @@ static BYTE prts_in(void)
  */
 static void prts_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -1978,7 +1970,7 @@ static void auxs_out(BYTE data)
 #ifdef PIPES
 	aux_in_eof = data;
 #else
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 #endif
 }
 
@@ -2221,7 +2213,7 @@ static BYTE fdcx_in(void)
  */
 static void fdcx_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -2283,12 +2275,16 @@ static void mmui_out(BYTE data)
 	if (data > MAXSEG) {
 		printf("Try to init %d banks, available %d banks\r\n",
 		       data, MAXSEG);
-		exit(1);
+		cpu_error = IOERROR;
+		cpu_state = STOPPED;
+		return;
 	}
 	for (i = 0; i < data; i++) {
 		if ((mmu[i] = malloc(segsize)) == NULL) {
 			printf("can't allocate memory for bank %d\r\n", i+1);
-			exit(1);
+			cpu_error = IOERROR;
+			cpu_state = STOPPED;
+			return;
 		}
 	}
 	maxbnk = data;
@@ -2316,11 +2312,13 @@ static void mmus_out(BYTE data)
 		return;
 	if (data >= maxbnk) {
 		printf("%04x: try to select unallocated bank %d\r\n",
-		       (unsigned int)(PC-ram), data);
-		exit(1);
+		       (unsigned int) (PC - ram), data);
+		cpu_error = IOERROR;
+		cpu_state = STOPPED;
+		return;
 	}
 	//printf("memory select bank %d from %04x\r\n",
-	//	data, (unsigned int)(PC-ram));
+	//	data, (unsigned int) (PC - ram));
 	memcpy(mmu[selbnk], (char *) ram, segsize);
 	memcpy((char *) ram, mmu[data], segsize);
 	selbnk = data;
@@ -2344,7 +2342,9 @@ static void mmuc_out(BYTE data)
 {
 	if (mmu[0] != NULL) {
 		printf("Not possible to resize already allocated segments\r\n");
-		exit(1);
+		cpu_error = IOERROR;
+		cpu_state = STOPPED;
+		return;
 	}
 	segsize = data << 8;
 }
@@ -2449,7 +2449,7 @@ static BYTE clkd_in(void)
  */
 static void clkd_out(BYTE data)
 {
-	data++; /* to avoid compiler warning */
+	data = data; /* to avoid compiler warning */
 }
 
 /*
@@ -2499,6 +2499,8 @@ static void time_out(BYTE data)
 	if (data == 1) {
 		timer = 1;
 		newact.sa_handler = int_timer;
+		memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
+		newact.sa_flags = 0;
 		sigaction(SIGALRM, &newact, NULL);
 		tim.it_value.tv_sec = 0;
 		tim.it_value.tv_usec = 10000;
@@ -2508,6 +2510,8 @@ static void time_out(BYTE data)
 	} else {
 		timer = 0;
 		newact.sa_handler = SIG_IGN;
+		memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
+		newact.sa_flags = 0;
 		sigaction(SIGALRM, &newact, NULL);
 		tim.it_value.tv_sec = 0;
 		tim.it_value.tv_usec = 0;
@@ -2618,6 +2622,8 @@ static BYTE speedh_in(void)
  */
 static void int_timer(int sig)
 {
+	sig = sig;	/* to avoid compiler warning */
+
 	int_int = 1;
 	int_data = 0xff;	/* RST 38H for IM 0 */
 }
@@ -2635,6 +2641,8 @@ static void int_io(int sig)
 	int go_away;
 	int on = 1;
 
+	sig = sig;	/* to avoid compiler warning */
+
 	for (i = 0; i < NUMSOC; i++) {
 		p[i].fd = ss[i];
 		p[i].events = POLLIN;
@@ -2645,25 +2653,24 @@ static void int_io(int sig)
 
 	for (i = 0; i < NUMSOC; i++) {
 		if ((ss[i] != 0) && (p[i].revents)) {
-
 			alen = sizeof(fsin);
 
 			if (ssc[i] != 0) {
 				go_away = accept(ss[i],
-						 (struct sockaddr *)&fsin,
+						 (struct sockaddr *) &fsin,
 						 &alen);
 				close(go_away);
 				return;
 			}
 
-			if ((ssc[i] = accept(ss[i], (struct sockaddr *)&fsin,
+			if ((ssc[i] = accept(ss[i], (struct sockaddr *) &fsin,
 			    &alen)) == -1) {
-				perror("accept server socket");
+				perror("accept on server socket");
 				ssc[i] = 0;
 			}
 
 			if (setsockopt(ssc[i], IPPROTO_TCP, TCP_NODELAY,
-			    (void *)&on, sizeof(on)) == -1) {
+			    (void *) &on, sizeof(on)) == -1) {
 				perror("setsockopt TCP_NODELAY on server socket");
 			}
 

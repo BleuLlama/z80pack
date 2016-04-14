@@ -511,8 +511,10 @@ void cromemco_fdc_data_out(BYTE data)
 			state = FDC_IDLE;		/* done */
 			fdc_flags |= 1;			/* set EOJ */
 			fdc_flags &= ~128;		/* reset DRQ */
-			fdc_stat = 0;
-			write(fd, &buf[0], secsz);
+			if (write(fd, &buf[0], secsz) == secsz)
+				fdc_stat = 0;
+			else
+				fdc_stat = 0x10;	/* sector not found */
 			close(fd);
 		}
 		break;
@@ -600,7 +602,10 @@ void cromemco_fdc_data_out(BYTE data)
 				return;
 			} else {
 				secs++;
-				write(fd, buf, bcnt);
+				if (write(fd, buf, bcnt) == bcnt)
+					fdc_stat = 0;
+				else
+					fdc_stat = 0x10; /* sector not found */
 				wrtstat = 1;
 			}
 		}
@@ -613,7 +618,6 @@ void cromemco_fdc_data_out(BYTE data)
 			state = FDC_IDLE;
 			fdc_flags |= 1;		/* set EOJ */
 			fdc_flags &= ~128;	/* reset DRQ */
-			fdc_stat = 0;
 			close(fd);
 		}
 		break;
@@ -791,7 +795,7 @@ void cromemco_fdc_cmd_out(BYTE data)
 		//printf("16fdc: seek\r\n");
 		headloaded = (data & 8) ? 1 : 0;
 		fdc_flags |= 1;			/* set EOJ */
-		if ((fdc_track >= 0) && (fdc_track <= disks[disk].tracks))
+		if (fdc_track <= disks[disk].tracks)
 			fdc_stat = (fdc_track == 0) ? 4 : 0;
 		else
 			fdc_stat = 16;		/* seek error */
@@ -804,7 +808,7 @@ void cromemco_fdc_cmd_out(BYTE data)
 		//if (data & 0x10)
 			fdc_track += step_dir;
 		fdc_flags |= 1;			/* set EOJ */
-		if ((fdc_track >= 0) && (fdc_track <= disks[disk].tracks))
+		if (fdc_track <= disks[disk].tracks)
 			fdc_stat = (fdc_track == 0) ? 4 : 0;
 		else
 			fdc_stat = 16;		/* seek error */
@@ -818,7 +822,7 @@ void cromemco_fdc_cmd_out(BYTE data)
 			fdc_track++;
 		fdc_flags |= 1;			/* set EOJ */
 		step_dir = 1;
-		if ((fdc_track >= 0) && (fdc_track <= disks[disk].tracks))
+		if (fdc_track <= disks[disk].tracks)
 			fdc_stat = (fdc_track == 0) ? 4 : 0;
 		else
 			fdc_stat = 16;		/* seek error */
@@ -832,7 +836,7 @@ void cromemco_fdc_cmd_out(BYTE data)
 			fdc_track--;
 		fdc_flags |= 1;			/* set EOJ */
 		step_dir = -1;
-		if ((fdc_track >= 0) && (fdc_track <= disks[disk].tracks))
+		if (fdc_track <= disks[disk].tracks)
 			fdc_stat = (fdc_track == 0) ? 4 : 0;
 		else
 			fdc_stat = 16;		/* seek error */

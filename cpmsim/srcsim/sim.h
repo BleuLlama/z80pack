@@ -31,6 +31,7 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 20-JUL-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 /*
@@ -39,17 +40,15 @@
  */
 #define CPU_SPEED 0	/* default CPU speed 0=unlimited */
 #define Z80_UNDOC	/* compile undocumented Z80 instructions */
-#define WANT_INT	/* interrupt for MP/M etc */
 /*#define WANT_SPC*/	/* activate for SP over-/underrun handling */
 /*#define WANT_PCC*/	/* activate for PC overrun handling */
 #define WANT_FASTM	/* much faster but not accurate Z80 block moves */
-/*#define CNTL_C*/	/* don't abort simulation with cntl-c */
-#define CNTL_BS		/* emergency exit with cntl-\ :-) */
-#define WANT_TIM	/* run length measurement needed to adjust CPU speed */
+/*#define WANT_TIM*/	/* don't count t-states */
 /*#define HISIZE  1000*//* no history */
 /*#define SBSIZE  10*/	/* no breakpoints */
 /*#define FRONTPANEL*/	/* no frontpanel emulation */
 /*#define BUS_8080*/	/* no emulation of 8080 bus status */
+
 #define PIPES		/* use named pipes for auxiliary device */
 #define NETWORKING	/* TCP/IP networked serial ports */
 #define NUMSOC	4	/* number of server sockets */
@@ -59,7 +58,7 @@
 
 /*
  * forking and pipes are working now with Cygwin in 2014,
- * but SIGIO on BSD sockets is not yet
+ * but SIGIO on BSD sockets is not
  */
 #ifdef __CYGWIN__
 //#undef PIPES		/* forking and pipes was not working correct */
@@ -77,7 +76,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2015 by Udo Munk"
-#define RELEASE	"1.25"
+#define RELEASE	"1.26"
 
 #define LENCMD		80		/* length of command buffers etc */
 

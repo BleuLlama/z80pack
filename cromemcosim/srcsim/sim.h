@@ -12,6 +12,8 @@
  * 01-JAN-15 fixed 16FDC, machine now also boots CDOS 2.58 from 8" and 5.25"
  * 01-JAN-15 fixed frontpanel switch settings, added boot flag to fp switch
  * 12-JAN-15 fdc and tu-art improvements, implemented banked memory
+ * 10-MAR-15 TU-ART lpt's implemented for CP/M, CDOS and Cromix
+ * 26-MAR-15 TU-ART tty's implemented for CDOS and Cromix
  */
 
 /*
@@ -20,39 +22,33 @@
  */
 #define CPU_SPEED 4	/* default CPU speed */
 /*#define Z80_UNDOC*/	/* don't compile undocumented Z80 instructions */
-#define WANT_INT	/* interrupt for stuff */
 #define WANT_SPC	/* activate SP over-/underrun handling 0000<->FFFF */
 #define WANT_PCC	/* activate PC overrun handling FFFF->0000 */
 #define WANT_FASTM	/* much faster but not accurate Z80 block moves */
-/*#define CNTL_C*/	/* don't abort simulation with cntl-c */
-#define CNTL_BS		/* emergency exit with cntl-\ :-) */
-#define WANT_TIM	/* run length measurement needed to adjust CPU speed */
+/*#define WANT_TIM*/	/* don't count t-states */
 /*#define HISIZE  1000*//* no history */
 /*#define SBSIZE  10*/	/* no breakpoints */
 #define FRONTPANEL	/* emulate a machines frontpanel */
 #define BUS_8080	/* emulate 8080 bus status for front panel */
-/*#define PIPES*/	/* use named pipes for auxiliary device */
-/*#define NETWORKING*/	/* TCP/IP networked serial ports */
-/*#define NUMSOC 4 */	/* number of server sockets */
-/*#define TCPASYNC*/	/* tcp/ip server can use async I/O */
-/*#define CNETDEBUG*/	/* client network protocol debugger */
-/*#define SNETDEBUG*/	/* server network protocol debugger */
+
+#define NUMSOC 2	/* number of TCP/IP sockets, 2 per TU-ART */
+#define SERVERPORT 4010	/* first TCP/IP server port used */
 
 /*
  *	Default CPU
  */
-#define Z80             1
-#define I8080           2
-#define DEFAULT_CPU     Z80
+#define Z80		1
+#define I8080		2
+#define DEFAULT_CPU	Z80
 
 /*
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2015 by Udo Munk"
-#define RELEASE	"1.25"
+#define RELEASE	"1.26"
 
 #define USR_COM	"Cromemco Z-1 Simulation"
-#define USR_REL	"1.6"
+#define USR_REL	"1.7"
 #define USR_CPR	"Copyright (C) 2014-2015 by Udo Munk"
 
 #define LENCMD		80		/* length of command buffers etc */

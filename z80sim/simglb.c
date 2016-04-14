@@ -31,6 +31,7 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 /*
@@ -97,12 +98,10 @@ int sb_next;			/* index into breakpoint memory */
 /*
  *	Variables for runtime measurement
  */
-#ifdef WANT_TIM
 long t_states;			/* number of counted T states */
 int t_flag;			/* flag, 1 = on, 0 = off */
 BYTE *t_start =	ram + 65535;	/* start address for measurement */
 BYTE *t_end = ram + 65535;	/* end address for measurement */
-#endif
 
 /*
  *	Variables for frontpanel emulation
@@ -132,12 +131,10 @@ BYTE cpu_state;			/* status of CPU emulation */
 int cpu_error;			/* error status of CPU emulation */
 int int_nmi;			/* non maskable interrupt */
 int int_int;			/* interrupt */
-int tmax;			/* max t-stats to execute in 10ms */
+int tmax;			/* max t-states to execute in 10ms */
 int int_mode;			/* CPU interrupt mode (IM 0, IM 1, IM 2) */
 BYTE int_data;			/* data from interrupting device on data bus */
 int int_protection = 0;		/* to delay interrupts after EI */
-int cntl_c;			/* flag	for cntl-c entered */
-int cntl_bs;			/* flag	for cntl-\ entered */
 
 /*
  *	Variables for I/O support

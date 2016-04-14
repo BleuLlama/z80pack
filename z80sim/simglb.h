@@ -31,6 +31,7 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 /*
@@ -54,8 +55,8 @@ extern BYTE	cpu_bus;
 extern BYTE	ram[],*wrk_ram, cpu_state, int_data;
 
 extern int	s_flag, l_flag, m_flag, x_flag, break_flag, i_flag, f_flag,
-		cpu_error, int_nmi, int_int, int_mode, cntl_c, cntl_bs,
-		parity[], sb_next, int_protection;
+		cpu_error, int_nmi, int_int, int_mode, parity[], sb_next,
+		int_protection;
 
 #ifdef Z80_UNDOC
 extern int	u_flag;
@@ -75,11 +76,9 @@ extern int	h_next,	h_flag;
 extern struct	softbreak soft[];
 #endif
 
-#ifdef WANT_TIM
 extern long	t_states;
 extern int	t_flag;
 extern BYTE	*t_start, *t_end;
-#endif
 
 #ifdef FRONTPANEL
 extern unsigned long long fp_clock;

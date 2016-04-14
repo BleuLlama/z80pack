@@ -69,7 +69,7 @@ void tarbell_cmd_out(BYTE data)
 
 	} else if ((data & 0xf0) == 0x10) {	/* seek */
 		//printf("tarbell: seek to track %d\r\n", fdc_track);
-		if ((fdc_track >= 0) && (fdc_track <= TRK))
+		if (fdc_track <= TRK)
 			fdc_stat = 0;
 		else
 			fdc_stat = 0x10;	/* seek error */
@@ -78,7 +78,7 @@ void tarbell_cmd_out(BYTE data)
 		//printf("tarbell: step in\r\n");
 		if (data & 0x10)
 			fdc_track++;
-		if ((fdc_track >= 0) && (fdc_track <= TRK))
+		if (fdc_track <= TRK)
 			fdc_stat = 0;
 		else
 			fdc_stat = 0x10;	/* seek error */
@@ -87,7 +87,7 @@ void tarbell_cmd_out(BYTE data)
 		//printf("tarbell: step out\r\n");
 		if (data & 0x10)
 			fdc_track--;
-		if ((fdc_track >= 0) && (fdc_track <= TRK))
+		if (fdc_track <= TRK)
 			fdc_stat = 0;
 		else
 			fdc_stat = 0x10;	/* seek error */
@@ -320,8 +320,10 @@ void tarbell_data_out(BYTE data)
 		/* last byte? */
 		if (dcnt == SEC_SZ) {
 			state = FDC_IDLE;		/* reset DRQ */
-			fdc_stat = 0;
-			write(fd, &buf[0], SEC_SZ);
+			if (write(fd, &buf[0], SEC_SZ) == SEC_SZ)
+				fdc_stat = 0;
+			else
+				fdc_stat = 0x10;	/* record not found */
 			close(fd);
 		}
 		break;
@@ -365,14 +367,16 @@ void tarbell_data_out(BYTE data)
 				return;
 			} else {
 				secs++;
-				write(fd, buf, bcnt);
+				if (write(fd, buf, bcnt) == bcnt)
+					fdc_stat = 0;
+				else
+					fdc_stat = 0x10; /* record not found */
 				wrtstat = 1;
 			}
 		}
 		/* all sectors of track written? */
 		if (secs == SPT) {
 			state = FDC_IDLE;
-			fdc_stat = 0;
 			close(fd);
 		}
 		break;

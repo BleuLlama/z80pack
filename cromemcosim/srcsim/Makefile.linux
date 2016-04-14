@@ -1,6 +1,11 @@
 CC = gcc
 
-CFLAGS = -O3 -c -Wall
+# Development
+#CFLAGS = -O3 -c -Wall -Wextra -fstack-protector-all -D_FORTIFY_SOURCE=2
+
+# Production
+CFLAGS = -O3 -c -Wall -Wextra -U_FORTIFY_SOURCE
+
 LFLAGS = -s -L../../frontpanel -lfrontpanel -ljpeg -lGL -lGLU \
 	 -lXext -lXmu -lXt -lX11 -lm -lpthread
 
@@ -23,6 +28,7 @@ OBJ =   sim0.o \
 	simfun.o \
 	simglb.o \
 	unix_terminal.o \
+	unix_network.o \
 	cromemco-tu-art.o \
 	cromemco-fdc.o
 
@@ -82,6 +88,9 @@ simglb.o : simglb.c sim.h
 unix_terminal.o : ../../iodevices/unix_terminal.c
 	$(CC) $(CFLAGS) ../../iodevices/unix_terminal.c
 
+unix_network.o : ../../iodevices/unix_network.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/unix_network.c
+
 cromemco-tu-art.o : ../../iodevices/cromemco-tu-art.c
 	$(CC) $(CFLAGS) -I./ ../../iodevices/cromemco-tu-art.c
 
@@ -96,4 +105,4 @@ allclean:
 	make -f Makefile.linux clean
 	rm -f ../cromemcosim
 	rm -f ../disks/drive*.dsk
-	rm -f ../printer.cpm
+	rm -f ../lpt[12]

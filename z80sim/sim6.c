@@ -31,6 +31,7 @@
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
+ * 18-APR-15 Release 1.26 bugfixes and improvements
  */
 
 /*
@@ -326,11 +327,7 @@ int op_ddcb_handel(void)
 			PC = ram;
 #endif
 
-#ifdef WANT_TIM
 	t = (*op_ddcb[*PC++]) (d);	/* execute next opcode */
-#else
-	(*op_ddcb[*PC++]) (d);
-#endif
 
 #ifdef WANT_PCC
 		if (PC > ram + 65535)	/* again correct PC overrun */
@@ -948,7 +945,7 @@ static int op_sraixd(int data)		/* SRA (IX+d) */
 	//*p >>= 1;
 	memwrt(p, *p >> 1);
 	//*p |= i;
-	memwrt(p, *p | 1);
+	memwrt(p, *p | i);
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);

@@ -26,7 +26,7 @@
  * disk definitions 5.25"/8" drives, single/double density,
  * single/double sided
  */
-enum Disk_type{ SMALL, LARGE, UNKNOWN };
+enum Disk_type { SMALL, LARGE, UNKNOWN };
 enum Disk_density { SINGLE, DOUBLE };
 enum Disk_sides { ONE, TWO };
 

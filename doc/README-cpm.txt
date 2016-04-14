@@ -12,7 +12,7 @@ This compiles additional support programs, see below.
 
 3. Make backup copies of your distribution disks!
    cd ~/z80pack-x.y/cpmsim/disks/library
-   cp *.dsk ../backups
+   cp -p *.dsk ../backups
 
 4. Change to directory ~/z80pack-x.y/cpmsim
    ./cpm2 - run CP/M 2.2
@@ -55,9 +55,16 @@ send:
 	the process on the UNIX host. Under CP/M 3 the device name
 	is AUX: for both directions.
 
+If you use PIP to transfer files between the host system and the
+simulator, you can only use ASCII files, because pip uses CNTL-Z
+for EOF! To transfer a binary file from the host system to the
+simulator convert it to Intel hex format with bin2hex. This
+can be converted back to a binary file under CP/M with the LOAD
+command.
+
 Copy the the both shell scripts cpmr.sh and cpmw.sh to ~/bin
 or /usr/local/bin. Edit the line with: 
-	diskdir=~/z80pack-1.25/cpmsim/disks
+	diskdir=~/z80pack-1.26/cpmsim/disks
 to the path where you have extracted the z80pack distribution.
 
 cpmr:
@@ -71,10 +78,3 @@ cpmw:
 	Usage: cpmw [-t] drive [user:]file
 	Option -t does the text file conversions between UNIX
 	and CP/M for text files. The user number 0-15 is optional.
-
-If you use PIP to transfer files between the host system and the
-simulator, you can only use ASCII files, because pip uses CNTL-Z
-for EOF! To transfer a binary file from the host system to the
-simulator convert it to Intel hex format with bin2hex. This
-can be converted back to a binary file under CP/M with the LOAD
-command.
