@@ -8,7 +8,7 @@ This compiles the CPU and hardware emulation needed to run CP/M and MP/M.
 2. Change to directory ~/z80pack/cpmsim/srccpm2
    make
    make clean
-This compiles support programs (see below), installs named pipes and so on.
+This compiles support programs, see below.
 
 3. Make backup copies of your distribution disks!
    cd ~/z80pack/cpmsim/disks/library
@@ -17,14 +17,15 @@ This compiles support programs (see below), installs named pipes and so on.
 4. Change to directory ~/z80pack/cpmsim
    cpm2 - run CP/M 2.2
    cpm3 - run CP/M 3.0
-   mpm  - this boots CP/M 2, run command mpm to boot MP/M 2
+   mpm  - this boots CP/M 2, run command mpmldr to boot MP/M 2
 
 Usage of the support programs:
 
 format:	to create an empty disk image for the CP/M simulation.
-	input: format <a | b | c | d | i | j>
+	input: format <a | b | c | d | i | j | p>
 	output: in directory disks files drivea.cpm, driveb.cpm,
-		drivec.cpm, drived.cpm, drivei.cpm and drivej.cpm
+		drivec.cpm, drived.cpm, drivei.cpm, drivej.cpm
+		and drivep.cpm
 
 bin2hex:converts binary files to Intel hex.
 
