@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 1987-2014 by Udo Munk
+ * Copyright (C) 1987-2015 by Udo Munk
  *
  * This module contains a complex I/O-simulation for running
  * CP/M, MP/M, UCSD p-System...
@@ -40,6 +40,10 @@
  * 02-MAR-14 source cleanup and improvements
  * 03-MAI-14 improved network code, telnet negotiation rewritten
  * 16-JUL-14 unused I/O ports need to return FF, see survey.mac
+ * 17-SEP-14 FDC error 8 for DMA overrun, as reported by Alan Cox
+ * 17-SEP-14 fixed bug in MMU bank select, as reported by Alan Cox
+ * 31-JAN-15 took over some improvements made for the Z-1 emulation
+ * 28-FEB-15 cleanup for 1.25 release
  */
 
 /*
@@ -875,6 +879,7 @@ void init_io(void)
 		       (char *) NULL);
 		puts("can't exec receive process, compile the tools dude");
 		kill(0, SIGQUIT);
+		exit(1);
 	}
 	if ((auxin = open("auxin", O_RDONLY | O_NDELAY)) == -1) {
 		perror("pipe auxin");
@@ -1088,7 +1093,9 @@ void reset_system(void)
 BYTE io_in(BYTE adr)
 {
 	io_port = adr;
-	return((*port_in[adr]) ());
+	io_data = (*port_in[adr]) ();
+	//printf("input %02x from port %02x\r\n", io_data, io_port);
+	return(io_data);
 }
 
 /*
@@ -1099,10 +1106,12 @@ BYTE io_in(BYTE adr)
 void io_out(BYTE adr, BYTE data)
 {
 	io_port = adr;
+	io_data = data;
 
 	busy_loop_cnt[0] = 0;
 
 	(*port_out[adr]) (data);
+	//printf("output %02x to port %02x\r\n", io_data, io_port)";
 }
 
 /*
@@ -2149,6 +2158,7 @@ static BYTE fdco_in(void)
  *	  5 - read error
  *	  6 - write error
  *	  7 - illegal command to FDC
+ *        8 - DMA overrun > 0xffff
  */
 static void fdco_out(BYTE data)
 {
@@ -2163,6 +2173,10 @@ static void fdco_out(BYTE data)
 	}
 	if (sector > disks[drive].sectors) {
 		status = 3;
+		return;
+	}
+	if (dmadh == 0xff && dmadl > 0x80) {
+		status = 8;
 		return;
 	}
 	pos = (((long)track) * ((long)disks[drive].sectors) + sector - 1) << 7;
@@ -2300,11 +2314,13 @@ static void mmus_out(BYTE data)
 {
 	if (data == selbnk)
 		return;
-	if (data > maxbnk) {
-		printf("Try to select unallocated bank %d\r\n", data);
+	if (data >= maxbnk) {
+		printf("%04x: try to select unallocated bank %d\r\n",
+		       (unsigned int)(PC-ram), data);
 		exit(1);
 	}
-	//printf("SIM: memory select bank %d from %d\r\n", data, PC-ram);
+	//printf("memory select bank %d from %04x\r\n",
+	//	data, (unsigned int)(PC-ram));
 	memcpy(mmu[selbnk], (char *) ram, segsize);
 	memcpy((char *) ram, mmu[data], segsize);
 	selbnk = data;
@@ -2454,7 +2470,8 @@ static int to_bcd(int val)
 
 /*
  *	Calculate number of days since 1.1.1978
- *	CP/M 3 and MP/M 2 are Y2K bug fixed and can handle the date
+ *	CP/M 3 and MP/M 2 are Y2K bug fixed and can handle the date,
+ *	so the Y2K bug here is intentional.
  */
 static int get_date(struct tm *t)
 {

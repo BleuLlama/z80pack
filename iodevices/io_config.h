@@ -13,6 +13,7 @@
  * 20-OCT-08 first version finished
  * 20-MAR-14 ignore carriage return too, necessary for the Windows port
  * 19-JUN-14 added config parameter for droping nulls after CR/LF
+ * 09-OCT-14 modified to support 2 SIO's
  */
 
 extern void io_config(void);

@@ -24,6 +24,11 @@
  extern "C" {
 #endif
 
+#ifdef _WINDLL
+#define FP_DLLPORT __declspec (dllexport)
+#else
+#define FP_DLLPORT
+#endif
 
 #ifndef _SIM_DEFS_H_
 #define _SIM_DEFS_H_
@@ -37,39 +42,39 @@ typedef unsigned long long uint64;
 #define FP_SW_UP	1
 #define FP_SW_CENTER	2
 
-int	fp_test(int n);
-int     fp_init(char *cfg_fname );
-int	fp_openWindow(char *title);
-void	fp_framerate(float f);
-void	fp_sampleData(void);
-void	fp_sampleDataWarp(int clockwarp);
-void	fp_sampleLightGroup(int groupnum, int clockwarp);
-void	fp_sampleSwitches(void);
-void	fp_quit(void);
+FP_DLLPORT int	fp_test(int n);
+FP_DLLPORT int     fp_init(char *cfg_fname );
+FP_DLLPORT int	fp_openWindow(char *title);
+FP_DLLPORT void	fp_framerate(float f);
+FP_DLLPORT void	fp_sampleData(void);
+FP_DLLPORT void	fp_sampleDataWarp(int clockwarp);
+FP_DLLPORT void	fp_sampleLightGroup(int groupnum, int clockwarp);
+FP_DLLPORT void	fp_sampleSwitches(void);
+FP_DLLPORT void	fp_quit(void);
 
 /* data binding functions */
 
-void 	fp_bindSimclock( uint64 *addr);
-void	fp_bindRunFlag(uint8 *addr);
-int	fp_bindLight32(char *name, uint32 *bits, int bitnum);
-int	fp_bindLight16(char *name, uint16 *bits, int bitnum);
-int	fp_bindLight8(char *name, uint8 *bits, int bitnum);
-int	fp_bindLight8invert(char *name, uint8 *bits, int bitnum, uint8 mask);
-int	fp_bindLight16invert(char *name, uint16 *bits, int bitnum, uint16 mask);
-int	fp_bindLight32invert(char *name, uint32 *bits, int bitnum, uint32 mask);
+FP_DLLPORT void 	fp_bindSimclock( uint64 *addr);
+FP_DLLPORT void	fp_bindRunFlag(uint8 *addr);
+FP_DLLPORT int	fp_bindLight32(char *name, uint32 *bits, int bitnum);
+FP_DLLPORT int	fp_bindLight16(char *name, uint16 *bits, int bitnum);
+FP_DLLPORT int	fp_bindLight8(char *name, uint8 *bits, int bitnum);
+FP_DLLPORT int	fp_bindLight8invert(char *name, uint8 *bits, int bitnum, uint8 mask);
+FP_DLLPORT int	fp_bindLight16invert(char *name, uint16 *bits, int bitnum, uint16 mask);
+FP_DLLPORT int	fp_bindLight32invert(char *name, uint32 *bits, int bitnum, uint32 mask);
 
-int	fp_bindSwitch32(char *name, uint32 *loc_down, uint32 *loc_up, int bitnum);
-int	fp_bindSwitch16(char *name, uint16 *loc_down, uint16 *loc_up, int bitnum);
-int	fp_bindSwitch8(char *name, uint8 *loc_down, uint8 *loc_up, int bitnum);
+FP_DLLPORT int	fp_bindSwitch32(char *name, uint32 *loc_down, uint32 *loc_up, int bitnum);
+FP_DLLPORT int	fp_bindSwitch16(char *name, uint16 *loc_down, uint16 *loc_up, int bitnum);
+FP_DLLPORT int	fp_bindSwitch8(char *name, uint8 *loc_down, uint8 *loc_up, int bitnum);
 
 /* callbacks */
 
-int	fp_addSwitchCallback(char *name, void (*cbfunc)(int state, int val), int userval);
-void	fp_addQuitCallback(void (*cbfunc)(void));
+FP_DLLPORT int	fp_addSwitchCallback(char *name, void (*cbfunc)(int state, int val), int userval);
+FP_DLLPORT void	fp_addQuitCallback(void (*cbfunc)(void));
 
 /* error reporting */
 
-void    fp_ignoreBindErrors(int n);		/* n=1 - ignore    n=0 report errors */
+FP_DLLPORT void    fp_ignoreBindErrors(int n);		/* n=1 - ignore    n=0 report errors */
 #ifdef __cplusplus
  }
 #endif

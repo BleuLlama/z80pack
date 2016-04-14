@@ -3,7 +3,7 @@
  *
  * Common I/O devices used by various simulated machines
  *
- * Copyright (C) 2014 by Udo Munk
+ * Copyright (C) 2014-2015 by Udo Munk
  *
  * Emulation of an IMSAI FIF S100 board
  *
@@ -12,6 +12,7 @@
  * 02-MAR-14 improvements
  * 23-MAR-14 got all 4 disk drives working
  *    AUG-14 some improvements after seeing the original IMSAI BIOS
+ * 27-JAN-15 unlink and create new disk file if format track command
  */
 
 extern BYTE imsai_fif_in(void);

@@ -1,6 +1,6 @@
 ;	CP/M 3 BIOS for Z80-Simulator
 ;
-;	Copyright (C) 1989-2007 by Udo Munk
+;	Copyright (C) 1989-2015 by Udo Munk
 ;
 	.Z80
 ;
@@ -193,7 +193,7 @@ DPH8:	DEFW	0			;sector translation table
 	DB	0,0,0,0,0,0,0,0,0	;bdos scratch area
 	DB	0			;media flag
 	DEFW	DPB1			;disk parameter block
-	DEFW	0000H			;checksum vector
+	DEFW	0FFFEH			;checksum vector
 	DEFW	0FFFEH			;allocation vector
 	DEFW	0FFFEH			;directory buffer control block
 	DEFW	0FFFFH			;dtabcb not used
@@ -203,7 +203,7 @@ DPH9:	DEFW	0			;sector translation table
 	DB	0,0,0,0,0,0,0,0,0	;bdos scratch area
 	DB	0			;media flag
 	DEFW	DPB1			;disk parameter block
-	DEFW	0000H			;checksum vector
+	DEFW	0FFFEH			;checksum vector
 	DEFW	0FFFEH			;allocation vector
 	DEFW	0FFFEH			;directory buffer control block
 	DEFW	0FFFFH			;dtabcb not used
@@ -220,7 +220,7 @@ DPB1:	DEFW    128		;sectors per track
 	DEFW    1023		;directory max
 	DEFB    255		;alloc 0
 	DEFB    255		;alloc 1
-	DEFW    8000H		;check size
+	DEFW    256		;check size
 	DEFW    0		;track offset
 	DEFB	0,0		;physical sector size and shift
 ;
@@ -232,7 +232,7 @@ DPH15:	DEFW	0			;sector translation table
 	DB	0,0,0,0,0,0,0,0,0	;bdos scratch area
 	DB	0			;media flag
 	DEFW	DPB2			;disk parameter block
-	DEFW	0000H			;checksum vector
+	DEFW	0FFFEH			;checksum vector
 	DEFW	0FFFEH			;allocation vector
 	DEFW	0FFFEH			;directory buffer control block
 	DEFW	0FFFFH			;dtabcb not used
@@ -249,7 +249,7 @@ DPB2:	DEFW    16384		;sectors per track
 	DEFW    8191		;directory max
 	DEFB    255		;alloc 0
 	DEFB    255		;alloc 1
-	DEFW    8000H		;check size
+	DEFW    2048		;check size
 	DEFW    0		;track offset
 	DEFB	0,0		;physical sector size and shift
 ;
@@ -292,8 +292,8 @@ STACK:
 ;	signon message
 ;
 SIGNON:	DEFB	13,10
-	DEFM	'BANKED BIOS3 V1.6 for Z80SIM, '
-	DEFM	'Copyright 1989-2007 by Udo Munk'
+	DEFM	'BANKED BIOS3 V1.6-HD, '
+	DEFM	'Copyright 1989-2015 by Udo Munk'
 	DEFB	13,10
 	DEFB	0
 ;

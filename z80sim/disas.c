@@ -1,7 +1,7 @@
 /*
  * Z80 disassembler for	Z80-CPU	simulator
  *
- * Copyright (C) 1989-2014 by Udo Munk
+ * Copyright (C) 1989-2015 by Udo Munk
  * Parts Copyright (C) 2008 by Justin Clancy
  *
  * History:
@@ -31,6 +31,7 @@
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
+ * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
  */
 
 #include <stdio.h>
@@ -319,7 +320,7 @@ static struct opt optab[256] = {
 
 static int addr;
 static char *unkown = "???";
-static char *reg[] = { "B", "C", "D", "E", "H",	"L", "(HL)", "A" };
+static char *reg[] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
 static char *regix = "IX";
 static char *regiy = "IY";
 
@@ -436,7 +437,7 @@ static int nnout(char *s, unsigned char **p)
 {
 	register int i;
 
-	i = *(*p + 1) +	(*(*p +	2) << 8);
+	i = *(*p + 1) + (*(*p + 2) << 8);
 	sprintf(Disass_Str, "%s%04X\n", s, i);
 	return(3);
 }
@@ -448,7 +449,7 @@ static int inout(char *s, unsigned char **p)
 {
 	register int i;
 
-	i = *(*p + 1) +	(*(*p +	2) << 8);
+	i = *(*p + 1) + (*(*p + 2) << 8);
 	sprintf(Disass_Str, s, i);
 	strcat(Disass_Str, "\n");
 	return(3);
@@ -462,47 +463,47 @@ static int cbop(char *s, unsigned char **p)
 	register int b2;
 
 	b2 = *(*p + 1);
-	if (b2 >= 0x00 && b2 <=	0x07) {
+	if (b2 >= 0x00 && b2 <= 0x07) {
 		sprintf(Disass_Str, "RLC\t%s\n",
 			reg[b2 & 7]);
 		return(2);
 	}
-	if (b2 >= 0x08 && b2 <=	0x0f) {
+	if (b2 >= 0x08 && b2 <= 0x0f) {
 		sprintf(Disass_Str, "RRC\t%s\n",
 			reg[b2 & 7]);
 		return(2);
 	}
-	if (b2 >= 0x10 && b2 <=	0x17) {
+	if (b2 >= 0x10 && b2 <= 0x17) {
 		sprintf(Disass_Str, "RL\t%s\n",
 			reg[b2 & 7]);
 		return(2);
 	}
-	if (b2 >= 0x18 && b2 <=	0x1f) {
+	if (b2 >= 0x18 && b2 <= 0x1f) {
 		sprintf(Disass_Str, "RR\t%s\n",
 			reg[b2 & 7]);
 		return(2);
 	}
-	if (b2 >= 0x20 && b2 <=	0x27) {
+	if (b2 >= 0x20 && b2 <= 0x27) {
 		sprintf(Disass_Str, "SLA\t%s\n",
 			reg[b2 & 7]);
 		return(2);
 	}
-	if (b2 >= 0x28 && b2 <=	0x2f) {
+	if (b2 >= 0x28 && b2 <= 0x2f) {
 		sprintf(Disass_Str, "SRA\t%s\n",
 			reg[b2 & 7]);
 		return(2);
 	}
-	if (b2 >= 0x38 && b2 <=	0x3f) {
+	if (b2 >= 0x38 && b2 <= 0x3f) {
 		sprintf(Disass_Str, "SRL\t%s\n",
 			reg[b2 & 7]);
 		return(2);
 	}
-	if (b2 >= 0x40 && b2 <=	0x7f) {
+	if (b2 >= 0x40 && b2 <= 0x7f) {
 		sprintf(Disass_Str, "BIT\t%c,%s\n",
 			((b2 >> 3) & 7) + '0', reg[b2 &	7]);
 		return(2);
 	}
-	if (b2 >= 0x80 && b2 <=	0xbf) {
+	if (b2 >= 0x80 && b2 <= 0xbf) {
 		sprintf(Disass_Str, "RES\t%c,%s\n",
 			((b2 >> 3) & 7) + '0', reg[b2 &	7]);
 		return(2);
@@ -537,7 +538,7 @@ static int edop(char *s, unsigned char **p)
 		strcat(Disass_Str, "SBC\tHL,BC\n");
 		break;
 	case 0x43:
-		i = *(*p + 2) +	(*(*p +	3) << 8);
+		i = *(*p + 2) + (*(*p + 3) << 8);
 		sprintf(Disass_Str, "LD\t(%04X),BC\n", i);
 		len = 4;
 		break;
@@ -563,7 +564,7 @@ static int edop(char *s, unsigned char **p)
 		strcat(Disass_Str, "ADC\tHL,BC\n");
 		break;
 	case 0x4b:
-		i = *(*p + 2) +	(*(*p +	3) << 8);
+		i = *(*p + 2) + (*(*p + 3) << 8);
 		sprintf(Disass_Str, "LD\tBC,(%04X)\n", i);
 		len = 4;
 		break;
@@ -583,7 +584,7 @@ static int edop(char *s, unsigned char **p)
 		strcat(Disass_Str, "SBC\tHL,DE\n");
 		break;
 	case 0x53:
-		i = *(*p + 2) +	(*(*p +	3) << 8);
+		i = *(*p + 2) + (*(*p + 3) << 8);
 		sprintf(Disass_Str, "LD\t(%04X),DE\n", i);
 		len = 4;
 		break;
@@ -603,7 +604,7 @@ static int edop(char *s, unsigned char **p)
 		strcat(Disass_Str, "ADC\tHL,DE\n");
 		break;
 	case 0x5b:
-		i = *(*p + 2) +	(*(*p +	3) << 8);
+		i = *(*p + 2) + (*(*p + 3) << 8);
 		sprintf(Disass_Str, "LD\tDE,(%04X)\n", i);
 		len = 4;
 		break;
@@ -641,7 +642,7 @@ static int edop(char *s, unsigned char **p)
 		strcat(Disass_Str, "SBC\tHL,SP\n");
 		break;
 	case 0x73:
-		i = *(*p + 2) +	(*(*p +	3) << 8);
+		i = *(*p + 2) + (*(*p + 3) << 8);
 		sprintf(Disass_Str, "LD\t(%04X),SP\n", i);
 		len = 4;
 		break;
@@ -655,7 +656,7 @@ static int edop(char *s, unsigned char **p)
 		strcat(Disass_Str, "ADC\tHL,SP\n");
 		break;
 	case 0x7b:
-		i = *(*p + 2) +	(*(*p +	3) << 8);
+		i = *(*p + 2) + (*(*p + 3) << 8);
 		sprintf(Disass_Str, "LD\tSP,(%04X)\n", i);
 		len = 4;
 		break;
@@ -727,7 +728,7 @@ static int ddfd(char *s, unsigned char **p)
 	else
 		ireg = regiy;
 	b2 = *(*p + 1);
-	if (b2 >= 0x70 && b2 <=	0x77) {
+	if (b2 >= 0x70 && b2 <= 0x77) {
 		sprintf(Disass_Str, "LD\t(%s+%02X),%s\n", ireg, *(*p + 2),
 			reg[b2 & 7]);
 		return(3);
@@ -742,7 +743,7 @@ static int ddfd(char *s, unsigned char **p)
 		len = 2;
 		break;
 	case 0x21:
-		sprintf(Disass_Str, "LD\t%s,%04X\n", ireg, *(*p + 2) + (*(*p	+ 3) <<	8));
+		sprintf(Disass_Str, "LD\t%s,%04X\n", ireg, *(*p + 2) + (*(*p	+ 3) << 8));
 		len = 4;
 		break;
 	case 0x22:
@@ -775,7 +776,7 @@ static int ddfd(char *s, unsigned char **p)
 		sprintf(Disass_Str, "DEC\t(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0x36:
-		sprintf(Disass_Str, "LD\t(%s+%02X),%02X\n", ireg, *(*p + 2),	*(*p + 3));
+		sprintf(Disass_Str, "LD\t(%s+%02X),%02X\n", ireg, *(*p + 2), *(*p + 3));
 		len = 4;
 		break;
 	case 0x39:
@@ -830,10 +831,10 @@ static int ddfd(char *s, unsigned char **p)
 	case 0xcb:
 		switch (*(*p + 3)) {
 		case 0x06:
-			sprintf(Disass_Str, "RLC\t(%s+%02X)\n", ireg, *(*p +	2));
+			sprintf(Disass_Str, "RLC\t(%s+%02X)\n", ireg, *(*p + 2));
 			break;
 		case 0x0e:
-			sprintf(Disass_Str, "RRC\t(%s+%02X)\n", ireg, *(*p +	2));
+			sprintf(Disass_Str, "RRC\t(%s+%02X)\n", ireg, *(*p + 2));
 			break;
 		case 0x16:
 			sprintf(Disass_Str, "RL\t(%s+%02X)\n", ireg, *(*p + 2));
@@ -842,13 +843,13 @@ static int ddfd(char *s, unsigned char **p)
 			sprintf(Disass_Str, "RR\t(%s+%02X)\n", ireg, *(*p + 2));
 			break;
 		case 0x26:
-			sprintf(Disass_Str, "SLA\t(%s+%02X)\n", ireg, *(*p +	2));
+			sprintf(Disass_Str, "SLA\t(%s+%02X)\n", ireg, *(*p + 2));
 			break;
 		case 0x2e:
-			sprintf(Disass_Str, "SRA\t(%s+%02X)\n", ireg, *(*p +	2));
+			sprintf(Disass_Str, "SRA\t(%s+%02X)\n", ireg, *(*p + 2));
 			break;
 		case 0x3e:
-			sprintf(Disass_Str, "SRL\t(%s+%02X)\n", ireg, *(*p +	2));
+			sprintf(Disass_Str, "SRL\t(%s+%02X)\n", ireg, *(*p + 2));
 			break;
 		case 0x46:
 			sprintf(Disass_Str, "BIT\t0,(%s+%02X)\n", ireg, *(*p	+ 2));

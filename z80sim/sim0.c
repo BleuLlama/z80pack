@@ -1,7 +1,7 @@
 /*
- * Z80SIM  -  a	Z80-CPU	simulator
+ * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 1987-2014 by Udo Munk
+ * Copyright (C) 1987-2015 by Udo Munk
  *
  * History:
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
@@ -30,6 +30,7 @@
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
+ * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
  */
 
 /*
@@ -44,6 +45,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <libgen.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <memory.h>
@@ -62,14 +64,14 @@ extern int exatoi(char *);
 int main(int argc, char *argv[])
 {
 	register char *s, *p;
-	char *pn = argv[0];
+	char *pn = basename(argv[0]);
 
 #ifdef CPU_SPEED
 	f_flag = CPU_SPEED;
 	tmax = CPU_SPEED * 10000;
 #endif
 
-	while (--argc >	0 && (*++argv)[0] == '-')
+	while (--argc > 0 && (*++argv)[0] == '-')
 		for (s = argv[0] + 1; *s != '\0'; s++)
 			switch (*s) {
 			case 's':	/* save core and CPU on exit */
@@ -119,17 +121,17 @@ usage:				printf("usage:\t%s -z -8 -s -l -i -mn -fn -xfilename\n", pn);
 #else
 usage:				printf("usage:\t%s -z -8 -s -l -i -u -mn -fn -xfilename\n", pn);
 #endif
-				puts("\tz = emulate Zilog Z80");
-				puts("\t8 = emulate Intel 8080");
-				puts("\ts = save core and cpu");
-				puts("\tl = load core and cpu");
-				puts("\ti = trap on I/O to unused ports");
+				puts("\t-z = emulate Zilog Z80");
+				puts("\t-8 = emulate Intel 8080");
+				puts("\t-s = save core and CPU");
+				puts("\t-l = load core and CPU");
+				puts("\t-i = trap on I/O to unused ports");
 #ifdef Z80_UNDOC
-				puts("\tu = trap on undocumented Z80 ops");
+				puts("\t-u = trap on undocumented Z80 instructions");
 #endif
-				puts("\tm = init memory with n");
-				puts("\tf = CPU frequency n in MHz");
-				puts("\tx = load and execute filename");
+				puts("\t-m = init memory with n");
+				puts("\t-f = CPU clock frequency n in MHz");
+				puts("\t-x = load and execute filename");
 				exit(1);
 			}
 
@@ -169,7 +171,7 @@ puts(" #####    ###     #####    ###            #####    ###   #     #");
 	STACK = ram + 0xffff;
 	if (cpu == I8080)	/* the unused flag bits are documented for */
 		F = 2;		/* the 8080, so start with bit 1 set */
-	memset((char *)	ram, m_flag, 65536);
+	memset((char *) ram, m_flag, 65536);
 	if (l_flag)
 		if (load_core())
 			return(1);
@@ -277,7 +279,7 @@ int load_file(char *s)
 
 	while (isspace((int)*s))
 		s++;
-	while (*s != ',' && *s != '\n' && *s !=	'\0')
+	while (*s != ',' && *s != '\n' && *s != '\0')
 		*pfn++ = *s++;
 	*pfn = '\0';
 	if (strlen(fn) == 0) {
@@ -289,7 +291,7 @@ int load_file(char *s)
 		return(1);
 	}
 	if (*s == ',')
-		wrk_ram	= ram +	exatoi(++s);
+		wrk_ram	= ram + exatoi(++s);
 	else
 		wrk_ram	= NULL;
 	read(fd, (char *) fileb, 5); /*	read first 5 bytes of file */
@@ -320,9 +322,9 @@ static int load_mos(int fd, char *fn)
 
 	read(fd, (char *) fileb, 3);	/* read load address */
 	if (wrk_ram == NULL)		/* and set if not given */
-		wrk_ram	= ram +	(fileb[2] * 256	+ fileb[1]);
-	count =	ram + 65535 - wrk_ram;
-	if ((readn = read(fd, (char *)	wrk_ram, count)) == count) {
+		wrk_ram	= ram + (fileb[2] * 256	+ fileb[1]);
+	count = ram + 65535 - wrk_ram;
+	if ((readn = read(fd, (char *) wrk_ram, count)) == count) {
 		puts("Too much to load, stopped at 0xffff");
 		rc = 1;
 	}

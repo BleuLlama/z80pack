@@ -21,12 +21,41 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
+
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+#include <windows.h>
+void usleep(unsigned __int64 ticks)
+{
+	/*
+	LARGE_INTEGER frequency;
+	LARGE_INTEGER currentTime;
+	LARGE_INTEGER endTime;
+
+	QueryPerformanceCounter(&endTime);
+
+	// Ticks in microseconds (1/1000 ms)
+	QueryPerformanceFrequency(&frequency);
+	endTime.QuadPart += (ticks * frequency.QuadPart) / (1000ULL * 1000ULL);
+
+	do
+	{
+		SwitchToThread();
+
+		QueryPerformanceCounter(&currentTime);
+	} while (currentTime.QuadPart < endTime.QuadPart);
+	*/
+	Sleep(ticks/1000);
+}
+#else
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/timeb.h>
 #include <time.h>
-#include <unistd.h>
+#endif
+
+#include <GL/gl.h>
+#include <GL/glu.h>
+
 #include "lp_utils.h"
 
 #define TRUE  1
@@ -609,27 +638,44 @@ int n = glGetError();
 
 */
 
+typedef struct 
+{
+  double  fps,
+          frametime,
+          start,
+          et;
+} frate_t;
+
+static frate_t frate_parms = {30.0, 1.0/30., 0., 0.};
+
+
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+
+double frate_gettime(void)
+{
+	LARGE_INTEGER frequency;
+	LARGE_INTEGER currentTime;
+
+	// Ticks in microseconds (1/1000 ms)
+	QueryPerformanceFrequency(&frequency);
+	QueryPerformanceCounter(&currentTime);
+
+	return ((double)(currentTime.QuadPart) / (double)(frequency.QuadPart));
+}
+
+#else
+
 typedef struct {
     struct timeval              bsdtime;
     float                       dt;
     int                         stopped;
 } watch_t;
 
-typedef struct 
-{
-  double	fps,
-		frametime,
-  		start,
-		et;
-} frate_t;
-
-static frate_t frate_parms = {30.0, 1.0/30., 0., 0.};
-
 static watch_t syswatch;
 
 double frate_gettime(void)
 {
-   struct timeval      tp;
+    struct timeval      tp;
     struct timezone     tzp;
     int                 sec;
     int                 usec;
@@ -651,9 +697,10 @@ double frate_gettime(void)
     secf = (double) sec;
     usecf = (double) usec;
     usecf = usecf / 1000000.0; 
-    dt = secf + usecf; 
+    dt = secf + usecf;
     return (dt);
 }
+#endif
 
 /* funcs */
 
@@ -680,7 +727,7 @@ void framerate_wait(void)
 
  if( (delta =  frate_parms.frametime - frate_parms.et ) > 0.0 )
   {
-    delta = delta * 10e5;
+    delta = delta * 1000000.0;
     usec = (unsigned int) delta;
     usleep(usec);
   }
@@ -769,7 +816,7 @@ Parser::addArg(const char *s, const char *cpos1, const char *cpos2)
 
 	case PARSER_INT:
 
-		fval = strtof(results.strings[results.num_args],&endptr);
+		fval = strtod(results.strings[results.num_args],&endptr);
 
 		if(endptr == results.strings[results.num_args])
 		 {
@@ -782,7 +829,7 @@ Parser::addArg(const char *s, const char *cpos1, const char *cpos2)
 
 	case PARSER_FLOAT:
 
-		fval = strtof(results.strings[results.num_args],&endptr);
+		fval = strtod(results.strings[results.num_args],&endptr);
 		results.floats[results.num_args] = fval;
 		if(endptr == results.strings[results.num_args])
 		 {

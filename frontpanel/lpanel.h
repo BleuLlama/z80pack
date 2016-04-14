@@ -23,8 +23,8 @@
 
 #include <stdio.h>
 #if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
-#include <GL/gl.h>
 #include <windows.h>
+#include <GL/gl.h>
 #else
 #include <GL/glx.h>
 #include <X11/Xlib.h>
@@ -248,7 +248,7 @@ class Lpanel
 		samples_per_second;
   char		perf_txt[30];
 
-  char		cursor_txt[30];
+  char		cursor_txt[60];
   float		cursor_textpos[2];
   int		do_cursor, do_stats;
   float		cursor[3], cursor_inc;

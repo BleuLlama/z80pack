@@ -1,7 +1,7 @@
 /*
- * Z80SIM  -  a	Z80-CPU	simulator
+ * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 1987-2014 by Udo Munk
+ * Copyright (C) 1987-2015 by Udo Munk
  *
  * This modul of the simulator contains a simple terminal I/O
  * simulation as an example.
@@ -33,6 +33,7 @@
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
+ * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
  */
 
 /*
@@ -64,7 +65,7 @@ static void p001_out(BYTE);
  */
 static BYTE (*port_in[256]) (void) = {
 	 io_trap_in,		/* port 0 */
-	 p001_in		/* port	1 */
+	 p001_in		/* port 1 */
 };
 
 /*
@@ -73,7 +74,7 @@ static BYTE (*port_in[256]) (void) = {
  */
 static void (*port_out[256]) (BYTE) = {
 	io_trap_out,		/* port 0 */
-	p001_out		/* port	1 */
+	p001_out		/* port 1 */
 };
 
 /*

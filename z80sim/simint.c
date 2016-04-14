@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 1987-2014 by Udo Munk
+ * Copyright (C) 1987-2015 by Udo Munk
  *
  * History:
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
@@ -30,6 +30,7 @@
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
+ * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
  */
 
 /*

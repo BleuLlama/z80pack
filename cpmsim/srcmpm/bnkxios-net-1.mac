@@ -1,6 +1,6 @@
 ;	MP/M 2 XIOS for Z80-Simulator
 ;
-;	Copyright (C) 1989-2007 by Udo Munk
+;	Copyright (C) 1989-2014 by Udo Munk
 ;
 NMBCNS	EQU	5		;number of consoles
 TICKPS	EQU	100		;number of ticks per second
@@ -390,7 +390,7 @@ MAXCONSOLE:
 ;
 SYSTEMINIT:
 ;
-	LD	A,090H		;configure mmu segement size
+	LD	A,080H		;configure mmu segement size
 	OUT	(MMUSEG),A
 	LD	A,8		;initialize banked memory
 	OUT	(MMUINI),A
@@ -586,7 +586,7 @@ WAITIO: OUT	(FDCOP),A	;start i/o operation
 ;
 SIGNON:	DEFB	13,10
 	DEFM	'MP/M 2 XIOS V1.7-NET-1 for Z80SIM, '
-	DEFM	'Copyright 1989-2007 by Udo Munk'
+	DEFM	'Copyright 1989-2014 by Udo Munk'
 	DEFB	13,10,0
 ;
 TICKN:	DEFB	0		;flag for tick

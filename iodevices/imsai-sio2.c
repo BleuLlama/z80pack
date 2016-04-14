@@ -5,12 +5,13 @@
  *
  * Copyright (C) 2008-2014 by Udo Munk
  *
- * Partial emulation of an IMSAI SIO-2 S100 board
+ * Emulation of an IMSAI SIO-2 S100 board
  *
  * History:
  * 20-OCT-08 first version finished
  * 19-JUN-14 added config parameter for droping nulls after CR/LF
  * 18-JUL-14 don't block on read from terminal
+ * 09-OCT-14 modified to support SIO 2
  */
 
 #include <unistd.h>
@@ -21,17 +22,21 @@
 #include "sim.h"
 #include "simglb.h"
 
-int sio_upper_case;
-int sio_strip_parity;
-int sio_drop_nulls;
+int sio1_upper_case;
+int sio1_strip_parity;
+int sio1_drop_nulls;
+
+int sio2_upper_case;
+int sio2_strip_parity;
+int sio2_drop_nulls;
 
 /*
  * read status register
  *
- * bit 0 = 1, transmitter  ready to write character to tty
+ * bit 0 = 1, transmitter ready to write character to tty
  * bit 1 = 1, character available for input from tty
  */
-BYTE imsai_sio2_status_in(void)
+BYTE imsai_sio1_status_in(void)
 {
 	BYTE status = 0;
 	struct pollfd p[1];
@@ -51,7 +56,7 @@ BYTE imsai_sio2_status_in(void)
 /*
  * write status register
  */
-void imsai_sio2_status_out(BYTE data)
+void imsai_sio1_status_out(BYTE data)
 {
 	data++; /* to avoid compiler warning */
 }
@@ -62,7 +67,7 @@ void imsai_sio2_status_out(BYTE data)
  * can be configured to translate to upper case, most of the old software
  * written for tty's won't accept lower case characters
  */
-BYTE imsai_sio2_data_in(void)
+BYTE imsai_sio1_data_in(void)
 {
 	BYTE data;
 	struct pollfd p[1];
@@ -75,7 +80,7 @@ BYTE imsai_sio2_data_in(void)
 		return(0);
 
 	read(fileno(stdin), &data, 1);
-	if (sio_upper_case)
+	if (sio1_upper_case)
 		data = toupper(data);
 	return(data);
 }
@@ -86,14 +91,14 @@ BYTE imsai_sio2_data_in(void)
  * can be configured to strip parity bit and drop nulls send after CR/LF,
  * because some old software won't
  */
-void imsai_sio2_data_out(BYTE data)
+void imsai_sio1_data_out(BYTE data)
 {
 	/* often send after CR/LF to give tty printer some time */
-	if (sio_drop_nulls)
+	if (sio1_drop_nulls)
 		if ((data == 127) || (data == 255) || (data == 0))
 			return;
 
-	if (sio_strip_parity)
+	if (sio1_strip_parity)
 		data &= 0x7f;
 
 again:
@@ -108,4 +113,14 @@ again:
 	}
 	fflush(stdout);
 	return;
+}
+
+BYTE imsai_sio2_status_in(void)
+{
+	return(0);
+}
+
+BYTE imsai_sio2_data_in(void)
+{
+	return(0);
 }

@@ -1,4 +1,5 @@
 #if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+#include <windows.h>
 #include <GL/gl.h>
 #else
 #include <GL/gl.h>

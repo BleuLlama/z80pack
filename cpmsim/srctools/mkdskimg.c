@@ -1,7 +1,7 @@
 /*
- * CP/M 2.2 Formats a simulated Disk Drive
+ * make disk image files for cpmsim
  *
- * Copyright (C) 1988-2007 by Udo Munk
+ * Copyright (C) 1988-2015 by Udo Munk
  *
  * History:
  * 29-APR-88 Development on TARGON/35 with AT&T Unix System V.3
@@ -10,6 +10,7 @@
  * 18-NOV-06 added a second harddisk
  * 01-OCT-07 added a huge 512MB harddisk
  * 11-NOV-07 abort if file already exists
+ * 09-FEB-14 name changed from format to mkdskimg
  */
 
 #include <unistd.h>
@@ -26,7 +27,7 @@
 #define HD2SECTOR	16384
 
 /*
- *	This program is able to format the following disk formats:
+ *	This program creates image files for the following disk formats:
  *
  *		drive A:	8" IBM SS,SD
  *		drive B:	8" IBM SS,SD
@@ -43,7 +44,7 @@ int main(int argc, char *argv[])
 	char drive;
 	static unsigned char sector[128];
 	static char fn[] = "disks/drive?.cpm";
-	static char usage[] = "usage: format a | b | c | d | i | j | p";
+	static char usage[] = "usage: mkdskimg a | b | c | d | i | j | p";
 
 	if (argc != 2) {
 		puts(usage);

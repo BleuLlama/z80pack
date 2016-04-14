@@ -981,7 +981,7 @@ send:
 	if	mutexout
 
 ;	Use mutual exclusion if it is possible for some unsolicited input
-;	to stomp on your output (This is nice if you’re running some sort
+;	to stomp on your output (This is nice if you;re running some sort
 ;	of multi-drop protocol)
 
 	push	b		

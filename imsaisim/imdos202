@@ -1,0 +1,7 @@
+#!/bin/sh
+
+rm -f disks/drive[ab].dsk
+ln disks/library/imdos202.dsk disks/drivea.dsk
+ln ../disks/tools.dsk disks/driveb.dsk
+
+./imsaisim -xbootrom.hex $*

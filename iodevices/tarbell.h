@@ -3,7 +3,7 @@
  *
  * Common I/O devices used by various simulated machines
  *
- * Copyright (C) 2014 by Udo Munk
+ * Copyright (C) 2014-2015 by Udo Munk
  *
  * Emulation of a Tarbell SD 1011D S100 board
  *
@@ -11,6 +11,9 @@
  * 13-MAR-2014 first fully working version
  * 15-MAR-2014 some improvements for CP/M 1.3 & 1.4
  * 17-MAR-2014 close(fd) was missing in write sector lseek error case
+ *    AUG-2014 some improvements
+ * 22-JAN-2015 fixed buggy ID field
+ * 11-FEB-2015 implemented write track
  */
 
 extern BYTE tarbell_stat_in(void), tarbell_track_in(void);

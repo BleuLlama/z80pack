@@ -24,9 +24,9 @@ to terminate the emulation.
 
 Usage of the support programs:
 
-format:
+mkdskimg:
 	to create an empty disk image for the CP/M simulation.
-	input: format <a | b | c | d | i | j | p>
+	input: mkdskimg <a | b | c | d | i | j | p>
 	output: in directory disks files drivea.cpm, driveb.cpm,
 		drivec.cpm, drived.cpm, drivei.cpm, drivej.cpm
 		and drivep.cpm
@@ -54,6 +54,23 @@ send:
 	Under CP/M 2 type pip file=RDR: to read the data send from
 	the process on the UNIX host. Under CP/M 3 the device name
 	is AUX: for both directions.
+
+Copy the the both shell scripts cpmr.sh and cpmw.sh to ~/bin
+or /usr/local/bin. Edit the line with: 
+	diskdir=~/z80pack-1.25/cpmsim/disks
+to the path where you have extracted the z80pack distribution.
+
+cpmr:
+	Uses cpmtools to read a file from a CP/M disk image.
+	Usage: cpmr [-t] drive [user:]file
+	Option -t does the text file conversions between UNIX
+	and CP/M for text files. The user number 0-15 is optional.
+
+cpmw:
+	Uses cpmstools to write a file to a CP/M disk image.
+	Usage: cpmw [-t] drive [user:]file
+	Option -t does the text file conversions between UNIX
+	and CP/M for text files. The user number 0-15 is optional.
 
 If you use PIP to transfer files between the host system and the
 simulator, you can only use ASCII files, because pip uses CNTL-Z

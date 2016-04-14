@@ -1,6 +1,6 @@
 ;	MP/M 2 XIOS for Z80-Simulator
 ;
-;	Copyright (C) 1989-2007 by Udo Munk
+;	Copyright (C) 1989-2015 by Udo Munk
 ;
 NMBCNS	EQU	5		;number of consoles
 TICKPS	EQU	100		;number of ticks per second
@@ -99,9 +99,9 @@ CHK00:	DEFS	16		;check vector 0
 CHK01:	DEFS	16		;check vector 1
 CHK02:	DEFS	16		;check vector 2
 CHK03:	DEFS	16		;check vector 3
-CHKH1:	DEFS	0		;check vector harddisk 1
-CHKH2:	DEFS	0		;check vector harddisk 2
-CHKH3:	DEFS	0		;check vector harddisk 3
+CHKH1:	DEFS	256		;check vector harddisk 1
+CHKH2:	DEFS	256		;check vector harddisk 2
+CHKH3:	DEFS	2048		;check vector harddisk 3
 ;
 ;	COMMONBASE start
 ;
@@ -583,8 +583,8 @@ WAITIO: OUT	(FDCOP),A	;start i/o operation
 ;	XIOS data segment
 ;
 SIGNON:	DEFB	13,10
-	DEFM	'MP/M 2 XIOS V1.7 for Z80SIM, '
-	DEFM	'Copyright 1989-2007 by Udo Munk'
+	DEFM	'MP/M 2 XIOS V1.7-HD, '
+	DEFM	'Copyright 1989-2015 by Udo Munk'
 	DEFB	13,10,0
 ;
 TICKN:	DEFB	0		;flag for tick
@@ -671,7 +671,7 @@ HDBLK:  DEFW	128		;sectors per track
 	DEFW	1023		;directory max
 	DEFB	255		;alloc 0
 	DEFB	255		;alloc 1
-	DEFW	8000H		;check size
+	DEFW	256		;check size
 	DEFW	0		;track offset
 ;
 ;	fixed data tables for 512MB harddisk
@@ -692,7 +692,7 @@ HDBLK2:	DEFW	16384		;sectors per track
 	DEFW	8191		;directory max
 	DEFB	255		;alloc 0
 	DEFB	255		;alloc 1
-	DEFW	8000H		;check size
+	DEFW	2048		;check size
 	DEFW	0		;track offset
 ;
 DIRBF:	DEFS	128		;scratch directory area

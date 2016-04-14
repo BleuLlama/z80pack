@@ -1,7 +1,7 @@
 /*
- * Z80SIM  -  a	Z80-CPU	simulator
+ * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 1987-2014 by Udo Munk
+ * Copyright (C) 1987-2015 by Udo Munk
  *
  * History:
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
@@ -30,6 +30,7 @@
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
+ * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
  */
 
 /*
@@ -37,6 +38,7 @@
  *	starting with 0xed
  */
 
+#include <stdio.h>
 #include "sim.h"
 #include "simglb.h"
 
@@ -70,262 +72,262 @@ int op_ed_handel(void)
 	register int t;
 
 	static int (*op_ed[256]) (void) = {
-		trap_ed,			/* 0x00	*/
-		trap_ed,			/* 0x01	*/
-		trap_ed,			/* 0x02	*/
-		trap_ed,			/* 0x03	*/
-		trap_ed,			/* 0x04	*/
-		trap_ed,			/* 0x05	*/
-		trap_ed,			/* 0x06	*/
-		trap_ed,			/* 0x07	*/
-		trap_ed,			/* 0x08	*/
-		trap_ed,			/* 0x09	*/
-		trap_ed,			/* 0x0a	*/
-		trap_ed,			/* 0x0b	*/
-		trap_ed,			/* 0x0c	*/
-		trap_ed,			/* 0x0d	*/
-		trap_ed,			/* 0x0e	*/
-		trap_ed,			/* 0x0f	*/
-		trap_ed,			/* 0x10	*/
-		trap_ed,			/* 0x11	*/
-		trap_ed,			/* 0x12	*/
-		trap_ed,			/* 0x13	*/
-		trap_ed,			/* 0x14	*/
-		trap_ed,			/* 0x15	*/
-		trap_ed,			/* 0x16	*/
-		trap_ed,			/* 0x17	*/
-		trap_ed,			/* 0x18	*/
-		trap_ed,			/* 0x19	*/
-		trap_ed,			/* 0x1a	*/
-		trap_ed,			/* 0x1b	*/
-		trap_ed,			/* 0x1c	*/
-		trap_ed,			/* 0x1d	*/
-		trap_ed,			/* 0x1e	*/
-		trap_ed,			/* 0x1f	*/
-		trap_ed,			/* 0x20	*/
-		trap_ed,			/* 0x21	*/
-		trap_ed,			/* 0x22	*/
-		trap_ed,			/* 0x23	*/
-		trap_ed,			/* 0x24	*/
-		trap_ed,			/* 0x25	*/
-		trap_ed,			/* 0x26	*/
-		trap_ed,			/* 0x27	*/
-		trap_ed,			/* 0x28	*/
-		trap_ed,			/* 0x29	*/
-		trap_ed,			/* 0x2a	*/
-		trap_ed,			/* 0x2b	*/
-		trap_ed,			/* 0x2c	*/
-		trap_ed,			/* 0x2d	*/
-		trap_ed,			/* 0x2e	*/
-		trap_ed,			/* 0x2f	*/
-		trap_ed,			/* 0x30	*/
-		trap_ed,			/* 0x31	*/
-		trap_ed,			/* 0x32	*/
-		trap_ed,			/* 0x33	*/
-		trap_ed,			/* 0x34	*/
-		trap_ed,			/* 0x35	*/
-		trap_ed,			/* 0x36	*/
-		trap_ed,			/* 0x37	*/
-		trap_ed,			/* 0x38	*/
-		trap_ed,			/* 0x39	*/
-		trap_ed,			/* 0x3a	*/
-		trap_ed,			/* 0x3b	*/
-		trap_ed,			/* 0x3c	*/
-		trap_ed,			/* 0x3d	*/
-		trap_ed,			/* 0x3e	*/
-		trap_ed,			/* 0x3f	*/
-		op_inbic,			/* 0x40	*/
-		op_outcb,			/* 0x41	*/
-		op_sbchb,			/* 0x42	*/
-		op_ldinbc,			/* 0x43	*/
-		op_neg,				/* 0x44	*/
-		op_retn,			/* 0x45	*/
-		op_im0,				/* 0x46	*/
-		op_ldia,			/* 0x47	*/
-		op_incic,			/* 0x48	*/
-		op_outcc,			/* 0x49	*/
-		op_adchb,			/* 0x4a	*/
-		op_ldbcinn,			/* 0x4b	*/
-		trap_ed,			/* 0x4c	*/
-		op_reti,			/* 0x4d	*/
-		trap_ed,			/* 0x4e	*/
-		op_ldra,			/* 0x4f	*/
-		op_indic,			/* 0x50	*/
-		op_outcd,			/* 0x51	*/
-		op_sbchd,			/* 0x52	*/
-		op_ldinde,			/* 0x53	*/
-		trap_ed,			/* 0x54	*/
-		trap_ed,			/* 0x55	*/
-		op_im1,				/* 0x56	*/
-		op_ldai,			/* 0x57	*/
-		op_ineic,			/* 0x58	*/
-		op_outce,			/* 0x59	*/
-		op_adchd,			/* 0x5a	*/
-		op_lddeinn,			/* 0x5b	*/
-		trap_ed,			/* 0x5c	*/
-		trap_ed,			/* 0x5d	*/
-		op_im2,				/* 0x5e	*/
-		op_ldar,			/* 0x5f	*/
-		op_inhic,			/* 0x60	*/
-		op_outch,			/* 0x61	*/
-		op_sbchh,			/* 0x62	*/
-		trap_ed,			/* 0x63	*/
-		trap_ed,			/* 0x64	*/
-		trap_ed,			/* 0x65	*/
-		trap_ed,			/* 0x66	*/
-		op_oprrd,			/* 0x67	*/
-		op_inlic,			/* 0x68	*/
-		op_outcl,			/* 0x69	*/
-		op_adchh,			/* 0x6a	*/
-		trap_ed,			/* 0x6b	*/
-		trap_ed,			/* 0x6c	*/
-		trap_ed,			/* 0x6d	*/
-		trap_ed,			/* 0x6e	*/
-		op_oprld,			/* 0x6f	*/
-		trap_ed,			/* 0x70	*/
-		trap_ed,			/* 0x71	*/
-		op_sbchs,			/* 0x72	*/
-		op_ldinsp,			/* 0x73	*/
-		trap_ed,			/* 0x74	*/
-		trap_ed,			/* 0x75	*/
-		trap_ed,			/* 0x76	*/
-		trap_ed,			/* 0x77	*/
-		op_inaic,			/* 0x78	*/
-		op_outca,			/* 0x79	*/
-		op_adchs,			/* 0x7a	*/
-		op_ldspinn,			/* 0x7b	*/
-		trap_ed,			/* 0x7c	*/
-		trap_ed,			/* 0x7d	*/
-		trap_ed,			/* 0x7e	*/
-		trap_ed,			/* 0x7f	*/
-		trap_ed,			/* 0x80	*/
-		trap_ed,			/* 0x81	*/
-		trap_ed,			/* 0x82	*/
-		trap_ed,			/* 0x83	*/
-		trap_ed,			/* 0x84	*/
-		trap_ed,			/* 0x85	*/
-		trap_ed,			/* 0x86	*/
-		trap_ed,			/* 0x87	*/
-		trap_ed,			/* 0x88	*/
-		trap_ed,			/* 0x89	*/
-		trap_ed,			/* 0x8a	*/
-		trap_ed,			/* 0x8b	*/
-		trap_ed,			/* 0x8c	*/
-		trap_ed,			/* 0x8d	*/
-		trap_ed,			/* 0x8e	*/
-		trap_ed,			/* 0x8f	*/
-		trap_ed,			/* 0x90	*/
-		trap_ed,			/* 0x91	*/
-		trap_ed,			/* 0x92	*/
-		trap_ed,			/* 0x93	*/
-		trap_ed,			/* 0x94	*/
-		trap_ed,			/* 0x95	*/
-		trap_ed,			/* 0x96	*/
-		trap_ed,			/* 0x97	*/
-		trap_ed,			/* 0x98	*/
-		trap_ed,			/* 0x99	*/
-		trap_ed,			/* 0x9a	*/
-		trap_ed,			/* 0x9b	*/
-		trap_ed,			/* 0x9c	*/
-		trap_ed,			/* 0x9d	*/
-		trap_ed,			/* 0x9e	*/
-		trap_ed,			/* 0x9f	*/
-		op_ldi,				/* 0xa0	*/
-		op_cpi,				/* 0xa1	*/
-		op_ini,				/* 0xa2	*/
-		op_outi,			/* 0xa3	*/
-		trap_ed,			/* 0xa4	*/
-		trap_ed,			/* 0xa5	*/
-		trap_ed,			/* 0xa6	*/
-		trap_ed,			/* 0xa7	*/
-		op_ldd,				/* 0xa8	*/
-		op_cpdop,			/* 0xa9	*/
-		op_ind,				/* 0xaa	*/
-		op_outd,			/* 0xab	*/
-		trap_ed,			/* 0xac	*/
-		trap_ed,			/* 0xad	*/
-		trap_ed,			/* 0xae	*/
-		trap_ed,			/* 0xaf	*/
-		op_ldir,			/* 0xb0	*/
-		op_cpir,			/* 0xb1	*/
-		op_inir,			/* 0xb2	*/
-		op_otir,			/* 0xb3	*/
-		trap_ed,			/* 0xb4	*/
-		trap_ed,			/* 0xb5	*/
-		trap_ed,			/* 0xb6	*/
-		trap_ed,			/* 0xb7	*/
-		op_lddr,			/* 0xb8	*/
-		op_cpdr,			/* 0xb9	*/
-		op_indr,			/* 0xba	*/
-		op_otdr,			/* 0xbb	*/
-		trap_ed,			/* 0xbc	*/
-		trap_ed,			/* 0xbd	*/
-		trap_ed,			/* 0xbe	*/
-		trap_ed,			/* 0xbf	*/
-		trap_ed,			/* 0xc0	*/
-		trap_ed,			/* 0xc1	*/
-		trap_ed,			/* 0xc2	*/
-		trap_ed,			/* 0xc3	*/
-		trap_ed,			/* 0xc4	*/
-		trap_ed,			/* 0xc5	*/
-		trap_ed,			/* 0xc6	*/
-		trap_ed,			/* 0xc7	*/
-		trap_ed,			/* 0xc8	*/
-		trap_ed,			/* 0xc9	*/
-		trap_ed,			/* 0xca	*/
-		trap_ed,			/* 0xcb	*/
-		trap_ed,			/* 0xcc	*/
-		trap_ed,			/* 0xcd	*/
-		trap_ed,			/* 0xce	*/
-		trap_ed,			/* 0xcf	*/
-		trap_ed,			/* 0xd0	*/
-		trap_ed,			/* 0xd1	*/
-		trap_ed,			/* 0xd2	*/
-		trap_ed,			/* 0xd3	*/
-		trap_ed,			/* 0xd4	*/
-		trap_ed,			/* 0xd5	*/
-		trap_ed,			/* 0xd6	*/
-		trap_ed,			/* 0xd7	*/
-		trap_ed,			/* 0xd8	*/
-		trap_ed,			/* 0xd9	*/
-		trap_ed,			/* 0xda	*/
-		trap_ed,			/* 0xdb	*/
-		trap_ed,			/* 0xdc	*/
-		trap_ed,			/* 0xdd	*/
-		trap_ed,			/* 0xde	*/
-		trap_ed,			/* 0xdf	*/
-		trap_ed,			/* 0xe0	*/
-		trap_ed,			/* 0xe1	*/
-		trap_ed,			/* 0xe2	*/
-		trap_ed,			/* 0xe3	*/
-		trap_ed,			/* 0xe4	*/
-		trap_ed,			/* 0xe5	*/
-		trap_ed,			/* 0xe6	*/
-		trap_ed,			/* 0xe7	*/
-		trap_ed,			/* 0xe8	*/
-		trap_ed,			/* 0xe9	*/
-		trap_ed,			/* 0xea	*/
-		trap_ed,			/* 0xeb	*/
-		trap_ed,			/* 0xec	*/
-		trap_ed,			/* 0xed	*/
-		trap_ed,			/* 0xee	*/
-		trap_ed,			/* 0xef	*/
-		trap_ed,			/* 0xf0	*/
-		trap_ed,			/* 0xf1	*/
-		trap_ed,			/* 0xf2	*/
-		trap_ed,			/* 0xf3	*/
-		trap_ed,			/* 0xf4	*/
-		trap_ed,			/* 0xf5	*/
-		trap_ed,			/* 0xf6	*/
-		trap_ed,			/* 0xf7	*/
-		trap_ed,			/* 0xf8	*/
-		trap_ed,			/* 0xf9	*/
-		trap_ed,			/* 0xfa	*/
-		trap_ed,			/* 0xfb	*/
-		trap_ed,			/* 0xfc	*/
-		trap_ed,			/* 0xfd	*/
-		trap_ed,			/* 0xfe	*/
-		trap_ed				/* 0xff	*/
+		trap_ed,			/* 0x00 */
+		trap_ed,			/* 0x01 */
+		trap_ed,			/* 0x02 */
+		trap_ed,			/* 0x03 */
+		trap_ed,			/* 0x04 */
+		trap_ed,			/* 0x05 */
+		trap_ed,			/* 0x06 */
+		trap_ed,			/* 0x07 */
+		trap_ed,			/* 0x08 */
+		trap_ed,			/* 0x09 */
+		trap_ed,			/* 0x0a */
+		trap_ed,			/* 0x0b */
+		trap_ed,			/* 0x0c */
+		trap_ed,			/* 0x0d */
+		trap_ed,			/* 0x0e */
+		trap_ed,			/* 0x0f */
+		trap_ed,			/* 0x10 */
+		trap_ed,			/* 0x11 */
+		trap_ed,			/* 0x12 */
+		trap_ed,			/* 0x13 */
+		trap_ed,			/* 0x14 */
+		trap_ed,			/* 0x15 */
+		trap_ed,			/* 0x16 */
+		trap_ed,			/* 0x17 */
+		trap_ed,			/* 0x18 */
+		trap_ed,			/* 0x19 */
+		trap_ed,			/* 0x1a */
+		trap_ed,			/* 0x1b */
+		trap_ed,			/* 0x1c */
+		trap_ed,			/* 0x1d */
+		trap_ed,			/* 0x1e */
+		trap_ed,			/* 0x1f */
+		trap_ed,			/* 0x20 */
+		trap_ed,			/* 0x21 */
+		trap_ed,			/* 0x22 */
+		trap_ed,			/* 0x23 */
+		trap_ed,			/* 0x24 */
+		trap_ed,			/* 0x25 */
+		trap_ed,			/* 0x26 */
+		trap_ed,			/* 0x27 */
+		trap_ed,			/* 0x28 */
+		trap_ed,			/* 0x29 */
+		trap_ed,			/* 0x2a */
+		trap_ed,			/* 0x2b */
+		trap_ed,			/* 0x2c */
+		trap_ed,			/* 0x2d */
+		trap_ed,			/* 0x2e */
+		trap_ed,			/* 0x2f */
+		trap_ed,			/* 0x30 */
+		trap_ed,			/* 0x31 */
+		trap_ed,			/* 0x32 */
+		trap_ed,			/* 0x33 */
+		trap_ed,			/* 0x34 */
+		trap_ed,			/* 0x35 */
+		trap_ed,			/* 0x36 */
+		trap_ed,			/* 0x37 */
+		trap_ed,			/* 0x38 */
+		trap_ed,			/* 0x39 */
+		trap_ed,			/* 0x3a */
+		trap_ed,			/* 0x3b */
+		trap_ed,			/* 0x3c */
+		trap_ed,			/* 0x3d */
+		trap_ed,			/* 0x3e */
+		trap_ed,			/* 0x3f */
+		op_inbic,			/* 0x40 */
+		op_outcb,			/* 0x41 */
+		op_sbchb,			/* 0x42 */
+		op_ldinbc,			/* 0x43 */
+		op_neg,				/* 0x44 */
+		op_retn,			/* 0x45 */
+		op_im0,				/* 0x46 */
+		op_ldia,			/* 0x47 */
+		op_incic,			/* 0x48 */
+		op_outcc,			/* 0x49 */
+		op_adchb,			/* 0x4a */
+		op_ldbcinn,			/* 0x4b */
+		trap_ed,			/* 0x4c */
+		op_reti,			/* 0x4d */
+		trap_ed,			/* 0x4e */
+		op_ldra,			/* 0x4f */
+		op_indic,			/* 0x50 */
+		op_outcd,			/* 0x51 */
+		op_sbchd,			/* 0x52 */
+		op_ldinde,			/* 0x53 */
+		trap_ed,			/* 0x54 */
+		trap_ed,			/* 0x55 */
+		op_im1,				/* 0x56 */
+		op_ldai,			/* 0x57 */
+		op_ineic,			/* 0x58 */
+		op_outce,			/* 0x59 */
+		op_adchd,			/* 0x5a */
+		op_lddeinn,			/* 0x5b */
+		trap_ed,			/* 0x5c */
+		trap_ed,			/* 0x5d */
+		op_im2,				/* 0x5e */
+		op_ldar,			/* 0x5f */
+		op_inhic,			/* 0x60 */
+		op_outch,			/* 0x61 */
+		op_sbchh,			/* 0x62 */
+		trap_ed,			/* 0x63 */
+		trap_ed,			/* 0x64 */
+		trap_ed,			/* 0x65 */
+		trap_ed,			/* 0x66 */
+		op_oprrd,			/* 0x67 */
+		op_inlic,			/* 0x68 */
+		op_outcl,			/* 0x69 */
+		op_adchh,			/* 0x6a */
+		trap_ed,			/* 0x6b */
+		trap_ed,			/* 0x6c */
+		trap_ed,			/* 0x6d */
+		trap_ed,			/* 0x6e */
+		op_oprld,			/* 0x6f */
+		trap_ed,			/* 0x70 */
+		trap_ed,			/* 0x71 */
+		op_sbchs,			/* 0x72 */
+		op_ldinsp,			/* 0x73 */
+		trap_ed,			/* 0x74 */
+		trap_ed,			/* 0x75 */
+		trap_ed,			/* 0x76 */
+		trap_ed,			/* 0x77 */
+		op_inaic,			/* 0x78 */
+		op_outca,			/* 0x79 */
+		op_adchs,			/* 0x7a */
+		op_ldspinn,			/* 0x7b */
+		trap_ed,			/* 0x7c */
+		trap_ed,			/* 0x7d */
+		trap_ed,			/* 0x7e */
+		trap_ed,			/* 0x7f */
+		trap_ed,			/* 0x80 */
+		trap_ed,			/* 0x81 */
+		trap_ed,			/* 0x82 */
+		trap_ed,			/* 0x83 */
+		trap_ed,			/* 0x84 */
+		trap_ed,			/* 0x85 */
+		trap_ed,			/* 0x86 */
+		trap_ed,			/* 0x87 */
+		trap_ed,			/* 0x88 */
+		trap_ed,			/* 0x89 */
+		trap_ed,			/* 0x8a */
+		trap_ed,			/* 0x8b */
+		trap_ed,			/* 0x8c */
+		trap_ed,			/* 0x8d */
+		trap_ed,			/* 0x8e */
+		trap_ed,			/* 0x8f */
+		trap_ed,			/* 0x90 */
+		trap_ed,			/* 0x91 */
+		trap_ed,			/* 0x92 */
+		trap_ed,			/* 0x93 */
+		trap_ed,			/* 0x94 */
+		trap_ed,			/* 0x95 */
+		trap_ed,			/* 0x96 */
+		trap_ed,			/* 0x97 */
+		trap_ed,			/* 0x98 */
+		trap_ed,			/* 0x99 */
+		trap_ed,			/* 0x9a */
+		trap_ed,			/* 0x9b */
+		trap_ed,			/* 0x9c */
+		trap_ed,			/* 0x9d */
+		trap_ed,			/* 0x9e */
+		trap_ed,			/* 0x9f */
+		op_ldi,				/* 0xa0 */
+		op_cpi,				/* 0xa1 */
+		op_ini,				/* 0xa2 */
+		op_outi,			/* 0xa3 */
+		trap_ed,			/* 0xa4 */
+		trap_ed,			/* 0xa5 */
+		trap_ed,			/* 0xa6 */
+		trap_ed,			/* 0xa7 */
+		op_ldd,				/* 0xa8 */
+		op_cpdop,			/* 0xa9 */
+		op_ind,				/* 0xaa */
+		op_outd,			/* 0xab */
+		trap_ed,			/* 0xac */
+		trap_ed,			/* 0xad */
+		trap_ed,			/* 0xae */
+		trap_ed,			/* 0xaf */
+		op_ldir,			/* 0xb0 */
+		op_cpir,			/* 0xb1 */
+		op_inir,			/* 0xb2 */
+		op_otir,			/* 0xb3 */
+		trap_ed,			/* 0xb4 */
+		trap_ed,			/* 0xb5 */
+		trap_ed,			/* 0xb6 */
+		trap_ed,			/* 0xb7 */
+		op_lddr,			/* 0xb8 */
+		op_cpdr,			/* 0xb9 */
+		op_indr,			/* 0xba */
+		op_otdr,			/* 0xbb */
+		trap_ed,			/* 0xbc */
+		trap_ed,			/* 0xbd */
+		trap_ed,			/* 0xbe */
+		trap_ed,			/* 0xbf */
+		trap_ed,			/* 0xc0 */
+		trap_ed,			/* 0xc1 */
+		trap_ed,			/* 0xc2 */
+		trap_ed,			/* 0xc3 */
+		trap_ed,			/* 0xc4 */
+		trap_ed,			/* 0xc5 */
+		trap_ed,			/* 0xc6 */
+		trap_ed,			/* 0xc7 */
+		trap_ed,			/* 0xc8 */
+		trap_ed,			/* 0xc9 */
+		trap_ed,			/* 0xca */
+		trap_ed,			/* 0xcb */
+		trap_ed,			/* 0xcc */
+		trap_ed,			/* 0xcd */
+		trap_ed,			/* 0xce */
+		trap_ed,			/* 0xcf */
+		trap_ed,			/* 0xd0 */
+		trap_ed,			/* 0xd1 */
+		trap_ed,			/* 0xd2 */
+		trap_ed,			/* 0xd3 */
+		trap_ed,			/* 0xd4 */
+		trap_ed,			/* 0xd5 */
+		trap_ed,			/* 0xd6 */
+		trap_ed,			/* 0xd7 */
+		trap_ed,			/* 0xd8 */
+		trap_ed,			/* 0xd9 */
+		trap_ed,			/* 0xda */
+		trap_ed,			/* 0xdb */
+		trap_ed,			/* 0xdc */
+		trap_ed,			/* 0xdd */
+		trap_ed,			/* 0xde */
+		trap_ed,			/* 0xdf */
+		trap_ed,			/* 0xe0 */
+		trap_ed,			/* 0xe1 */
+		trap_ed,			/* 0xe2 */
+		trap_ed,			/* 0xe3 */
+		trap_ed,			/* 0xe4 */
+		trap_ed,			/* 0xe5 */
+		trap_ed,			/* 0xe6 */
+		trap_ed,			/* 0xe7 */
+		trap_ed,			/* 0xe8 */
+		trap_ed,			/* 0xe9 */
+		trap_ed,			/* 0xea */
+		trap_ed,			/* 0xeb */
+		trap_ed,			/* 0xec */
+		trap_ed,			/* 0xed */
+		trap_ed,			/* 0xee */
+		trap_ed,			/* 0xef */
+		trap_ed,			/* 0xf0 */
+		trap_ed,			/* 0xf1 */
+		trap_ed,			/* 0xf2 */
+		trap_ed,			/* 0xf3 */
+		trap_ed,			/* 0xf4 */
+		trap_ed,			/* 0xf5 */
+		trap_ed,			/* 0xf6 */
+		trap_ed,			/* 0xf7 */
+		trap_ed,			/* 0xf8 */
+		trap_ed,			/* 0xf9 */
+		trap_ed,			/* 0xfa */
+		trap_ed,			/* 0xfb */
+		trap_ed,			/* 0xfc */
+		trap_ed,			/* 0xfd */
+		trap_ed,			/* 0xfe */
+		trap_ed				/* 0xff */
 	};
 
 #ifdef WANT_TIM
@@ -355,18 +357,21 @@ static int trap_ed(void)
 
 static int op_im0(void)			/* IM 0 */
 {
+	//printf("*** IM 0 ***\r\n");
 	int_mode = 0;
 	return(8);
 }
 
 static int op_im1(void)			/* IM 1 */
 {
+	//printf("*** IM 1 ***\r\n");
 	int_mode = 1;
 	return(8);
 }
 
 static int op_im2(void)			/* IM 2 */
 {
+	//printf("*** IM 2 ***\r\n");
 	int_mode = 2;
 	return(8);
 }
@@ -384,12 +389,12 @@ static int op_reti(void)		/* RETI */
 	i = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	i += *STACK++ << 8;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	PC = ram + i;
 	return(14);
@@ -408,12 +413,12 @@ static int op_retn(void)		/* RETN */
 	i = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	i += *STACK++ << 8;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	PC = ram + i;
 	if (IFF & 2)
@@ -426,7 +431,7 @@ static int op_neg(void)			/* NEG */
 	(A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	(A == 0x80) ? (F |= P_FLAG) : (F &= ~P_FLAG);
 	(0 - ((signed char) A & 0xf) <	0) ? (F	|= H_FLAG) : (F	&= ~H_FLAG);
-	A = 0 -	A;
+	A = 0 - A;
 	F |= N_FLAG;
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -667,7 +672,8 @@ static int op_ini(void)			/* INI */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	io_in(C);
+	//*(ram + (H << 8) + L) = io_in(C);
+	memwrt(ram + (H << 8) + L, io_in(C));
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -685,8 +691,8 @@ static int op_ini(void)			/* INI */
 
 static int op_inir(void)		/* INIR */
 {
-	register int t	= -21;
 	register BYTE *d;
+	register int t	= -21;
 	BYTE io_in(BYTE);
 
 	d = ram	+ (H <<	8) + L;
@@ -697,7 +703,8 @@ static int op_inir(void)		/* INIR */
 #ifdef FRONTPANEL
 		fp_sampleLightGroup(0, 0);
 #endif
-		*d++ = io_in(C);
+		//*d++ = io_in(C);
+		memwrt(d++, io_in(C));
 #ifdef BUS_8080
 		cpu_bus = 0;
 #endif
@@ -708,7 +715,7 @@ static int op_inir(void)		/* INIR */
 		t += 21;
 	} while	(B);
 	H = (d - ram) >> 8;
-	L = d -	ram;
+	L = d - ram;
 	F |= N_FLAG | Z_FLAG;
 	return(t + 16);
 }
@@ -723,7 +730,8 @@ static int op_ind(void)			/* IND */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	io_in(C);
+	//*(ram + (H << 8) + L) = io_in(C);
+	memwrt(ram + (H << 8) + L, io_in(C));
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -753,7 +761,8 @@ static int op_indr(void)		/* INDR */
 #ifdef FRONTPANEL
 		fp_sampleLightGroup(0, 0);
 #endif
-		*d-- = io_in(C);
+		//*d-- = io_in(C);
+		memwrt(d--, io_in(C));
 #ifdef BUS_8080
 		cpu_bus = 0;
 #endif
@@ -764,7 +773,7 @@ static int op_indr(void)		/* INDR */
 		t += 21;
 	} while	(B);
 	H = (d - ram) >> 8;
-	L = d -	ram;
+	L = d - ram;
 	F |= N_FLAG | Z_FLAG;
 	return(t + 16);
 }
@@ -779,7 +788,7 @@ static int op_outi(void)		/* OUTI */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	io_out(C, *(ram	+ (H <<	8) * L));
+	io_out(C, *(ram	+ (H <<	8) + L));
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;
 #endif
@@ -820,7 +829,7 @@ static int op_otir(void)		/* OTIR */
 		t += 21;
 	} while	(B);
 	H = (d - ram) >> 8;
-	L = d -	ram;
+	L = d - ram;
 	F |= N_FLAG | Z_FLAG;
 	return(t + 16);
 }
@@ -835,7 +844,7 @@ static int op_outd(void)		/* OUTD */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	io_out(C, *(ram	+ (H <<	8) * L));
+	io_out(C, *(ram	+ (H <<	8) + L));
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;
 #endif
@@ -876,7 +885,7 @@ static int op_otdr(void)		/* OTDR */
 		t += 21;
 	} while	(B);
 	H = (d - ram) >> 8;
-	L = d -	ram;
+	L = d - ram;
 	F |= N_FLAG | Z_FLAG;
 	return(t + 16);
 }
@@ -959,7 +968,7 @@ static int op_ldspinn(void)		/* LD SP,(nn) */
 #endif
 	p = ram	+ *PC++;
 	p += *PC++ << 8;
-	STACK =	ram + *p++;
+	STACK = ram + *p++;
 	STACK += *p << 8;
 	return(20);
 }
@@ -976,8 +985,10 @@ static int op_ldinbc(void)		/* LD (nn),BC */
 #endif
 	p = ram	+ *PC++;
 	p += *PC++ << 8;
-	*p++ = C;
-	*p = B;
+	//*p++ = C;
+	memwrt(p++, C);
+	//*p = B;
+	memwrt(p, B);
 	return(20);
 }
 
@@ -993,8 +1004,10 @@ static int op_ldinde(void)		/* LD (nn),DE */
 #endif
 	p = ram	+ *PC++;
 	p += *PC++ << 8;
-	*p++ = E;
-	*p = D;
+	//*p++ = E;
+	memwrt(p++, E);
+	//*p = D;
+	memwrt(p, D);
 	return(20);
 }
 
@@ -1012,8 +1025,10 @@ static int op_ldinsp(void)		/* LD (nn),SP */
 	p = ram	+ *PC++;
 	p += *PC++ << 8;
 	i = STACK - ram;
-	*p++ = i;
-	*p = i >> 8;
+	//*p++ = i;
+	memwrt(p++, i);
+	//*p = i >> 8;
+	memwrt(p, i >> 8);
 	return(20);
 }
 
@@ -1023,11 +1038,11 @@ static int op_adchb(void)		/* ADC HL,BC */
 	WORD hl, bc;
 	SWORD shl, sbc;
 
-	hl = (H	<< 8) +	L;
-	bc = (B	<< 8) +	C;
+	hl = (H	<< 8) + L;
+	bc = (B	<< 8) + C;
 	shl = hl;
 	sbc = bc;
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	(((hl & 0x0fff) + (bc & 0x0fff) + carry) > 0x0fff) ? (F |= H_FLAG)
 							   : (F &= ~H_FLAG);
 	i = shl + sbc + carry;
@@ -1048,11 +1063,11 @@ static int op_adchd(void)		/* ADC HL,DE */
 	WORD hl, de;
 	SWORD shl, sde;
 
-	hl = (H	<< 8) +	L;
-	de = (D	<< 8) +	E;
+	hl = (H	<< 8) + L;
+	de = (D	<< 8) + E;
 	shl = hl;
 	sde = de;
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	(((hl & 0x0fff) + (de & 0x0fff) + carry) > 0x0fff) ? (F |= H_FLAG)
 							   : (F &= ~H_FLAG);
 	i = shl + sde + carry;
@@ -1073,9 +1088,9 @@ static int op_adchh(void)		/* ADC HL,HL */
 	WORD hl;
 	SWORD shl;
 
-	hl = (H	<< 8) +	L;
+	hl = (H	<< 8) + L;
 	shl = hl;
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	(((hl & 0x0fff) + (hl & 0x0fff) + carry) > 0x0fff) ? (F |= H_FLAG)
 							   : (F &= ~H_FLAG);
 	i = shl + shl + carry;
@@ -1096,11 +1111,11 @@ static int op_adchs(void)		/* ADC HL,SP */
 	WORD hl, sp;
 	SWORD shl, ssp;
 
-	hl = (H	<< 8) +	L;
+	hl = (H	<< 8) + L;
 	sp = STACK - ram;
 	shl = hl;
 	ssp = sp;
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	(((hl & 0x0fff) + (sp & 0x0fff) + carry) > 0x0fff) ? (F |= H_FLAG)
 							   : (F &= ~H_FLAG);
 	i = shl + ssp + carry;
@@ -1121,11 +1136,11 @@ static int op_sbchb(void)		/* SBC HL,BC */
 	WORD hl, bc;
 	SWORD shl, sbc;
 
-	hl = (H	<< 8) +	L;
-	bc = (B	<< 8) +	C;
+	hl = (H	<< 8) + L;
+	bc = (B	<< 8) + C;
 	shl = hl;
 	sbc = bc;
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	(((bc & 0x0fff) + carry) > (hl & 0x0fff)) ? (F |= H_FLAG)
 						  : (F &= ~H_FLAG);
 	i = shl - sbc - carry;
@@ -1146,11 +1161,11 @@ static int op_sbchd(void)		/* SBC HL,DE */
 	WORD hl, de;
 	SWORD shl, sde;
 
-	hl = (H	<< 8) +	L;
-	de = (D	<< 8) +	E;
+	hl = (H	<< 8) + L;
+	de = (D	<< 8) + E;
 	shl = hl;
 	sde = de;
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	(((de & 0x0fff) + carry) > (hl & 0x0fff)) ? (F |= H_FLAG)
 						  : (F &= ~H_FLAG);
 	i = shl - sde - carry;
@@ -1171,9 +1186,9 @@ static int op_sbchh(void)		/* SBC HL,HL */
 	WORD hl;
 	SWORD shl;
 
-	hl = (H	<< 8) +	L;
+	hl = (H	<< 8) + L;
 	shl = hl;
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	(((hl & 0x0fff) + carry) > (hl & 0x0fff)) ? (F |= H_FLAG)
 						  : (F &= ~H_FLAG);
 	i = shl - shl - carry;
@@ -1194,11 +1209,11 @@ static int op_sbchs(void)		/* SBC HL,SP */
 	WORD hl, sp;
 	SWORD shl, ssp;
 
-	hl = (H	<< 8) +	L;
+	hl = (H	<< 8) + L;
 	sp = STACK - ram;
 	shl = hl;
 	ssp = sp;
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	(((sp & 0x0fff) + carry) > (hl & 0x0fff)) ? (F |= H_FLAG)
 						  : (F &= ~H_FLAG);
 	i = shl - ssp - carry;
@@ -1221,7 +1236,8 @@ static int op_ldi(void)			/* LDI */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(D << 8) + E) =	*(ram +	(H << 8) + L);
+	//*(ram + (D << 8) + E) = *(ram + (H << 8) + L);
+	memwrt(ram + (D << 8) + E, *(ram + (H << 8) + L));
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -1237,11 +1253,12 @@ static int op_ldi(void)			/* LDI */
 	C--;
 	if (C == 0xff)
 		B--;
-	(B | C)	? (F |=	P_FLAG)	: (F &=	~P_FLAG);
+	(B | C) ? (F |= P_FLAG) : (F &= ~P_FLAG);
 	F &= ~(N_FLAG |	H_FLAG);
 	return(16);
 }
 
+#ifdef WANT_FASTM
 static int op_ldir(void)		/* LDIR */
 {
 	register int t	= -21;
@@ -1258,7 +1275,8 @@ static int op_ldir(void)		/* LDIR */
 #ifdef FRONTPANEL
 		fp_sampleLightGroup(0, 0);
 #endif
-		*d++ = *s++;
+		//*d++ = *s++;
+		memwrt(d++, *s++);
 		if (d > ram + 65535)	/* because they try with BC=0 */
 			d = ram;
 		if (s > ram + 65535)
@@ -1271,14 +1289,28 @@ static int op_ldir(void)		/* LDIR */
 #endif
 		t += 21;
 	} while	(--i);
-	B = C =	0;
+	B = C = 0;
 	D = (d - ram) >> 8;
-	E = d -	ram;
+	E = d - ram;
 	H = (s - ram) >> 8;
-	L = s -	ram;
+	L = s - ram;
 	F &= ~(N_FLAG |	P_FLAG | H_FLAG);
 	return(t + 16);
 }
+#else
+static int op_ldir(void)		/* LDIR */
+{
+	register int t;
+
+	op_ldi();
+	if (F & P_FLAG) {
+		t = 21;
+		PC -= 2;
+	} else
+		t = 16;
+	return(t);
+}
+#endif
 
 static int op_ldd(void)			/* LDD */
 {
@@ -1288,7 +1320,8 @@ static int op_ldd(void)			/* LDD */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(D << 8) + E) =	*(ram +	(H << 8) + L);
+	//*(ram + (D << 8) + E) = *(ram + (H << 8) + L);
+	memwrt(ram + (D << 8) + E, *(ram + (H << 8) + L));
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -1304,11 +1337,12 @@ static int op_ldd(void)			/* LDD */
 	C--;
 	if (C == 0xff)
 		B--;
-	(B | C)	? (F |=	P_FLAG)	: (F &=	~P_FLAG);
+	(B | C) ? (F |= P_FLAG) : (F &= ~P_FLAG);
 	F &= ~(N_FLAG |	H_FLAG);
 	return(16);
 }
 
+#ifdef WANT_FASTM
 static int op_lddr(void)		/* LDDR */
 {
 	register int t	= -21;
@@ -1325,7 +1359,8 @@ static int op_lddr(void)		/* LDDR */
 #ifdef FRONTPANEL
 		fp_sampleLightGroup(0, 0);
 #endif
-		*d-- = *s--;
+		//*d-- = *s--;
+		memwrt(d--, *s--);
 		if (d < ram)		/* because they try with BC=0 */
 			d = ram + 65535;
 		if (s < ram)
@@ -1338,14 +1373,28 @@ static int op_lddr(void)		/* LDDR */
 #endif
 		t += 21;
 	} while	(--i);
-	B = C =	0;
+	B = C = 0;
 	D = (d - ram) >> 8;
-	E = d -	ram;
+	E = d - ram;
 	H = (s - ram) >> 8;
-	L = s -	ram;
+	L = s - ram;
 	F &= ~(N_FLAG |	P_FLAG | H_FLAG);
 	return(t + 16);
 }
+#else
+static int op_lddr(void)		/* LDDR */
+{
+	register int t;
+
+	op_ldd();
+	if (F & P_FLAG) {
+		t = 21;
+		PC -= 2;
+	} else
+		t = 16;
+	return(t);
+}
+#endif
 
 static int op_cpi(void)		/* CPI */
 {
@@ -1359,7 +1408,7 @@ static int op_cpi(void)		/* CPI */
 #endif
 	i = *(ram + ((H << 8) + L));
 	((i & 0xf) > (A & 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
-	i = A -	i;
+	i = A - i;
 	L++;
 	if (!L)
 		H++;
@@ -1367,7 +1416,7 @@ static int op_cpi(void)		/* CPI */
 	if (C == 0xff)
 		B--;
 	F |= N_FLAG;
-	(B | C)	? (F |=	P_FLAG)	: (F &=	~P_FLAG);
+	(B | C) ? (F |= P_FLAG) : (F &= ~P_FLAG);
 	(i) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	return(16);
@@ -1394,14 +1443,14 @@ static int op_cpir(void)	/* CPIR */
 		if (s > ram + 65535)
 			s = ram;
 		((tmp & 0xf) > (A & 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
-		d = A -	tmp;
+		d = A - tmp;
 		t += 21;
 	} while	(--i &&	d);
 	F |= N_FLAG;
 	B = i >> 8;
 	C = i;
 	H = (s - ram) >> 8;
-	L = s -	ram;
+	L = s - ram;
 	(i) ? (F |= P_FLAG) : (F &= ~P_FLAG);
 	(d) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(d & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -1420,7 +1469,7 @@ static int op_cpdop(void)	/* CPD */
 #endif
 	i = *(ram + ((H << 8) + L));
 	((i & 0xf) > (A & 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
-	i = A -	i;
+	i = A - i;
 	L--;
 	if (L == 0xff)
 		H--;
@@ -1428,7 +1477,7 @@ static int op_cpdop(void)	/* CPD */
 	if (C == 0xff)
 		B--;
 	F |= N_FLAG;
-	(B | C)	? (F |=	P_FLAG)	: (F &=	~P_FLAG);
+	(B | C) ? (F |= P_FLAG) : (F &= ~P_FLAG);
 	(i) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	return(16);
@@ -1455,14 +1504,14 @@ static int op_cpdr(void)	/* CPDR */
 		if (s < ram)
 			s = ram + 65535;
 		((tmp & 0xf) > (A & 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
-		d = A -	tmp;
+		d = A - tmp;
 		t += 21;
 	} while	(--i &&	d);
 	F |= N_FLAG;
 	B = i >> 8;
 	C = i;
 	H = (s - ram) >> 8;
-	L = s -	ram;
+	L = s - ram;
 	(i) ? (F |= P_FLAG) : (F &= ~P_FLAG);
 	(d) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(d & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -1483,7 +1532,8 @@ static int op_oprld(void)	/* RLD (HL) */
 	j = A &	0x0f;
 	A = (A & 0xf0) | (i >> 4);
 	i = (i << 4) | j;
-	*(ram +	(H << 8) + L) =	i;
+	//*(ram + (H << 8) + L) = i;
+	memwrt(ram + (H << 8) + L, i);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -1511,7 +1561,8 @@ static int op_oprrd(void)	/* RRD (HL) */
 	j = A &	0x0f;
 	A = (A & 0xf0) | (i & 0x0f);
 	i = (i >> 4) | (j << 4);
-	*(ram +	(H << 8) + L) =	i;
+	//*(ram + (H << 8) + L) = i;
+	memwrt(ram + (H << 8) + L, i);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif

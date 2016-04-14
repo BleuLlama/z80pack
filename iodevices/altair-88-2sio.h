@@ -12,9 +12,10 @@
  * 31-JAN-14 use correct name from the manual
  * 19-JUN-14 added config parameter for droping nulls after CR/LF
  * 17-JUL-14 don't block on read from terminal
+ * 09-OCT-14 modified to support 2 SIO's
  */
 
-extern BYTE altair_sio2_status_in(void);
-extern void altair_sio2_status_out(BYTE);
-extern BYTE altair_sio2_data_in(void);
-extern void altair_sio2_data_out(BYTE);
+extern BYTE altair_sio1_status_in(void);
+extern void altair_sio1_status_out(BYTE);
+extern BYTE altair_sio1_data_in(void);
+extern void altair_sio1_data_out(BYTE);

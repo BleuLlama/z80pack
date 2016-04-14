@@ -3,7 +3,7 @@
  *
  * Common I/O devices used by various simulated machines
  *
- * Copyright (C) 2014 by Udo Munk
+ * Copyright (C) 2014-2015 by Udo Munk
  *
  * Emulation of an IMSAI FIF S100 board
  *
@@ -16,6 +16,8 @@
  * 02-MAR-14 improvements
  * 23-MAR-14 got all 4 disk drives working
  *    AUG-14 some improvements after seeing the original IMSAI CP/M 1.3 BIOS
+ * 17-SEP-14 FDC error 9 for DMA overrun, as reported by Alan Cox for cpmsim
+ * 27-JAN-15 unlink and create new disk file if format track command
  */
 
 #include <unistd.h>
@@ -135,6 +137,7 @@ void imsai_fif_out(BYTE data)
  *	6 - seek error
  *	7 - read error
  *	8 - write error
+ *	9 - DMA overrun > 0xffff
  *	15 - invalid command
  *
  *	These error codes will abort disk I/O, but this are not the ones
@@ -178,6 +181,12 @@ void disk_io(int addr)
 	sector = *(ram + addr + DD_SECTOR);
 	dma_addr = (*(ram + addr + DD_DMAH) * 256) + *(ram + addr + DD_DMAL);
 
+	/* check for DMA overrun */
+	if (dma_addr > 0xff80) {
+		*(ram + addr + DD_RESULT) = 9;
+		return;
+	}
+
 	/* convert IMSAI unit bit to internal disk no */
 	switch (unit) {
 	case 1:	/* IMDOS drive A: */
@@ -204,7 +213,13 @@ void disk_io(int addr)
 	}
 
 	/* try to open disk image for the wanted operation */
-	if ((fd = open(disks[disk], O_RDWR)) == -1) {
+	if (cmd == FMT_TRACK) {
+		if (track == 0)
+			unlink(disks[disk]);
+		fd = open(disks[disk], O_RDWR|O_CREAT, 0644);
+	} else
+		fd = open(disks[disk], O_RDWR);
+	if (fd == -1) {
 		*(ram + addr + DD_RESULT) = 3;
 		return;
 	}
@@ -254,7 +269,7 @@ void disk_io(int addr)
 		break;
 
 	case FMT_TRACK:
-		memset(&blksec, 0, SEC_SZ);
+		memset(&blksec, 0xe5, SEC_SZ);
 		if (track >= TRK) {
 			*(ram + addr + DD_RESULT) = 4;
 			goto done;

@@ -1,7 +1,8 @@
-SRCS = jpeg.cpp lpanel.cpp lp_gfx.cpp lp_main.cpp lp_utils.cpp lp_window.cpp \
-	lp_switch.cpp lp_font.cpp lp_materials.cpp
 
-OBJS = $(SRCS:.cpp=.o)
+SRCS    = jpeg.cpp lpanel.cpp lp_gfx.cpp lp_main.cpp lp_utils.cpp lp_window.cpp \
+	  lp_switch.cpp lp_font.cpp lp_materials.cpp
+
+OBJS    = $(SRCS:.cpp=.o)
 
 CC = g++
 
@@ -10,13 +11,11 @@ CC = g++
 INCLUDE =
 DEFINES = 
 
-CFLAGS = -c -DDLL_EXPORT -mms-bitfields -O3 -Wno-deprecated \
-	$(INCLUDE) $(DEFINES)
+CFLAGS  =  -c -DDLL_EXPORT -mms-bitfields -O3 -Wno-deprecated $(INCLUDE) $(DEFINES) $(LIB)
 
 default: $(OBJS) 
-	$(CC) -shared -Wl,--out-implib,libfrontpanel.a $(LDFLAGS) $(OBJS) \
-	-llibjpeg -lopengl32 -lgdi32 -lglu32 -lpthread \
-	-o libfrontpanel.dll
+	g++ -shared -Wl,--output-def,../lib/libfrontpanel.def -Wl,--out-implib,libfrontpanel.a $(LDFLAGS)  $(OBJS) -Wl,-Bstatic -ljpeg  -lopengl32 -lgdi32 -lglu32 -lpthread  -o ../lib/libfrontpanel.dll
+	cp frontpanel.h ../include
 
 jpeg.o : jpeg.cpp cdjpeg.h
 	$(CC) $(CFLAGS) jpeg.cpp  -o jpeg.o
@@ -45,7 +44,9 @@ lp_window.o : lp_window.cpp lpanel.h
 lp_materials.o : lp_materials.cpp lp_materials.h 
 	$(CC) $(CFLAGS) lp_materials.cpp  -o lp_materials.o
 
+
 clean:
-	rm -f *.o  libfrontpanel.so
+	rm -f *.o  ../lib/libfrontpanel.so
 
 all: clean default
+

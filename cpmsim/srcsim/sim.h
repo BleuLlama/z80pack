@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 1987-2014 by Udo Munk
+ * Copyright (C) 1987-2015 by Udo Munk
  *
  * History:
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
@@ -30,17 +30,19 @@
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 20-JUL-14 Release 1.24 bugfixes and improvements
+ * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
  */
 
 /*
  *	The following defines may be activated, commented or modified
  *	by user for her/his own purpose.
  */
-#define CPU_SPEED 0	/* default CPU speed */
+#define CPU_SPEED 0	/* default CPU speed 0=unlimited */
 #define Z80_UNDOC	/* compile undocumented Z80 instructions */
-#define WANT_INT	/* interrupt for MP/M */
-/*#define WANT_SPC*/	/* faster and normally not needed with CP/M */
-/*#define WANT_PCC*/	/* faster and normally not needed with CP/M */
+#define WANT_INT	/* interrupt for MP/M etc */
+/*#define WANT_SPC*/	/* activate for SP over-/underrun handling */
+/*#define WANT_PCC*/	/* activate for PC overrun handling */
+#define WANT_FASTM	/* much faster but not accurate Z80 block moves */
 /*#define CNTL_C*/	/* don't abort simulation with cntl-c */
 #define CNTL_BS		/* emergency exit with cntl-\ :-) */
 #define WANT_TIM	/* run length measurement needed to adjust CPU speed */
@@ -74,12 +76,12 @@
 /*
  *	The following lines of this file should not be modified by user
  */
-#define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.24"
+#define COPYR	"Copyright (C) 1987-2015 by Udo Munk"
+#define RELEASE	"1.25"
 
 #define LENCMD		80		/* length of command buffers etc */
 
-#define	S_FLAG		128		/* bit definitions of CPU flags */
+#define S_FLAG		128		/* bit definitions of CPU flags */
 #define Z_FLAG		64
 #define N2_FLAG		32
 #define H_FLAG		16
@@ -95,29 +97,31 @@
 #define CPU_HLTA	8
 #define CPU_STACK	4
 #define CPU_WO		2
-#define	CPU_INTA	1
+#define CPU_INTA	1
 
 					/* operation of simulated CPU */
-#define	SINGLE_STEP	3		/* single step */
-#define	CONTIN_RUN	1		/* continual run */
-#define	STOPPED		0		/* stop CPU because of error */
+#define SINGLE_STEP	3		/* single step */
+#define CONTIN_RUN	1		/* continual run */
+#define STOPPED		0		/* stop CPU because of error */
 
 					/* causes of error */
-#define	NONE		0		/* no error */
-#define	OPHALT		1		/* HALT	op-code	trap */
-#define	IOTRAPIN	2		/* I/O trap input */
+#define NONE		0		/* no error */
+#define OPHALT		1		/* HALT op-code trap */
+#define IOTRAPIN	2		/* I/O trap input */
 #define IOTRAPOUT	3		/* I/O trap output */
 #define IOHALT		4		/* halt system via I/O register */
 #define IOERROR		5		/* fatal I/O error */
-#define	OPTRAP1		6		/* illegal 1 byte op-code trap */
-#define	OPTRAP2		7		/* illegal 2 byte op-code trap */
-#define	OPTRAP4		8		/* illegal 4 byte op-code trap */
-#define	USERINT		9		/* user	interrupt */
+#define OPTRAP1		6		/* illegal 1 byte op-code trap */
+#define OPTRAP2		7		/* illegal 2 byte op-code trap */
+#define OPTRAP4		8		/* illegal 4 byte op-code trap */
+#define USERINT		9		/* user interrupt */
 #define POWEROFF	255		/* CPU off, no error */
 
-typedef	unsigned short WORD;		/* 16 bit unsigned */
-typedef	signed short   SWORD;		/* 16 bit signed */
-typedef	unsigned char  BYTE;		/* 8 bit unsigned */
+typedef unsigned short WORD;		/* 16 bit unsigned */
+typedef signed short   SWORD;		/* 16 bit signed */
+typedef unsigned char  BYTE;		/* 8 bit unsigned */
+
+#define memwrt(addr, data) (*(addr) = data)
 
 #ifdef HISIZE
 struct history {			/* structure of a history entry */
@@ -142,5 +146,5 @@ struct softbreak {			/* structure of a breakpoint */
 #endif
 
 #ifndef isxdigit
-#define	isxdigit(c) ((c<='f'&&c>='a')||(c<='F'&&c>='A')||(c<='9'&&c>='0'))
+#define isxdigit(c) ((c<='f'&&c>='a')||(c<='F'&&c>='A')||(c<='9'&&c>='0'))
 #endif

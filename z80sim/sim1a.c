@@ -1,7 +1,7 @@
 /*
- * Z80SIM  -  a	Z80-CPU	simulator
+ * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 1987-2014 by Udo Munk
+ * Copyright (C) 1987-2015 by Udo Munk
  *
  * History:
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
@@ -30,6 +30,7 @@
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
  * 06-SEP-14 Release 1.24 bugfixes and improvements
+ * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
  */
 
 #include <unistd.h>
@@ -47,7 +48,7 @@ void check_gui_break(void);
 #endif
 
 static int op_trap(void), op_nop(void), op_hlt(void), op_stc(void);
-static int op_cmc(void), op_cma(void), op_daa(void), op_ei(void), op_di(void);;
+static int op_cmc(void), op_cma(void), op_daa(void), op_ei(void), op_di(void);
 static int op_out(void), op_in(void);
 static int op_mvian(void), op_mvibn(void), op_mvicn(void), op_mvidn(void);
 static int op_mvien(void), op_mvihn(void), op_mviln(void);
@@ -127,263 +128,263 @@ static int op_rst4(void), op_rst5(void), op_rst6(void), op_rst7(void);
  */
 void cpu_8080(void)
 {
-	static int (*op_sim[256]) (void) =	{
-		op_nop,				/* 0x00	*/
-		op_lxibnn,			/* 0x01	*/
-		op_staxb,			/* 0x02	*/
-		op_inxb,			/* 0x03	*/
-		op_inrb,			/* 0x04	*/
-		op_dcrb,			/* 0x05	*/
-		op_mvibn,			/* 0x06	*/
-		op_rlc,				/* 0x07	*/
-		op_trap,			/* 0x08	*/
-		op_dadb,			/* 0x09	*/
-		op_ldaxb,			/* 0x0a	*/
-		op_dcxb,			/* 0x0b	*/
-		op_inrc,			/* 0x0c	*/
-		op_dcrc,			/* 0x0d	*/
-		op_mvicn,			/* 0x0e	*/
-		op_rrc,				/* 0x0f	*/
-		op_trap,			/* 0x10	*/
-		op_lxidnn,			/* 0x11	*/
-		op_staxd,			/* 0x12	*/
-		op_inxd,			/* 0x13	*/
-		op_inrd,			/* 0x14	*/
-		op_dcrd,			/* 0x15	*/
-		op_mvidn,			/* 0x16	*/
-		op_ral,				/* 0x17	*/
-		op_trap,			/* 0x18	*/
-		op_dadd,			/* 0x19	*/
-		op_ldaxd,			/* 0x1a	*/
-		op_dcxd,			/* 0x1b	*/
-		op_inre,			/* 0x1c	*/
-		op_dcre,			/* 0x1d	*/
-		op_mvien,			/* 0x1e	*/
-		op_rar,				/* 0x1f	*/
-		op_trap,			/* 0x20	*/
-		op_lxihnn,			/* 0x21	*/
-		op_shldnn,			/* 0x22	*/
-		op_inxh,			/* 0x23	*/
-		op_inrh,			/* 0x24	*/
-		op_dcrh,			/* 0x25	*/
-		op_mvihn,			/* 0x26	*/
-		op_daa,				/* 0x27	*/
-		op_trap,			/* 0x28	*/
-		op_dadh,			/* 0x29	*/
-		op_lhldnn,			/* 0x2a	*/
-		op_dcxh,			/* 0x2b	*/
-		op_inrl,			/* 0x2c	*/
-		op_dcrl,			/* 0x2d	*/
-		op_mviln,			/* 0x2e	*/
-		op_cma,				/* 0x2f	*/
-		op_trap,			/* 0x30	*/
-		op_lxispnn,			/* 0x31	*/
-		op_stann,			/* 0x32	*/
-		op_inxsp,			/* 0x33	*/
-		op_inrm,			/* 0x34	*/
-		op_dcrm,			/* 0x35	*/
-		op_mvimn,			/* 0x36	*/
-		op_stc,				/* 0x37	*/
-		op_trap,			/* 0x38	*/
-		op_dadsp,			/* 0x39	*/
-		op_ldann,			/* 0x3a	*/
-		op_dcxsp,			/* 0x3b	*/
-		op_inra,			/* 0x3c	*/
-		op_dcra,			/* 0x3d	*/
-		op_mvian,			/* 0x3e	*/
-		op_cmc,				/* 0x3f	*/
-		op_movbb,			/* 0x40	*/
-		op_movbc,			/* 0x41	*/
-		op_movbd,			/* 0x42	*/
-		op_movbe,			/* 0x43	*/
-		op_movbh,			/* 0x44	*/
-		op_movbl,			/* 0x45	*/
-		op_movbm,			/* 0x46	*/
-		op_movba,			/* 0x47	*/
-		op_movcb,			/* 0x48	*/
-		op_movcc,			/* 0x49	*/
-		op_movcd,			/* 0x4a	*/
-		op_movce,			/* 0x4b	*/
-		op_movch,			/* 0x4c	*/
-		op_movcl,			/* 0x4d	*/
-		op_movcm,			/* 0x4e	*/
-		op_movca,			/* 0x4f	*/
-		op_movdb,			/* 0x50	*/
-		op_movdc,			/* 0x51	*/
-		op_movdd,			/* 0x52	*/
-		op_movde,			/* 0x53	*/
-		op_movdh,			/* 0x54	*/
-		op_movdl,			/* 0x55	*/
-		op_movdm,			/* 0x56	*/
-		op_movda,			/* 0x57	*/
-		op_moveb,			/* 0x58	*/
-		op_movec,			/* 0x59	*/
-		op_moved,			/* 0x5a	*/
-		op_movee,			/* 0x5b	*/
-		op_moveh,			/* 0x5c	*/
-		op_movel,			/* 0x5d	*/
-		op_movem,			/* 0x5e	*/
-		op_movea,			/* 0x5f	*/
-		op_movhb,			/* 0x60	*/
-		op_movhc,			/* 0x61	*/
-		op_movhd,			/* 0x62	*/
-		op_movhe,			/* 0x63	*/
-		op_movhh,			/* 0x64	*/
-		op_movhl,			/* 0x65	*/
-		op_movhm,			/* 0x66	*/
-		op_movha,			/* 0x67	*/
-		op_movlb,			/* 0x68	*/
-		op_movlc,			/* 0x69	*/
-		op_movld,			/* 0x6a	*/
-		op_movle,			/* 0x6b	*/
-		op_movlh,			/* 0x6c	*/
-		op_movll,			/* 0x6d	*/
-		op_movlm,			/* 0x6e	*/
-		op_movla,			/* 0x6f	*/
-		op_movmb,			/* 0x70	*/
-		op_movmc,			/* 0x71	*/
-		op_movmd,			/* 0x72	*/
-		op_movme,			/* 0x73	*/
-		op_movmh,			/* 0x74	*/
-		op_movml,			/* 0x75	*/
-		op_hlt,				/* 0x76	*/
-		op_movma,			/* 0x77	*/
-		op_movab,			/* 0x78	*/
-		op_movac,			/* 0x79	*/
-		op_movad,			/* 0x7a	*/
-		op_movae,			/* 0x7b	*/
-		op_movah,			/* 0x7c	*/
-		op_moval,			/* 0x7d	*/
-		op_movam,			/* 0x7e	*/
-		op_movaa,			/* 0x7f	*/
-		op_addb,			/* 0x80	*/
-		op_addc,			/* 0x81	*/
-		op_addd,			/* 0x82	*/
-		op_adde,			/* 0x83	*/
-		op_addh,			/* 0x84	*/
-		op_addl,			/* 0x85	*/
-		op_addm,			/* 0x86	*/
-		op_adda,			/* 0x87	*/
-		op_adcb,			/* 0x88	*/
-		op_adcc,			/* 0x89	*/
-		op_adcd,			/* 0x8a	*/
-		op_adce,			/* 0x8b	*/
-		op_adch,			/* 0x8c	*/
-		op_adcl,			/* 0x8d	*/
-		op_adcm,			/* 0x8e	*/
-		op_adca,			/* 0x8f	*/
-		op_subb,			/* 0x90	*/
-		op_subc,			/* 0x91	*/
-		op_subd,			/* 0x92	*/
-		op_sube,			/* 0x93	*/
-		op_subh,			/* 0x94	*/
-		op_subl,			/* 0x95	*/
-		op_subm,			/* 0x96	*/
-		op_suba,			/* 0x97	*/
-		op_sbbb,			/* 0x98	*/
-		op_sbbc,			/* 0x99	*/
-		op_sbbd,			/* 0x9a	*/
-		op_sbbe,			/* 0x9b	*/
-		op_sbbh,			/* 0x9c	*/
-		op_sbbl,			/* 0x9d	*/
-		op_sbbm,			/* 0x9e	*/
-		op_sbba,			/* 0x9f	*/
-		op_anab,			/* 0xa0	*/
-		op_anac,			/* 0xa1	*/
-		op_anad,			/* 0xa2	*/
-		op_anae,			/* 0xa3	*/
-		op_anah,			/* 0xa4	*/
-		op_anal,			/* 0xa5	*/
-		op_anam,			/* 0xa6	*/
-		op_anaa,			/* 0xa7	*/
-		op_xrab,			/* 0xa8	*/
-		op_xrac,			/* 0xa9	*/
-		op_xrad,			/* 0xaa	*/
-		op_xrae,			/* 0xab	*/
-		op_xrah,			/* 0xac	*/
-		op_xral,			/* 0xad	*/
-		op_xram,			/* 0xae	*/
-		op_xraa,			/* 0xaf	*/
-		op_orab,			/* 0xb0	*/
-		op_orac,			/* 0xb1	*/
-		op_orad,			/* 0xb2	*/
-		op_orae,			/* 0xb3	*/
-		op_orah,			/* 0xb4	*/
-		op_oral,			/* 0xb5	*/
-		op_oram,			/* 0xb6	*/
-		op_oraa,			/* 0xb7	*/
-		op_cmpb,			/* 0xb8	*/
-		op_cmpc,			/* 0xb9	*/
-		op_cmpd,			/* 0xba	*/
-		op_cmpe,			/* 0xbb	*/
-		op_cmph,			/* 0xbc	*/
-		op_cmpl,			/* 0xbd	*/
-		op_cmpm,			/* 0xbe	*/
-		op_cmpa,			/* 0xbf	*/
-		op_rnz,				/* 0xc0	*/
-		op_popb,			/* 0xc1	*/
-		op_jnz,				/* 0xc2	*/
-		op_jmp,				/* 0xc3	*/
-		op_cnz,				/* 0xc4	*/
-		op_pushb,			/* 0xc5	*/
-		op_adin,			/* 0xc6	*/
-		op_rst0,			/* 0xc7	*/
-		op_rz,				/* 0xc8	*/
-		op_ret,				/* 0xc9	*/
-		op_jz,				/* 0xca	*/
-		op_trap,			/* 0xcb	*/
-		op_cz,				/* 0xcc	*/
-		op_call,			/* 0xcd	*/
-		op_acin,			/* 0xce	*/
-		op_rst1,			/* 0xcf	*/
-		op_rnc,				/* 0xd0	*/
-		op_popd,			/* 0xd1	*/
-		op_jnc,				/* 0xd2	*/
-		op_out,				/* 0xd3	*/
-		op_cnc,				/* 0xd4	*/
-		op_pushd,			/* 0xd5	*/
-		op_suin,			/* 0xd6	*/
-		op_rst2,			/* 0xd7	*/
-		op_rc,				/* 0xd8	*/
-		op_trap,			/* 0xd9	*/
-		op_jc,				/* 0xda	*/
-		op_in,				/* 0xdb	*/
-		op_cc,				/* 0xdc	*/
-		op_trap,			/* 0xdd	*/
-		op_sbin,			/* 0xde	*/
-		op_rst3,			/* 0xdf	*/
-		op_rpo,				/* 0xe0	*/
-		op_poph,			/* 0xe1	*/
-		op_jpo,				/* 0xe2	*/
-		op_xthl,			/* 0xe3	*/
-		op_cpo,				/* 0xe4	*/
-		op_pushh,			/* 0xe5	*/
-		op_anin,			/* 0xe6	*/
-		op_rst4,			/* 0xe7	*/
-		op_rpe,				/* 0xe8	*/
-		op_pchl,			/* 0xe9	*/
-		op_jpe,				/* 0xea	*/
-		op_xchg,			/* 0xeb	*/
-		op_cpe,				/* 0xec	*/
-		op_trap,			/* 0xed	*/
-		op_xrin,			/* 0xee	*/
-		op_rst5,			/* 0xef	*/
-		op_rp,				/* 0xf0	*/
-		op_poppsw,			/* 0xf1	*/
-		op_jp,				/* 0xf2	*/
-		op_di,				/* 0xf3	*/
-		op_cp,				/* 0xf4	*/
-		op_pushpsw,			/* 0xf5	*/
-		op_orin,			/* 0xf6	*/
-		op_rst6,			/* 0xf7	*/
-		op_rm,				/* 0xf8	*/
-		op_sphl,			/* 0xf9	*/
-		op_jm,				/* 0xfa	*/
-		op_ei,				/* 0xfb	*/
-		op_cm,				/* 0xfc	*/
-		op_trap,			/* 0xfd	*/
-		op_cpin,			/* 0xfe	*/
-		op_rst7				/* 0xff	*/
+	static int (*op_sim[256]) (void) = {
+		op_nop,				/* 0x00 */
+		op_lxibnn,			/* 0x01 */
+		op_staxb,			/* 0x02 */
+		op_inxb,			/* 0x03 */
+		op_inrb,			/* 0x04 */
+		op_dcrb,			/* 0x05 */
+		op_mvibn,			/* 0x06 */
+		op_rlc,				/* 0x07 */
+		op_trap,			/* 0x08 */
+		op_dadb,			/* 0x09 */
+		op_ldaxb,			/* 0x0a */
+		op_dcxb,			/* 0x0b */
+		op_inrc,			/* 0x0c */
+		op_dcrc,			/* 0x0d */
+		op_mvicn,			/* 0x0e */
+		op_rrc,				/* 0x0f */
+		op_trap,			/* 0x10 */
+		op_lxidnn,			/* 0x11 */
+		op_staxd,			/* 0x12 */
+		op_inxd,			/* 0x13 */
+		op_inrd,			/* 0x14 */
+		op_dcrd,			/* 0x15 */
+		op_mvidn,			/* 0x16 */
+		op_ral,				/* 0x17 */
+		op_trap,			/* 0x18 */
+		op_dadd,			/* 0x19 */
+		op_ldaxd,			/* 0x1a */
+		op_dcxd,			/* 0x1b */
+		op_inre,			/* 0x1c */
+		op_dcre,			/* 0x1d */
+		op_mvien,			/* 0x1e */
+		op_rar,				/* 0x1f */
+		op_trap,			/* 0x20 */
+		op_lxihnn,			/* 0x21 */
+		op_shldnn,			/* 0x22 */
+		op_inxh,			/* 0x23 */
+		op_inrh,			/* 0x24 */
+		op_dcrh,			/* 0x25 */
+		op_mvihn,			/* 0x26 */
+		op_daa,				/* 0x27 */
+		op_trap,			/* 0x28 */
+		op_dadh,			/* 0x29 */
+		op_lhldnn,			/* 0x2a */
+		op_dcxh,			/* 0x2b */
+		op_inrl,			/* 0x2c */
+		op_dcrl,			/* 0x2d */
+		op_mviln,			/* 0x2e */
+		op_cma,				/* 0x2f */
+		op_trap,			/* 0x30 */
+		op_lxispnn,			/* 0x31 */
+		op_stann,			/* 0x32 */
+		op_inxsp,			/* 0x33 */
+		op_inrm,			/* 0x34 */
+		op_dcrm,			/* 0x35 */
+		op_mvimn,			/* 0x36 */
+		op_stc,				/* 0x37 */
+		op_trap,			/* 0x38 */
+		op_dadsp,			/* 0x39 */
+		op_ldann,			/* 0x3a */
+		op_dcxsp,			/* 0x3b */
+		op_inra,			/* 0x3c */
+		op_dcra,			/* 0x3d */
+		op_mvian,			/* 0x3e */
+		op_cmc,				/* 0x3f */
+		op_movbb,			/* 0x40 */
+		op_movbc,			/* 0x41 */
+		op_movbd,			/* 0x42 */
+		op_movbe,			/* 0x43 */
+		op_movbh,			/* 0x44 */
+		op_movbl,			/* 0x45 */
+		op_movbm,			/* 0x46 */
+		op_movba,			/* 0x47 */
+		op_movcb,			/* 0x48 */
+		op_movcc,			/* 0x49 */
+		op_movcd,			/* 0x4a */
+		op_movce,			/* 0x4b */
+		op_movch,			/* 0x4c */
+		op_movcl,			/* 0x4d */
+		op_movcm,			/* 0x4e */
+		op_movca,			/* 0x4f */
+		op_movdb,			/* 0x50 */
+		op_movdc,			/* 0x51 */
+		op_movdd,			/* 0x52 */
+		op_movde,			/* 0x53 */
+		op_movdh,			/* 0x54 */
+		op_movdl,			/* 0x55 */
+		op_movdm,			/* 0x56 */
+		op_movda,			/* 0x57 */
+		op_moveb,			/* 0x58 */
+		op_movec,			/* 0x59 */
+		op_moved,			/* 0x5a */
+		op_movee,			/* 0x5b */
+		op_moveh,			/* 0x5c */
+		op_movel,			/* 0x5d */
+		op_movem,			/* 0x5e */
+		op_movea,			/* 0x5f */
+		op_movhb,			/* 0x60 */
+		op_movhc,			/* 0x61 */
+		op_movhd,			/* 0x62 */
+		op_movhe,			/* 0x63 */
+		op_movhh,			/* 0x64 */
+		op_movhl,			/* 0x65 */
+		op_movhm,			/* 0x66 */
+		op_movha,			/* 0x67 */
+		op_movlb,			/* 0x68 */
+		op_movlc,			/* 0x69 */
+		op_movld,			/* 0x6a */
+		op_movle,			/* 0x6b */
+		op_movlh,			/* 0x6c */
+		op_movll,			/* 0x6d */
+		op_movlm,			/* 0x6e */
+		op_movla,			/* 0x6f */
+		op_movmb,			/* 0x70 */
+		op_movmc,			/* 0x71 */
+		op_movmd,			/* 0x72 */
+		op_movme,			/* 0x73 */
+		op_movmh,			/* 0x74 */
+		op_movml,			/* 0x75 */
+		op_hlt,				/* 0x76 */
+		op_movma,			/* 0x77 */
+		op_movab,			/* 0x78 */
+		op_movac,			/* 0x79 */
+		op_movad,			/* 0x7a */
+		op_movae,			/* 0x7b */
+		op_movah,			/* 0x7c */
+		op_moval,			/* 0x7d */
+		op_movam,			/* 0x7e */
+		op_movaa,			/* 0x7f */
+		op_addb,			/* 0x80 */
+		op_addc,			/* 0x81 */
+		op_addd,			/* 0x82 */
+		op_adde,			/* 0x83 */
+		op_addh,			/* 0x84 */
+		op_addl,			/* 0x85 */
+		op_addm,			/* 0x86 */
+		op_adda,			/* 0x87 */
+		op_adcb,			/* 0x88 */
+		op_adcc,			/* 0x89 */
+		op_adcd,			/* 0x8a */
+		op_adce,			/* 0x8b */
+		op_adch,			/* 0x8c */
+		op_adcl,			/* 0x8d */
+		op_adcm,			/* 0x8e */
+		op_adca,			/* 0x8f */
+		op_subb,			/* 0x90 */
+		op_subc,			/* 0x91 */
+		op_subd,			/* 0x92 */
+		op_sube,			/* 0x93 */
+		op_subh,			/* 0x94 */
+		op_subl,			/* 0x95 */
+		op_subm,			/* 0x96 */
+		op_suba,			/* 0x97 */
+		op_sbbb,			/* 0x98 */
+		op_sbbc,			/* 0x99 */
+		op_sbbd,			/* 0x9a */
+		op_sbbe,			/* 0x9b */
+		op_sbbh,			/* 0x9c */
+		op_sbbl,			/* 0x9d */
+		op_sbbm,			/* 0x9e */
+		op_sbba,			/* 0x9f */
+		op_anab,			/* 0xa0 */
+		op_anac,			/* 0xa1 */
+		op_anad,			/* 0xa2 */
+		op_anae,			/* 0xa3 */
+		op_anah,			/* 0xa4 */
+		op_anal,			/* 0xa5 */
+		op_anam,			/* 0xa6 */
+		op_anaa,			/* 0xa7 */
+		op_xrab,			/* 0xa8 */
+		op_xrac,			/* 0xa9 */
+		op_xrad,			/* 0xaa */
+		op_xrae,			/* 0xab */
+		op_xrah,			/* 0xac */
+		op_xral,			/* 0xad */
+		op_xram,			/* 0xae */
+		op_xraa,			/* 0xaf */
+		op_orab,			/* 0xb0 */
+		op_orac,			/* 0xb1 */
+		op_orad,			/* 0xb2 */
+		op_orae,			/* 0xb3 */
+		op_orah,			/* 0xb4 */
+		op_oral,			/* 0xb5 */
+		op_oram,			/* 0xb6 */
+		op_oraa,			/* 0xb7 */
+		op_cmpb,			/* 0xb8 */
+		op_cmpc,			/* 0xb9 */
+		op_cmpd,			/* 0xba */
+		op_cmpe,			/* 0xbb */
+		op_cmph,			/* 0xbc */
+		op_cmpl,			/* 0xbd */
+		op_cmpm,			/* 0xbe */
+		op_cmpa,			/* 0xbf */
+		op_rnz,				/* 0xc0 */
+		op_popb,			/* 0xc1 */
+		op_jnz,				/* 0xc2 */
+		op_jmp,				/* 0xc3 */
+		op_cnz,				/* 0xc4 */
+		op_pushb,			/* 0xc5 */
+		op_adin,			/* 0xc6 */
+		op_rst0,			/* 0xc7 */
+		op_rz,				/* 0xc8 */
+		op_ret,				/* 0xc9 */
+		op_jz,				/* 0xca */
+		op_trap,			/* 0xcb */
+		op_cz,				/* 0xcc */
+		op_call,			/* 0xcd */
+		op_acin,			/* 0xce */
+		op_rst1,			/* 0xcf */
+		op_rnc,				/* 0xd0 */
+		op_popd,			/* 0xd1 */
+		op_jnc,				/* 0xd2 */
+		op_out,				/* 0xd3 */
+		op_cnc,				/* 0xd4 */
+		op_pushd,			/* 0xd5 */
+		op_suin,			/* 0xd6 */
+		op_rst2,			/* 0xd7 */
+		op_rc,				/* 0xd8 */
+		op_trap,			/* 0xd9 */
+		op_jc,				/* 0xda */
+		op_in,				/* 0xdb */
+		op_cc,				/* 0xdc */
+		op_trap,			/* 0xdd */
+		op_sbin,			/* 0xde */
+		op_rst3,			/* 0xdf */
+		op_rpo,				/* 0xe0 */
+		op_poph,			/* 0xe1 */
+		op_jpo,				/* 0xe2 */
+		op_xthl,			/* 0xe3 */
+		op_cpo,				/* 0xe4 */
+		op_pushh,			/* 0xe5 */
+		op_anin,			/* 0xe6 */
+		op_rst4,			/* 0xe7 */
+		op_rpe,				/* 0xe8 */
+		op_pchl,			/* 0xe9 */
+		op_jpe,				/* 0xea */
+		op_xchg,			/* 0xeb */
+		op_cpe,				/* 0xec */
+		op_trap,			/* 0xed */
+		op_xrin,			/* 0xee */
+		op_rst5,			/* 0xef */
+		op_rp,				/* 0xf0 */
+		op_poppsw,			/* 0xf1 */
+		op_jp,				/* 0xf2 */
+		op_di,				/* 0xf3 */
+		op_cp,				/* 0xf4 */
+		op_pushpsw,			/* 0xf5 */
+		op_orin,			/* 0xf6 */
+		op_rst6,			/* 0xf7 */
+		op_rm,				/* 0xf8 */
+		op_sphl,			/* 0xf9 */
+		op_jm,				/* 0xfa */
+		op_ei,				/* 0xfb */
+		op_cm,				/* 0xfc */
+		op_trap,			/* 0xfd */
+		op_cpin,			/* 0xfe */
+		op_rst7				/* 0xff */
 	};
 
 #ifdef WANT_TIM
@@ -461,12 +462,12 @@ void cpu_8080(void)
 
 #ifdef WANT_SPC
 			if (STACK <= ram)
-				STACK =	ram + 65536L;
+				STACK = ram + 65536L;
 #endif
 			*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 			if (STACK <= ram)
-				STACK =	ram + 65536L;
+				STACK = ram + 65536L;
 #endif
 			*--STACK = (PC - ram);
 			switch (int_data) {
@@ -566,7 +567,6 @@ static int op_nop(void)                 /* NOP */
 
 static int op_hlt(void)			/* HLT */
 {
-	extern int busy_loop_cnt[];
 	struct timespec timer;
 
 #ifdef BUS_8080
@@ -574,33 +574,54 @@ static int op_hlt(void)			/* HLT */
 #endif
 
 #ifndef FRONTPANEL
-	if (IFF == 0)	{
+	/* without a frontpanel DI + HALT stops the machine */
+	if (IFF == 0)   {
 		cpu_error = OPHALT;
 		cpu_state = STOPPED;
-	} else
-#endif
+	} else {
+	/* else wait for INT or user interrupt */
 		while ((int_int == 0) && (cpu_state == CONTIN_RUN)) {
-#ifdef FRONTPANEL
-			fp_clock += 4;
-			fp_sampleData();
-#endif
 			timer.tv_sec = 0;
 			timer.tv_nsec = 1000000L;
 			nanosleep(&timer, NULL);
 			R += 9999;
 		}
-
-	if (int_int) {
+	}
 #ifdef BUS_8080
+	if (int_int)
 		cpu_bus = CPU_INTA | CPU_WO | CPU_HLTA | CPU_M1;
 #endif
-#ifdef FRONTPANEL
-		fp_clock += 7;
-		fp_sampleLightGroup(0, 0);
-#endif
-	}
-
 	busy_loop_cnt[0] = 0;
+
+#else
+
+	/* INT disabled, wait for frontpanel reset or user interrupt */
+	if (IFF == 0)   {
+		while (cpu_state == CONTIN_RUN) {
+			fp_clock += 4;
+			fp_sampleData();
+			timer.tv_sec = 0;
+			timer.tv_nsec = 1000000L;
+			nanosleep(&timer, NULL);
+			R += 9999;
+		}
+	} else {
+	/* else wait for INT, frontpanel reset or user interrupt */
+		while ((int_int == 0) && (cpu_state == CONTIN_RUN)) {
+			fp_clock += 4;
+			fp_sampleData();
+			timer.tv_sec = 0;
+			timer.tv_nsec = 1000000L;
+			nanosleep(&timer, NULL);
+			R += 9999;
+		}
+		if (int_int) {
+			cpu_bus = CPU_INTA | CPU_WO | CPU_HLTA | CPU_M1;
+			fp_clock += 7;
+			fp_sampleLightGroup(0, 0);
+		}
+	}
+#endif
 
 	return(7);
 }
@@ -613,7 +634,7 @@ static int op_stc(void)			/* STC */
 
 static int op_cmc(void)			/* CMC */
 {
-	if (F &	C_FLAG)	{
+	if (F &	C_FLAG) {
 		F &= ~C_FLAG;
 	} else {
 		F |= C_FLAG;
@@ -629,11 +650,11 @@ static int op_cma(void)			/* CMA */
 
 static int op_daa(void)			/* DAA */
 {
-	if (((A	& 0x0f)	> 9) ||	(F & H_FLAG)) {
+	if (((A	& 0x0f) > 9) ||	(F & H_FLAG)) {
 		(((A & 0x0f) + 6) > 0x0f) ? (F |= H_FLAG) : (F &= ~H_FLAG);
 		A += 6;
 	}
-	if (((A	& 0xf0)	> 0x90)	|| (F &	C_FLAG)) {
+	if (((A	& 0xf0) > 0x90) || (F &	C_FLAG)) {
 		if (((A & 0xf0) + 0x60) > 0xf0)
 			F |= C_FLAG;
 		A += 0x60;
@@ -817,7 +838,7 @@ static int op_staxb(void)		/* STAX B */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(B << 8) + C) =	A;
+	*(ram + (B << 8) + C) = A;
 	return(7);
 }
 
@@ -829,7 +850,7 @@ static int op_staxd(void)		/* STAX D */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(D << 8) + E) =	A;
+	*(ram + (D << 8) + E) = A;
 	return(7);
 }
 
@@ -845,7 +866,7 @@ static int op_stann(void)		/* STA nn */
 #endif
 	i = *PC++;
 	i += *PC++ << 8;
-	*(ram +	i) = A;
+	*(ram + i) = A;
 	return(13);
 }
 
@@ -857,7 +878,7 @@ static int op_movma(void)		/* MOV M,A */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	A;
+	*(ram + (H << 8) + L) = A;
 	return(7);
 }
 
@@ -869,7 +890,7 @@ static int op_movmb(void)		/* MOV M,B */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	B;
+	*(ram + (H << 8) + L) = B;
 	return(7);
 }
 
@@ -881,7 +902,7 @@ static int op_movmc(void)		/* MOV M,C */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	C;
+	*(ram + (H << 8) + L) = C;
 	return(7);
 }
 
@@ -893,7 +914,7 @@ static int op_movmd(void)		/* MOV M,D */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	D;
+	*(ram + (H << 8) + L) = D;
 	return(7);
 }
 
@@ -905,7 +926,7 @@ static int op_movme(void)		/* MOV M,E */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	E;
+	*(ram + (H << 8) + L) = E;
 	return(7);
 }
 
@@ -917,7 +938,7 @@ static int op_movmh(void)		/* MOV M,H */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	H;
+	*(ram + (H << 8) + L) = H;
 	return(7);
 }
 
@@ -929,7 +950,7 @@ static int op_movml(void)		/* MOV M,L */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	L;
+	*(ram + (H << 8) + L) = L;
 	return(7);
 }
 
@@ -941,7 +962,7 @@ static int op_mvimn(void)		/* MVI M,n */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	*(ram +	(H << 8) + L) =	*PC++;
+	*(ram + (H << 8) + L) = *PC++;
 	return(10);
 }
 
@@ -1363,14 +1384,14 @@ static int op_lxispnn(void)		/* LXI SP,nn */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	STACK =	ram + *PC++;
+	STACK = ram + *PC++;
 	STACK += *PC++ << 8;
 	return(10);
 }
 
 static int op_sphl(void)		/* SPHL */
 {
-	STACK =	ram + (H << 8) + L;
+	STACK = ram + (H << 8) + L;
 	return(5);
 }
 
@@ -1387,7 +1408,7 @@ static int op_lhldnn(void)		/* LHLD nn */
 	i = *PC++;
 	i += *PC++ << 8;
 	L = *(ram + i);
-	H = *(ram + i +	1);
+	H = *(ram + i + 1);
 	return(16);
 }
 
@@ -1403,8 +1424,8 @@ static int op_shldnn(void)		/* SHLD nn */
 #endif
 	i = *PC++;
 	i += *PC++ << 8;
-	*(ram +	i) = L;
-	*(ram +	i + 1) = H;
+	*(ram + i) = L;
+	*(ram + i + 1) = H;
 	return(16);
 }
 
@@ -1437,7 +1458,7 @@ static int op_inxsp(void)		/* INX SP */
 	STACK++;
 #ifdef WANT_SPC
 	if (STACK > ram	+ 65535)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	return(5);
 }
@@ -1471,7 +1492,7 @@ static int op_dcxsp(void)		/* DCX SP */
 	STACK--;
 #ifdef WANT_SPC
 	if (STACK < ram)
-		STACK =	ram + 65535;
+		STACK = ram + 65535;
 #endif
 	return(5);
 }
@@ -1712,7 +1733,7 @@ static int op_oram(void)		/* ORA M */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	A |= *(ram + (H	<< 8) +	L);
+	A |= *(ram + (H	<< 8) + L);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
@@ -1812,7 +1833,7 @@ static int op_xram(void)		/* XRA M */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	A ^= *(ram + (H	<< 8) +	L);
+	A ^= *(ram + (H	<< 8) + L);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
@@ -1957,7 +1978,7 @@ static int op_adca(void)		/* ADC A */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	((A & 0xf) + (A	& 0xf) + carry > 0xf) ?	(F |= H_FLAG) :	(F &= ~H_FLAG);
 	((A << 1) + carry > 255) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = (A << 1) + carry;
@@ -1971,7 +1992,7 @@ static int op_adcb(void)		/* ADC B */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	((A & 0xf) + (B	& 0xf) + carry > 0xf) ?	(F |= H_FLAG) :	(F &= ~H_FLAG);
 	(A + B + carry > 255) ?	(F |= C_FLAG) :	(F &= ~C_FLAG);
 	A = A + B + carry;
@@ -1985,7 +2006,7 @@ static int op_adcc(void)		/* ADC C */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	((A & 0xf) + (C	& 0xf) + carry > 0xf) ?	(F |= H_FLAG) :	(F &= ~H_FLAG);
 	(A + C + carry > 255) ?	(F |= C_FLAG) :	(F &= ~C_FLAG);
 	A = A + C + carry;
@@ -1999,7 +2020,7 @@ static int op_adcd(void)		/* ADC D */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	((A & 0xf) + (D	& 0xf) + carry > 0xf) ?	(F |= H_FLAG) :	(F &= ~H_FLAG);
 	(A + D + carry > 255) ?	(F |= C_FLAG) :	(F &= ~C_FLAG);
 	A = A + D + carry;
@@ -2013,7 +2034,7 @@ static int op_adce(void)		/* ADC E */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	((A & 0xf) + (E	& 0xf) + carry > 0xf) ?	(F |= H_FLAG) :	(F &= ~H_FLAG);
 	(A + E + carry > 255) ?	(F |= C_FLAG) :	(F &= ~C_FLAG);
 	A = A + E + carry;
@@ -2027,7 +2048,7 @@ static int op_adch(void)		/* ADC H */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	((A & 0xf) + (H	& 0xf) + carry > 0xf) ?	(F |= H_FLAG) :	(F &= ~H_FLAG);
 	(A + H + carry > 255) ?	(F |= C_FLAG) :	(F &= ~C_FLAG);
 	A = A + H + carry;
@@ -2041,7 +2062,7 @@ static int op_adcl(void)		/* ADC L */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	((A & 0xf) + (L	& 0xf) + carry > 0xf) ?	(F |= H_FLAG) :	(F &= ~H_FLAG);
 	(A + L + carry > 255) ?	(F |= C_FLAG) :	(F &= ~C_FLAG);
 	A = A + L + carry;
@@ -2063,7 +2084,7 @@ static int op_adcm(void)		/* ADC M */
 	fp_sampleLightGroup(0, 0);
 #endif
 	P = *(ram + (H << 8) + L);
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	((A & 0xf) + (P	& 0xf) + carry > 0xf) ?	(F |= H_FLAG) :	(F &= ~H_FLAG);
 	(A + P + carry > 255) ?	(F |= C_FLAG) :	(F &= ~C_FLAG);
 	A = A + P + carry;
@@ -2084,7 +2105,7 @@ static int op_acin(void)		/* ACI n */
 #ifdef FRONTPANEL
 	fp_sampleLightGroup(0, 0);
 #endif
-	carry =	(F & C_FLAG) ? 1 : 0;
+	carry = (F & C_FLAG) ? 1 : 0;
 	P = *PC++;
 	((A & 0xf) + (P	& 0xf) + carry > 0xf) ?	(F |= H_FLAG) :	(F &= ~H_FLAG);
 	(A + P + carry > 255) ?	(F |= C_FLAG) :	(F &= ~C_FLAG);
@@ -2105,8 +2126,8 @@ static int op_suba(void)		/* SUB A */
 
 static int op_subb(void)		/* SUB B */
 {
-	((B & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(B > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((B & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(B > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - B;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2116,8 +2137,8 @@ static int op_subb(void)		/* SUB B */
 
 static int op_subc(void)		/* SUB C */
 {
-	((C & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(C > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((C & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(C > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - C;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2127,8 +2148,8 @@ static int op_subc(void)		/* SUB C */
 
 static int op_subd(void)		/* SUB D */
 {
-	((D & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(D > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((D & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(D > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - D;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2138,8 +2159,8 @@ static int op_subd(void)		/* SUB D */
 
 static int op_sube(void)		/* SUB E */
 {
-	((E & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(E > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((E & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(E > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - E;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2149,8 +2170,8 @@ static int op_sube(void)		/* SUB E */
 
 static int op_subh(void)		/* SUB H */
 {
-	((H & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(H > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((H & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(H > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - H;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2160,8 +2181,8 @@ static int op_subh(void)		/* SUB H */
 
 static int op_subl(void)		/* SUB L */
 {
-	((L & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(L > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((L & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(L > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - L;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2180,8 +2201,8 @@ static int op_subm(void)		/* SUB M */
 	fp_sampleLightGroup(0, 0);
 #endif
 	P = *(ram + (H << 8) + L);
-	((P & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(P > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((P & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(P > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - P;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2199,8 +2220,8 @@ static int op_suin(void)		/* SUI n */
 	fp_sampleLightGroup(0, 0);
 #endif
 	P = *PC++;
-	((P & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(P > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((P & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(P > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - P;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2210,7 +2231,7 @@ static int op_suin(void)		/* SUI n */
 
 static int op_sbba(void)		/* SBB A */
 {
-	if (F &	C_FLAG)	{
+	if (F &	C_FLAG) {
 		F |= S_FLAG | H_FLAG | C_FLAG;
 		F &= ~Z_FLAG;
 		A = 255;
@@ -2227,9 +2248,9 @@ static int op_sbbb(void)		/* SBB B */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
-	((B & 0xf) + carry > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(B + carry > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	carry = (F & C_FLAG) ? 1 : 0;
+	((B & 0xf) + carry > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(B + carry > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - B - carry;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2241,9 +2262,9 @@ static int op_sbbc(void)		/* SBB C */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
-	((C & 0xf) + carry > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(C + carry > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	carry = (F & C_FLAG) ? 1 : 0;
+	((C & 0xf) + carry > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(C + carry > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - C - carry;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2255,9 +2276,9 @@ static int op_sbbd(void)		/* SBB D */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
-	((D & 0xf) + carry > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(D + carry > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	carry = (F & C_FLAG) ? 1 : 0;
+	((D & 0xf) + carry > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(D + carry > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - D - carry;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2269,9 +2290,9 @@ static int op_sbbe(void)		/* SBB E */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
-	((E & 0xf) + carry > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(E + carry > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	carry = (F & C_FLAG) ? 1 : 0;
+	((E & 0xf) + carry > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(E + carry > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A =  A - E - carry;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2283,9 +2304,9 @@ static int op_sbbh(void)		/* SBB H */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
-	((H & 0xf) + carry > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(H + carry > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	carry = (F & C_FLAG) ? 1 : 0;
+	((H & 0xf) + carry > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(H + carry > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - H - carry;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2297,9 +2318,9 @@ static int op_sbbl(void)		/* SBB L */
 {
 	register int carry;
 
-	carry =	(F & C_FLAG) ? 1 : 0;
-	((L & 0xf) + carry > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(L + carry > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	carry = (F & C_FLAG) ? 1 : 0;
+	((L & 0xf) + carry > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(L + carry > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - L - carry;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2319,9 +2340,9 @@ static int op_sbbm(void)		/* SBB M */
 	fp_sampleLightGroup(0, 0);
 #endif
 	P = *(ram + (H << 8) + L);
-	carry =	(F & C_FLAG) ? 1 : 0;
-	((P & 0xf) + carry > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(P + carry > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	carry = (F & C_FLAG) ? 1 : 0;
+	((P & 0xf) + carry > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(P + carry > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - P - carry;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2341,9 +2362,9 @@ static int op_sbin(void)		/* SBI n */
 	fp_sampleLightGroup(0, 0);
 #endif
 	P = *PC++;
-	carry =	(F & C_FLAG) ? 1 : 0;
-	((P & 0xf) + carry > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(P + carry > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	carry = (F & C_FLAG) ? 1 : 0;
+	((P & 0xf) + carry > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(P + carry > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A = A - P - carry;
 	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2362,8 +2383,8 @@ static int op_cmpb(void)		/* CMP B */
 {
 	register BYTE i;
 
-	((B & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(B > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((B & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(B > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	i = A - B;
 	(parity[i]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2375,8 +2396,8 @@ static int op_cmpc(void)		/* CMP C */
 {
 	register BYTE i;
 
-	((C & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(C > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((C & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(C > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	i = A - C;
 	(parity[i]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2388,8 +2409,8 @@ static int op_cmpd(void)		/* CMP D */
 {
 	register BYTE i;
 
-	((D & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(D > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((D & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(D > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	i = A - D;
 	(parity[i]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2401,8 +2422,8 @@ static int op_cmpe(void)		/* CMP E */
 {
 	register BYTE i;
 
-	((E & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(E > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((E & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(E > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	i = A - E;
 	(parity[i]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2414,8 +2435,8 @@ static int op_cmph(void)		/* CMP H */
 {
 	register BYTE i;
 
-	((H & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(H > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((H & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(H > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	i = A - H;
 	(parity[i]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2427,8 +2448,8 @@ static int op_cmpl(void)		/* CMP L */
 {
 	register BYTE i;
 
-	((L & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(L > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((L & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(L > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	i = A - L;
 	(parity[i]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2448,8 +2469,8 @@ static int op_cmpm(void)		/* CMP M */
 	fp_sampleLightGroup(0, 0);
 #endif
 	P = *(ram + (H << 8) + L);
-	((P & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(P > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((P & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(P > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	i = A - P;
 	(parity[i]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2469,8 +2490,8 @@ static int op_cpin(void)		/* CPI n */
 	fp_sampleLightGroup(0, 0);
 #endif
 	P = *PC++;
-	((P & 0xf) > (A	& 0xf))	? (F |=	H_FLAG)	: (F &=	~H_FLAG);
-	(P > A)	? (F |=	C_FLAG)	: (F &=	~C_FLAG);
+	((P & 0xf) > (A	& 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	(P > A) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	i = A - P;
 	(parity[i]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	(i & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
@@ -2685,7 +2706,7 @@ static int op_ral(void)			/* RAL */
 	old_c_flag = F & C_FLAG;
 	(A & 128) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A <<= 1;
-	if (old_c_flag)	A |= 1;
+	if (old_c_flag) A |= 1;
 	return(4);
 }
 
@@ -2697,7 +2718,7 @@ static int op_rar(void)			/* RAR */
 	i = A &	1;
 	(i) ? (F |= C_FLAG) : (F &= ~C_FLAG);
 	A >>= 1;
-	if (old_c_flag)	A |= 128;
+	if (old_c_flag) A |= 128;
 	return(4);
 }
 
@@ -2749,12 +2770,12 @@ static int op_pushpsw(void)		/* PUSH PSW */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = A;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = F;
 	return(11);
@@ -2770,12 +2791,12 @@ static int op_pushb(void)		/* PUSH B */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = B;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = C;
 	return(11);
@@ -2791,12 +2812,12 @@ static int op_pushd(void)		/* PUSH D */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = D;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = E;
 	return(11);
@@ -2812,12 +2833,12 @@ static int op_pushh(void)		/* PUSH H */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = H;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = L;
 	return(11);
@@ -2836,12 +2857,12 @@ static int op_poppsw(void)		/* POP PSW */
 	F |= N_FLAG;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	A = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	return(10);
 }
@@ -2857,12 +2878,12 @@ static int op_popb(void)		/* POP B */
 	C = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	B = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	return(10);
 }
@@ -2878,12 +2899,12 @@ static int op_popd(void)		/* POP D */
 	E = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	D = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	return(10);
 }
@@ -2899,12 +2920,12 @@ static int op_poph(void)		/* POP H */
 	L = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	H = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	return(10);
 }
@@ -2946,7 +2967,7 @@ static int op_call(void)		/* CALL */
 	i += *PC++ << 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 #ifdef BUS_8080
 	cpu_bus = CPU_STACK;
@@ -2957,7 +2978,7 @@ static int op_call(void)		/* CALL */
 	*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram);
 	PC = ram + i;
@@ -2977,12 +2998,12 @@ static int op_ret(void)			/* RET */
 	i = *STACK++;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	i += *STACK++ << 8;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
-		STACK =	ram;
+		STACK = ram;
 #endif
 	PC = ram + i;
 	return(10);
@@ -2992,7 +3013,7 @@ static int op_jz(void)			/* JZ nn */
 {
 	register unsigned i;
 
-	if (F &	Z_FLAG)	{
+	if (F &	Z_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_MEMR;
 #endif
@@ -3030,7 +3051,7 @@ static int op_jc(void)			/* JC nn */
 {
 	register unsigned i;
 
-	if (F &	C_FLAG)	{
+	if (F &	C_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_MEMR;
 #endif
@@ -3068,7 +3089,7 @@ static int op_jpe(void)			/* JPE nn */
 {
 	register unsigned i;
 
-	if (F &	P_FLAG)	{
+	if (F &	P_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_MEMR;
 #endif
@@ -3106,7 +3127,7 @@ static int op_jm(void)			/* JM nn */
 {
 	register unsigned i;
 
-	if (F &	S_FLAG)	{
+	if (F &	S_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_MEMR;
 #endif
@@ -3144,7 +3165,7 @@ static int op_cz(void)			/* CZ nn */
 {
 	register unsigned i;
 
-	if (F &	Z_FLAG)	{
+	if (F &	Z_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_MEMR;
 #endif
@@ -3155,12 +3176,12 @@ static int op_cz(void)			/* CZ nn */
 		i += *PC++ << 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram);
 #ifdef BUS_8080
@@ -3192,12 +3213,12 @@ static int op_cnz(void)			/* CNZ nn */
 		i += *PC++ << 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram);
 #ifdef BUS_8080
@@ -3218,7 +3239,7 @@ static int op_cc(void)			/* CC nn */
 {
 	register unsigned i;
 
-	if (F &	C_FLAG)	{
+	if (F &	C_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_MEMR;
 #endif
@@ -3229,12 +3250,12 @@ static int op_cc(void)			/* CC nn */
 		i += *PC++ << 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram);
 #ifdef BUS_8080
@@ -3266,12 +3287,12 @@ static int op_cnc(void)			/* CNC nn */
 		i += *PC++ << 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 #ifdef BUS_8080
 		cpu_bus = CPU_STACK;
@@ -3292,7 +3313,7 @@ static int op_cpe(void)			/* CPE nn */
 {
 	register unsigned i;
 
-	if (F &	P_FLAG)	{
+	if (F &	P_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_MEMR;
 #endif
@@ -3303,12 +3324,12 @@ static int op_cpe(void)			/* CPE nn */
 		i += *PC++ << 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram);
 #ifdef BUS_8080
@@ -3340,12 +3361,12 @@ static int op_cpo(void)			/* CPO nn */
 		i += *PC++ << 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram);
 #ifdef BUS_8080
@@ -3366,7 +3387,7 @@ static int op_cm(void)			/* CM nn */
 {
 	register unsigned i;
 
-	if (F &	S_FLAG)	{
+	if (F &	S_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_MEMR;
 #endif
@@ -3377,12 +3398,12 @@ static int op_cm(void)			/* CM nn */
 		i += *PC++ << 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram);
 #ifdef BUS_8080
@@ -3414,12 +3435,12 @@ static int op_cp(void)			/* CP nn */
 		i += *PC++ << 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 		if (STACK <= ram)
-			STACK =	ram + 65536L;
+			STACK = ram + 65536L;
 #endif
 		*--STACK = (PC - ram);
 #ifdef BUS_8080
@@ -3440,7 +3461,7 @@ static int op_rz(void)			/* RZ */
 {
 	register unsigned i;
 
-	if (F &	Z_FLAG)	{
+	if (F &	Z_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_STACK | CPU_MEMR;
 #endif
@@ -3450,12 +3471,12 @@ static int op_rz(void)			/* RZ */
 		i = *STACK++;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		i += *STACK++ << 8;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		PC = ram + i;
 		return(11);
@@ -3478,12 +3499,12 @@ static int op_rnz(void)			/* RNZ */
 		i = *STACK++;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		i += *STACK++ << 8;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		PC = ram + i;
 		return(11);
@@ -3496,7 +3517,7 @@ static int op_rc(void)			/* RC */
 {
 	register unsigned i;
 
-	if (F &	C_FLAG)	{
+	if (F &	C_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_STACK | CPU_MEMR;
 #endif
@@ -3506,12 +3527,12 @@ static int op_rc(void)			/* RC */
 		i = *STACK++;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		i += *STACK++ << 8;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		PC = ram + i;
 		return(11);
@@ -3534,12 +3555,12 @@ static int op_rnc(void)			/* RNC */
 		i = *STACK++;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		i += *STACK++ << 8;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		PC = ram + i;
 		return(11);
@@ -3552,7 +3573,7 @@ static int op_rpe(void)			/* RPE */
 {
 	register unsigned i;
 
-	if (F &	P_FLAG)	{
+	if (F &	P_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_STACK | CPU_MEMR;
 #endif
@@ -3562,12 +3583,12 @@ static int op_rpe(void)			/* RPE */
 		i = *STACK++;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		i += *STACK++ << 8;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		PC = ram + i;
 		return(11);
@@ -3590,12 +3611,12 @@ static int op_rpo(void)			/* RPO */
 		i = *STACK++;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		i += *STACK++ << 8;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		PC = ram + i;
 		return(11);
@@ -3608,7 +3629,7 @@ static int op_rm(void)			/* RM */
 {
 	register unsigned i;
 
-	if (F &	S_FLAG)	{
+	if (F &	S_FLAG) {
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_STACK | CPU_MEMR;
 #endif
@@ -3618,12 +3639,12 @@ static int op_rm(void)			/* RM */
 		i = *STACK++;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		i += *STACK++ << 8;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		PC = ram + i;
 		return(11);
@@ -3646,12 +3667,12 @@ static int op_rp(void)			/* RP */
 		i = *STACK++;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		i += *STACK++ << 8;
 #ifdef WANT_SPC
 		if (STACK >= ram + 65536L)
-			STACK =	ram;
+			STACK = ram;
 #endif
 		PC = ram + i;
 		return(11);
@@ -3670,12 +3691,12 @@ static int op_rst0(void)		/* RST 0 */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram);
 	PC = ram;
@@ -3692,12 +3713,12 @@ static int op_rst1(void)		/* RST 1 */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram);
 	PC = ram + 0x08;
@@ -3714,12 +3735,12 @@ static int op_rst2(void)		/* RST 2 */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram);
 	PC = ram + 0x10;
@@ -3736,12 +3757,12 @@ static int op_rst3(void)		/* RST 3 */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram);
 	PC = ram + 0x18;
@@ -3758,12 +3779,12 @@ static int op_rst4(void)		/* RST 4 */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram);
 	PC = ram + 0x20;
@@ -3780,12 +3801,12 @@ static int op_rst5(void)		/* RST 5 */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram);
 	PC = ram + 0x28;
@@ -3802,12 +3823,12 @@ static int op_rst6(void)		/* RST 6 */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram);
 	PC = ram + 0x30;
@@ -3824,12 +3845,12 @@ static int op_rst7(void)		/* RST 7 */
 #endif
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram) >> 8;
 #ifdef WANT_SPC
 	if (STACK <= ram)
-		STACK =	ram + 65536L;
+		STACK = ram + 65536L;
 #endif
 	*--STACK = (PC - ram);
 	PC = ram + 0x38;

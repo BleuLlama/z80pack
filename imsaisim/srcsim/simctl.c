@@ -3,7 +3,7 @@
  *
  * This module allows operation of the system from an IMSAI 8080 front panel
  *
- * Copyright (C) 2008-2014 by Udo Munk
+ * Copyright (C) 2008-2015 by Udo Munk
  *
  * History:
  * 20-OCT-08 first version finished

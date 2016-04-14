@@ -16,6 +16,9 @@
 
 */
 
+#if defined (__MINGW32__) || defined (_WIN32) || defined (_WIN32_) || defined (__WIN32__)
+#include <windows.h>
+#endif
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <stdio.h>

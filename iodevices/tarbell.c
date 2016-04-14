@@ -3,7 +3,7 @@
  *
  * Common I/O devices used by various simulated machines
  *
- * Copyright (C) 2014 by Udo Munk
+ * Copyright (C) 2014-2015 by Udo Munk
  *
  * Emulation of a Tarbell SD 1011D S100 board
  *
@@ -12,6 +12,8 @@
  * 15-MAR-2014 some improvements for CP/M 1.3 & 1.4
  * 17-MAR-2014 close(fd) was missing in write sector lseek error case
  *    AUG-2014 some improvements
+ * 22-JAN-2015 fixed buggy ID field
+ * 11-FEB-2015 implemented write track
  */
 
 #include <unistd.h>
@@ -24,6 +26,7 @@
 #define FDC_READ	1	/* reading sector */
 #define FDC_WRITE	2	/* writing sector */
 #define FDC_READADR	3	/* read address */
+#define FDC_WRTTRK	4	/* write (format) track */
 
 /* 8" standard disks */
 #define SEC_SZ		128
@@ -117,8 +120,9 @@ void tarbell_cmd_out(BYTE data)
 		fdc_stat = 0x10;		/* record not found */
 
 	} else if ((data & 0xf0) == 0xf0) {	/* write track */
-		printf("tarbell: write track not implemented\r\n");
-		fdc_stat = 0x10;		/* record not found */
+		state = FDC_WRTTRK;
+		dcnt = 0;
+		fdc_stat = 0;
 
 	} else if ((data & 0xf0) == 0xd0) {	/* force interrupt */
 		//printf("tarbell: interrupt\r\n");
@@ -241,7 +245,7 @@ BYTE tarbell_data_in(void)
 			buf[0] = fdc_track;	/* build address field */
 			buf[1] = 0;
 			buf[2] = fdc_sec;
-			buf[3] = SEC_SZ;
+			buf[3] = 0;
 			buf[4] = 0;
 			buf[5] = 0;
 		}
@@ -268,6 +272,9 @@ BYTE tarbell_data_in(void)
 void tarbell_data_out(BYTE data)
 {
 	long pos;			/* seek position */
+	static int wrtstat;		/* state while formatting track */
+	static int bcnt;		/* byte counter for sector data */
+	static int secs;		/* # of sectors written so far */
 
 	switch (state) {
 	case FDC_WRITE:			/* write data to disk sector */
@@ -292,8 +299,7 @@ void tarbell_data_out(BYTE data)
 			if ((fd = open(disks[disk], O_RDWR)) == -1) {
 				state = FDC_IDLE;	/* abort command */
 				fdc_stat = 0x80;	/* not ready */
-				//printf("tarbell write: open error disk %d\r\n",
-				//       disk);
+				//printf("tarbell write: open error disk %d\r\n", disk);
 				return;
 			}
 
@@ -316,6 +322,57 @@ void tarbell_data_out(BYTE data)
 			state = FDC_IDLE;		/* reset DRQ */
 			fdc_stat = 0;
 			write(fd, &buf[0], SEC_SZ);
+			close(fd);
+		}
+		break;
+
+	case FDC_WRTTRK:		/* write (format) TRACK */
+		if (dcnt == 0) {
+			/* unlink disk image */
+			if (fdc_track == 0)
+				unlink(disks[disk]);
+			/* try to create new disk image */
+			if ((fd = open(disks[disk], O_RDWR|O_CREAT, 0644)) == -1) {
+				state = FDC_IDLE;	/* abort command */
+				fdc_stat = 0x80;	/* not ready */
+				return;
+			}
+			/* seek to track */
+			pos = fdc_track * SPT  * SEC_SZ;
+			if (lseek(fd, pos, SEEK_SET) == -1L) {
+				state = FDC_IDLE;	/* abort command */
+				fdc_stat = 0x10;	/* record not found */
+				close(fd);
+				return;
+			}
+			/* now wait for sector data */
+			wrtstat = 1;
+			secs = 0;
+		}
+		dcnt++;
+		/* wait for sector data address mark */
+		if (wrtstat == 1) {
+			if (data == 0xfb) {
+				wrtstat = 2;
+				bcnt = 0;
+			}
+			return;
+		}
+		/* collect bytes in buffer and write if sector complete */
+		if (wrtstat == 2) {
+			if (data != 0xf7) {
+				buf[bcnt++] = data;
+				return;
+			} else {
+				secs++;
+				write(fd, buf, bcnt);
+				wrtstat = 1;
+			}
+		}
+		/* all sectors of track written? */
+		if (secs == SPT) {
+			state = FDC_IDLE;
+			fdc_stat = 0;
 			close(fd);
 		}
 		break;
