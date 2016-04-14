@@ -6,12 +6,11 @@ CC = gcc
 # Production
 CFLAGS = -O3 -c -Wall -Wextra -U_FORTIFY_SOURCE
 
-LFLAGS = -s -L../../frontpanel -lfrontpanel -ljpeg -lGL -lGLU \
-	 -lXext -lXmu -lXt -lX11 -lm -lpthread
+# Debug
+#CLAGS = -O -g -c
 
-#CFLAGS = -g -c -Wall
-#LFLAGS = -L../../frontpanel -lfrontpanel -ljpeg -lGL -lGLU \
-#	 -lXext -lXmu -lXt -lX11 -lm -lpthread
+LFLAGS = -L../../frontpanel -lfrontpanel -ljpeg -lGL -lGLU \
+	 -lXext -lXmu -lXt -lX11 -lm -lpthread
 
 OBJ =   sim0.o \
 	sim1.o \
@@ -30,7 +29,8 @@ OBJ =   sim0.o \
 	unix_terminal.o \
 	unix_network.o \
 	cromemco-tu-art.o \
-	cromemco-fdc.o
+	cromemco-fdc.o \
+	cromemco-dazzler.o
 
 FP =	../../frontpanel/libfrontpanel.so
 
@@ -96,6 +96,9 @@ cromemco-tu-art.o : ../../iodevices/cromemco-tu-art.c
 
 cromemco-fdc.o : ../../iodevices/cromemco-fdc.c
 	$(CC) $(CFLAGS) -I./ ../../iodevices/cromemco-fdc.c
+
+cromemco-dazzler.o : ../../iodevices/cromemco-dazzler.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/cromemco-dazzler.c
 
 clean:
 	rm -f *.o

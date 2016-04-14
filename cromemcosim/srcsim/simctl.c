@@ -3,7 +3,7 @@
  *
  * This module allows operation of the system from a Cromemco Z-1 front panel
  *
- * Copyright (C) 2014-2015 by Udo Munk
+ * Copyright (C) 2014-2016 by Udo Munk
  *
  * History:
  * 15-DEC-14 first version
@@ -12,8 +12,10 @@
  * 01-JAN-15 fixed 16FDC, machine now also boots CDOS 2.58 from 8" and 5.25"
  * 01-JAN-15 fixed frontpanel switch settings, added boot flag to fp switch
  * 12-JAN-15 fdc and tu-art improvements, implemented banked memory
+ * 24-APR-15 added Cromemco DAZZLER to the machine
  */
 
+#include <X11/Xlib.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -25,6 +27,7 @@
 #include "sim.h"
 #include "simglb.h"
 #include "../../iodevices/cromemco-fdc.h"
+#include "../../iodevices/cromemco-dazzler.h"
 #include "../../iodevices/unix_terminal.h"
 #include "../../frontpanel/frontpanel.h"
 
@@ -62,6 +65,7 @@ void mon(void)
 		exit(1);
 
 	/* initialise front panel */
+	XInitThreads();
 	if (!fp_init("conf/panel.conf")) {
 		puts("frontpanel error");
 		exit(1);
@@ -351,9 +355,11 @@ void reset_clicked(int state, int val)
 			fp_led_address = 0;
 			fp_led_data = *ram;
 			cpu_bus = CPU_WO | CPU_M1 | CPU_MEMR;
+			cromemco_dazzler_off();
 		}
 		break;
 	case FP_SW_DOWN:
+		cromemco_dazzler_off();
 		break;
 	default:
 		break;
@@ -444,6 +450,7 @@ void power_clicked(int state, int val)
 		power--;
 		cpu_state = STOPPED;
 		cpu_error = POWEROFF;
+		cromemco_dazzler_off();
 		break;
 	default:
 		break;
@@ -458,4 +465,5 @@ void quit_callback(void)
 	power--;
 	cpu_state = STOPPED;
 	cpu_error = POWEROFF;
+	cromemco_dazzler_off();
 }

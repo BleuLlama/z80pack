@@ -1,6 +1,6 @@
 /*
  *	Z80 - Assembler
- *	Copyright (C) 1987-2014 by Udo Munk
+ *	Copyright (C) 1987-2016 by Udo Munk
  *
  *	History:
  *	17-SEP-1987 Development under Digital Research CP/M 2.2
@@ -10,6 +10,7 @@
  *	18-MAR-2007 use default output file extension dependent on format
  *	04-OCT-2008 fixed comment bug, ';' string argument now working
  *	22-FEB-2014 fixed is...() compiler warnings
+ *	13-JAN-2016 fixed buffer overflow, new expression parser from Didier
  */
 
 /*

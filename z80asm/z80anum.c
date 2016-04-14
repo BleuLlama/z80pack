@@ -1,296 +1,527 @@
 /*
- *	Z80 - Assembler
- *	Copyright (C) 1987-2014 by Udo Munk
- *
- *	History:
- *	17-SEP-1987 Development under Digital Research CP/M 2.2
- *	28-JUN-1988 Switched to Unix System V.3
- *	21-OCT-2006 changed to ANSI C for modern POSIX OS's
- *	03-FEB-2007 more ANSI C conformance and reduced compiler warnings
- *	18-MAR-2007 use default output file extension dependent on format
- *	04-OCT-2008 fixed comment bug, ';' string argument now working
- *	22-FEB-2014 fixed is...() compiler warnings
+ *	Copyright (C) 2016 by Didier Derny
  */
 
-/*
- *	module with numerical computation and conversion
- */
-
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <ctype.h>
+
 #include "z80a.h"
 #include "z80aglb.h"
 
-#ifndef isxdigit
-#define isxdigit(c) (isdigit(c) || (c>='a' && c<='f') || (c>='A' && c<='F'))
-#endif
+#define T_NODE  0
+#define T_VALUE 1
 
-/*
- *	definitions of operator symbols for expression parser
- */
-#define OPEDEC		1	/* decimal number */
-#define OPEHEX		2	/* hexadecimal number */
-#define OPEOCT		3	/* octal number */
-#define OPEBIN		4	/* binary number */
-#define OPESUB		5	/* arithmetical - */
-#define OPEADD		6	/* arithmetical + */
-#define OPEMUL		7	/* arithmetical * */
-#define OPEDIV		8	/* arithmetical / */
-#define OPEMOD		9	/* arithmetical modulo */
-#define OPESHL		10	/* logical shift left */
-#define OPESHR		11	/* logical shift right */
-#define OPELOR		12	/* logical OR */
-#define OPELAN		13	/* logical AND */
-#define OPEXOR		14	/* logical XOR */
-#define OPECOM		15	/* logical complement */
-#define OPESYM		99	/* symbol */
+// character classes
+#define C_BIN  0x0001
+#define C_HEX  0x0002
+#define C_OCT  0x0004
+#define C_DEC  0x0008
+#define C_OPE  0x0010
+#define C_SPC  0x0020
+#define C_SYM  0x0040
 
-int strval(char *);
-int isari(int);
-int get_type(char *);
-int axtoi(char *);
-int abtoi(char *);
-int aotoi(char *);
+// parser fsm states
+#define S_OPE  0
+#define S_HEX  1
+#define S_OCT  2
+#define S_BIN  3
+#define S_DEC  4
+#define S_LIT  5
+#define S_SYM  6
+
+// standard operators: '(', ')', '*', '/', '%', '+', '-', '|', '&', '^', '~'
+// other    operators: left shift '<', right shift '>', current position '$'
+// other    tokens:    end of parsing 'X', numerical value 'N'
+
+typedef struct node {
+  int   op:8;
+  int   left:8;
+  int   right:8;
+  int   flag:8;
+  int   value;
+} Node;
+
+int getsymvalue(char *);
+int getdot();
 
 extern struct sym *get_sym(char *);
 extern void asmerr(int);
 
-/*
- *	recursive expression parser
- *
- *	Input: pointer to argument rest string
- *
- *	Output: computed value
- */
-int eval(char *s)
-{
-	register char *p;
-	register int val;
-	char word[MAXLINE];
-	struct sym *sp;
 
-	val = 0;
-	while (*s) {
-		p = word;
-		if (*s == '(') {
-			s++;
-			while (*s != ')') {
-				if (*s == '\0') {
-					asmerr(E_MISPAR);
-					goto eval_break;
-				}
-				*p++ = *s++;
-			}
-			*p = '\0';
-			s++;
-			val = eval(word);
-			continue;
-		}
-		if (*s == STRSEP) {
-			s++;
-			while (*s != STRSEP) {
-				if (*s == '\n' || *s == '\0') {
-					asmerr(E_MISHYP);
-					goto hyp_error;
-				}
-				*p++ = *s++;
-			}
-			s++;
-hyp_error:
-			*p = '\0';
-			val = strval(word);
-			continue;
-		}
-		if (isari(*s))
-			*p++ = *s++;
-		else
-			while (!isspace((int)*s) && !isari(*s) && (*s != '\0'))
-				*p++ = *s++;
-		*p = '\0';
-		switch (get_type(word)) {
-		case OPESYM:			/* symbol */
-			if (strcmp(word, "$") == 0) {
-				val = pc;
-				break;
-			}
-			if (strlen(word) > SYMSIZE)
-				word[SYMSIZE] = '\0';
-			if ((sp = get_sym(word)) != NULL)
-				val = sp->sym_val;
-			else
-				asmerr(E_UNDSYM);
-			break;
-		case OPEDEC:			/* decimal number */
-			val = atoi(word);
-			break;
-		case OPEHEX:			/* hexadecimal number */
-			val = axtoi(word);
-			break;
-		case OPEBIN:			/* binary number */
-			val = abtoi(word);
-			break;
-		case OPEOCT:			/* octal number */
-			val = aotoi(word);
-			break;
-		case OPESUB:			/* arithmetical - */
-			val -= eval(s);
-			goto eval_break;
-		case OPEADD:			/* arithmetical + */
-			val += eval(s);
-			goto eval_break;
-		case OPEMUL:			/* arithmetical * */
-			val *= eval(s);
-			goto eval_break;
-		case OPEDIV:			/* arithmetical / */
-			val /= eval(s);
-			goto eval_break;
-		case OPEMOD:			/* arithmetical modulo */
-			val %= eval(s);
-			goto eval_break;
-		case OPESHL:			/* logical shift left */
-			val <<= eval(s);
-			goto eval_break;
-		case OPESHR:			/* logical shift right */
-			val >>= eval(s);
-			goto eval_break;
-		case OPELOR:			/* logical OR */
-			val |= eval(s);
-			goto eval_break;
-		case OPELAN:			/* logical AND */
-			val &= eval(s);
-			goto eval_break;
-		case OPEXOR:			/* logical XOR */
-			val ^= eval(s);
-			goto eval_break;
-		case OPECOM:			/* logical complement */
-			val = ~(eval(s));
-			goto eval_break;
-		}
-	}
-	eval_break:
-	return(val);
+static int  mknode(int, int, int, int);
+static void parser_init(char *);
+static int  parse();
+static int  asctoi(char *);
+static int  expr_factor();
+static int  expr_term();
+static int  expr_simple();
+static int  expr_shift();
+static int  expr_and();
+static int  expr_xor();
+static int  expr_or();
+static int  expr();
+static int  evaluate(int);
+       int  eval(char *);
+
+/* precedence
+   operators        functions
+   + - ~ (unaire)   expr_factor
+   * /  %           expr_term
+   + -              expr_simple
+   < >              expr_shift
+   &                expr_and
+   ^                expr_xor
+   |                expr_or 
+   ( )              expr    
+*/
+
+#define MAXNODES 100
+
+static int   parsed_pos  = 0;
+static char *parsed_line = NULL;
+static Node  nodes[MAXNODES];
+static int   curnode = 0;
+static int   charclass[128];
+static int   code;
+static int   type;
+static int   value;
+
+static int mknode(int op, int flag, int p1, int p2) {
+  int  node;
+
+  if (curnode < MAXNODES) {
+    node = curnode;
+    curnode++;
+    nodes[node].op    = op;
+    nodes[node].flag  = flag;      
+    if (nodes[node].flag == T_NODE) {
+      nodes[node].left  = p1;  
+      nodes[node].right = p2;  
+      nodes[node].value = 0;
+    } else {
+      nodes[node].left  = 0;  
+      nodes[node].right = 0;  
+      nodes[node].value = p1;
+    }
+    return node;
+  }
+  return -1;
 }
 
-/*
- *	get type of operand
- *
- *	Input: pointer to string with operand
- *
- *	Output: operand type
- */
-int get_type(char *s)
-{
-	if (isdigit((int)*s)) {		/* numerical operand */
-		if (isdigit((int)*(s + strlen(s) - 1)))	/* decimal number */
-			return(OPEDEC);
-		else if (*(s + strlen(s) - 1) == 'H')	/* hexadecimal number */
-			return(OPEHEX);
-		else if (*(s + strlen(s) - 1) == 'B')	/* binary number */
-			return(OPEBIN);
-		else if (*(s + strlen(s) - 1) == 'O')	/* octal number */
-			return(OPEOCT);
-	} else if (*s == '-')		/* arithmetical operand - */
-		return(OPESUB);
-	else if (*s == '+')		/* arithmetical operand + */
-		return(OPEADD);
-	else if (*s == '*')		/* arithmetical operand * */
-		return(OPEMUL);
-	else if (*s == '/')		/* arithmetical operand / */
-		return(OPEDIV);
-	else if (*s == '%')		/* arithmetical modulo */
-		return(OPEMOD);
-	else if (*s == '<')		/* logical shift left */
-		return(OPESHL);
-	else if (*s == '>')		/* logical shift right */
-		return(OPESHR);
-	else if (*s == '|')		/* logical OR */
-		return(OPELOR);
-	else if (*s == '&')		/* logical AND */
-		return(OPELAN);
-	else if (*s == '^')		/* logical XOR */
-		return(OPEXOR);
-	else if (*s == '~')		/* logical complement */
-		return(OPECOM);
-	return(OPESYM);			/* operand is symbol */
+// these 2 functions simulates the retieval 
+// of a symbol or of the current position
+int getdot() {
+  return pc;
 }
 
-/*
- *	check a character for arithmetical operators
- *	+, -, *, /, %, <, >, |, &, ~ and ^
- */
-int isari(int c)
-{
-	return((c) == '+' || (c) == '-' || (c) == '*' ||
-	       (c) == '/' || (c) == '%' || (c) == '<' ||
-	       (c) == '>' || (c) == '|' || (c) == '&' ||
-	       (c) == '~' || (c) == '^');
+int getsymvalue(char *str) {
+  struct sym *sp;
+  
+  if (strcasecmp(str, "$") == 0)
+    return getdot();
+  if (strlen(str) > SYMSIZE)
+    str[SYMSIZE] = '\0';
+  if ((sp = get_sym(str)) != NULL) 
+    return sp->sym_val;
+  else 
+    asmerr(E_UNDSYM);
+  return 0;
 }
 
-/*
- *	conversion of string with hexadecimal number to integer
- *	format: nnnnH or 0nnnnH if 1st digit > 9
- */
-int axtoi(char *str)
-{
-	register int num;
+static void parser_init(char *str) {
+  static int initialized = 0;
+  int i;
 
-	num = 0;
-	while (isxdigit((int)*str)) {
-		num *= 16;
-		num += *str - ((*str <= '9') ? '0' : '7');
-		str++;
-	}
-	return(num);
+  parsed_pos = 0;
+  curnode = 1;
+  bzero(&nodes[0], sizeof(nodes));
+  if (parsed_line) 
+    free(parsed_line);
+  parsed_line = strdup(str);
+  if (!initialized) {
+    bzero(&charclass, sizeof(charclass));
+    for (i='a'; i<='z'; i++)
+      charclass[i] = charclass[i] | C_SYM;
+    for (i='A'; i<='Z'; i++)
+      charclass[i] = charclass[i] | C_SYM;
+    for (i='0'; i<='9'; i++)
+      charclass[i] = charclass[i] | C_DEC | C_HEX | C_SYM;
+    for (i='0'; i<='7'; i++)
+      charclass[i] |= C_OCT;
+    for (i='a'; i<='f'; i++)
+      charclass[i] |= C_HEX;
+    for (i='A'; i<='F'; i++)
+      charclass[i] |= C_HEX;
+    for (i='0'; i<='1'; i++)
+      charclass[i] |= C_BIN;
+    charclass['_']  |= C_SYM;
+    charclass['$']  |= C_SYM;
+    charclass['-']  |= C_OPE;
+    charclass['+']  |= C_OPE;
+    charclass['*']  |= C_OPE;
+    charclass['/']  |= C_OPE;
+    charclass['%']  |= C_OPE;
+    charclass['<']  |= C_OPE;
+    charclass['>']  |= C_OPE;
+    charclass['|']  |= C_OPE;
+    charclass['&']  |= C_OPE;
+    charclass['^']  |= C_OPE;
+    charclass['~']  |= C_OPE;
+    charclass['(']  |= C_OPE;
+    charclass[')']  |= C_OPE;
+    charclass[' ']  |= C_SPC;
+    charclass['\n'] |= C_SPC;
+    charclass['\r'] |= C_SPC;
+    charclass['\t'] |= C_SPC;
+    initialized = 1;
+  }
 }
 
-/*
- *	conversion of string with octal number to integer
- *	format: nnnnO
- */
-int aotoi(char *str)
-{
-	register int num;
+static int parse() {
+  int mark, state, index, quote, pcode, post; 
+  char symbol[256];
 
-	num = 0;
-	while ('0' <= *str && *str <= '7') {
-		num *= 8;
-		num += (*str++) - '0';
-	}
-	return(num);
+  mark  = parsed_pos;
+  state = -1;
+ again:  
+  parsed_pos = mark;
+  state++;
+  quote  = 0;  
+  index  = 0;  
+  code   = -1;
+  pcode  = 0;
+  value  = 0;
+  post   = 0;
+  while(1) {
+    pcode = code;
+  skip_spaces:
+    code = parsed_line[parsed_pos]; 
+    parsed_pos += (code) ? 1 : 0;
+    type = ((code < 128) ? charclass[code] : 0);
+    if ((quote == 0) && ((type & C_SPC) == C_SPC))
+      goto skip_spaces;
+    switch(state) {
+    case S_OPE:
+      if ((type & C_OPE) == C_OPE) 
+        return code;
+      goto again;
+
+    case S_HEX:
+      if ((type & C_HEX) == C_HEX) {
+        value *= 16;
+        value += toupper(code) - ((code <= '9') ? '0' : '7');
+        index++;
+        continue;
+      } 
+      if ((index > 0) && (toupper(code) == 'H')) {
+        post = 1;
+        continue;
+      }
+      if (post && ((code == 0) || ((type & C_OPE) == C_OPE))) {
+        if ((type & C_OPE) == C_OPE) 
+          parsed_pos--;
+        return 'N';
+      }
+      goto again;
+      
+    case S_OCT:
+      if ((type & C_OCT) == C_OCT) {
+        value *= 8;
+        value += code - '0';
+        index++;
+        continue;
+      }
+      if ((index > 0) && (toupper(code) == 'O')) {
+        post = 1;
+        continue;
+      }
+      if (post && ((code == 0) || ((type & C_OPE) == C_OPE))) {
+        if ((type & C_OPE) == C_OPE) 
+          parsed_pos--;
+        return 'N';
+      }
+      goto again;
+
+    case S_BIN:
+      if ((type & C_BIN) == C_BIN) {
+        value *= 2;
+        value += code - '0';
+        index++;
+        continue;
+      }
+      if ((index > 0) && (toupper(code) == 'B')) {
+        post = 1;
+        return 'N';
+      }
+      if (post && ((code == 0) || ((type & C_OPE) == C_OPE))) {
+        if ((type & C_OPE) == C_OPE) 
+          parsed_pos--;
+        return 'N';
+      }
+      goto again;
+      
+    case S_DEC:
+      if ((type & C_DEC) == C_DEC) {
+        value *= 10;
+        value += code - '0';
+        index++;
+        continue;
+      }
+      if ((index > 0) && ((code == 0) || ((type & C_OPE) == C_OPE))) {
+        if ((type & C_OPE) == C_OPE) 
+          parsed_pos--;
+        return 'N';
+      }
+      goto again;
+
+    case S_LIT:
+      if (quote == 0) {
+        if (code != '\'')
+          goto again;          
+        quote = 1;
+        continue;
+      } else {
+        if (code == '\'') { 
+          if (pcode != '\\') {
+            symbol[index] = '\0';
+            value = asctoi(symbol);
+            return 'N';
+          } else 
+            symbol[index++] = code;
+        } else {
+          symbol[index++] = code;
+        }
+      }
+      break;
+
+    case S_SYM:
+      if ((type & C_SYM) == C_SYM) {
+        symbol[index++] = code;
+        continue;
+      }
+      if ((index > 0) && (((type & C_OPE) == C_OPE) || (code == 0))) {
+        symbol[index] = '\0';        
+        value = getsymvalue(symbol);
+        if ((type & C_OPE) == C_OPE) 
+          parsed_pos--;
+        return 'N';
+      }
+      goto again;
+      
+    default:
+      if (code == 0) 
+        return 'X';
+      asmerr(E_ILLOPE);
+      return 1;
+    }
+  }
 }
 
-/*
- *	conversion of string with binary number to integer
- *	format: nnnnnnnnnnnnnnnnB
- */
-int abtoi(char *str)
-{
-	register int num;
-
-	num = 0;
-	while ('0' <= *str && *str <= '1') {
-		num *= 2;
-		num += (*str++) - '0';
-	}
-	return(num);
+static int asctoi(char *str) {
+  register int num;
+  
+  num = 0;
+  while (*str) {
+    num <<= 8;    
+    if (*str == '\\') {
+      str++;
+      switch(*str++) {
+      case 'a':  num |= 0x07; break;
+      case 'b':  num |= 0x08; break;
+      case 'f':  num |= 0x0c; break;
+      case 'n':  num |= 0x0a; break;
+      case 'r':  num |= 0x0d; break;
+      case 't':  num |= 0x09; break;
+      case 'v':  num |= 0x0b; break;
+      case '\\': num |= 0x5c; break;
+      case '\'': num |= 0x27; break;
+      case '"':  num |= 0x22; break;
+      case '?':  num |= 0x3f; break;
+      default:
+        break;
+      }
+    } else {
+      num |= (int) *str++;
+    }
+  }
+  return(num);
 }
 
-/*
- *	convert ASCII string to integer
- */
-int strval(char *str)
-{
-	register int num;
-
-	num = 0;
-	while (*str) {
-		num <<= 8;
-		num += (int) *str++;
-	}
-	return(num);
+static int expr_factor() {
+  int n1, tok;
+  
+  tok = parse();
+  switch(tok) {
+  case '(':  	
+    n1 = expr();
+    tok = parse();
+    if (tok != ')') {
+      asmerr(E_MISPAR);
+      return 0;
+    }
+    return n1;
+  case '~':
+    return mknode('~', T_NODE, expr_factor(), 0);
+  case '+':
+    return mknode('*', T_NODE, mknode('N', T_VALUE,  1, 0), expr_factor());
+  case '-':
+    return mknode('*', T_NODE, mknode('N', T_VALUE, -1, 0), expr_factor());
+  case 'N':
+    return mknode('N', T_VALUE, value, 0);
+  default :
+    asmerr(E_ILLOPE);
+    return 0;
+  }
 }
+
+static int expr_term() {
+  int n1, tok, mark;
+  
+  n1 = expr_factor();
+  mark = parsed_pos;
+  tok = parse();
+  switch(tok) {
+  case '/':
+  case '*':
+  case '%':
+    return mknode(tok, T_NODE, n1, expr_term());
+  default: 
+    parsed_pos = mark;
+    return n1;
+  }
+}
+
+static int expr_simple() {
+  int n1, tok, mark;
+
+  n1 = expr_term();
+  mark = parsed_pos;
+  tok = parse();
+  switch(tok) {
+  case '+':
+  case '-':
+    return mknode(tok, T_NODE, n1, expr_simple());
+  default: 
+    parsed_pos = mark;
+    return n1;
+  }
+}
+
+static int expr_shift() {
+  int n1, tok, mark;
+
+  n1 = expr_simple();
+  mark = parsed_pos;
+  tok = parse();
+  switch(tok) {
+  case '<':
+  case '>':
+    return mknode(tok, T_NODE, n1, expr_shift());
+  default :  
+    parsed_pos = mark;
+    return n1;
+  }
+}
+
+static int expr_and() {
+  int n1, tok, mark;
+
+  n1 = expr_shift();
+  mark = parsed_pos;
+  tok = parse();
+  switch(tok) {
+  case '&':
+    return mknode(tok, T_NODE, n1, expr_and());
+  default :  
+    parsed_pos = mark;
+    return n1;
+  }
+}
+
+int expr_xor() {
+  int n1, tok, mark;
+
+  n1 = expr_and();
+  mark = parsed_pos;
+  tok = parse();
+  switch(tok) {
+  case '^':
+    return mknode(tok, T_NODE, n1, expr_xor());
+  default :  
+    parsed_pos = mark;
+    return n1;
+  }
+}
+
+static int expr_or() {
+  int n1, tok, mark;
+
+  n1 = expr_xor();
+  mark = parsed_pos;
+  tok = parse();
+  switch(tok) {
+  case '|':
+    return mknode(tok, T_NODE, n1, expr_or());
+  default :  
+    parsed_pos = mark;
+    return n1;
+  }
+}
+
+static int expr() {
+  return expr_or();
+}
+
+static int evaluate(int node) {
+  int n1, n2;
+
+  n1 = n2 = 0; // to make the compiler happy
+  if (nodes[node].flag == 0) {
+    if (nodes[node].left)
+      n1 = evaluate(nodes[node].left);
+    if (nodes[node].right)
+      n2 = evaluate(nodes[node].right);
+    switch(nodes[node].op) {
+    case '~':
+      return ~ n1;
+    case '-':
+      return n1 - n2;
+    case '+':
+      return n1 + n2;
+    case '*':
+      return n1 * n2;
+    case '/':
+      return n1 / n2;
+    case '%':
+      return n1 % n2;
+    case '<':
+      return n1 << n2;
+    case '>':
+      return n1 >> n2;
+    case '|':
+      return n1 | n2;
+    case '^':
+      return n1 ^ n2;
+    case '&':
+      return n1 & n2;
+    default: 
+      asmerr(E_ILLOPE);
+      return n1;
+    }
+  } else {
+    return nodes[node].value;
+  }
+}    
+
+int eval(char *str) {
+  parser_init(str);
+  return evaluate(expr());
+}
+
+// from z80anum-orig.c
 
 /*
  *	check value for range -256 < value < 256
@@ -298,12 +529,12 @@ int strval(char *str)
  */
 int chk_v1(int i)
 {
-	if (i >= -255 && i <= 255)
-		return(i);
-	else {
-		asmerr(E_VALOUT);
-		return(0);
-	}
+  if (i >= -255 && i <= 255)
+    return(i);
+  else {
+    asmerr(E_VALOUT);
+    return(0);
+  }
 }
 
 /*
@@ -312,10 +543,10 @@ int chk_v1(int i)
  */
 int chk_v2(int i)
 {
-	if (i >= -127 && i <= 127)
-		return(i);
-	else {
-		asmerr(E_VALOUT);
-		return(0);
-	}
+  if (i >= -127 && i <= 127)
+    return(i);
+  else {
+    asmerr(E_VALOUT);
+    return(0);
+  }
 }

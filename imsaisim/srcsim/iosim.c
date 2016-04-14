@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 2008-2015 by Udo Munk
+ * Copyright (C) 2008-2016 by Udo Munk
  *
  * This module of the simulator contains the I/O simulation
  * for an IMSAI 8080 system
@@ -14,6 +14,7 @@
  * 16-JUL-14 unused I/O ports need to return FF, see survey.mac
  * 14-OCT-14 support for SIO 2 added, parallel ports problem with ROM avoided
  * 31-JAN-15 took over some improvements made for the Z-1 emulation
+ * 09-MAY-15 added Cromemco DAZZLER to the machine
  */
 
 #include <unistd.h>
@@ -29,6 +30,7 @@
 #include "../../iodevices/io_config.h"
 #include "../../iodevices/imsai-sio2.h"
 #include "../../iodevices/imsai-fif.h"
+#include "../../iodevices/cromemco-dazzler.h"
 
 /*
  *	Forward declarations for I/O functions
@@ -63,7 +65,7 @@ static BYTE (*port_in[256]) (void) = {
 	io_trap_in,		/* port 11 */
 	io_trap_in,		/* port 12 */
 	io_trap_in,		/* port 13 */
-	io_trap_in,		/* port 14 */
+	cromemco_dazzler_flags_in, /* port 14 */
 	io_trap_in,		/* port 15 */
 	io_trap_in,		/* port 16 */
 	io_trap_in,		/* port 17 */
@@ -326,8 +328,8 @@ static void (*port_out[256]) (BYTE) = {
 	io_trap_out,		/* port 11 */
 	io_trap_out,		/* port 12 */
 	io_trap_out,		/* port 13 */
-	io_trap_out,		/* port 14 */
-	io_trap_out,		/* port 15 */
+	cromemco_dazzler_ctl_out,	/* port 14 */
+	cromemco_dazzler_format_out,	/* port 15 */
 	io_trap_out,		/* port 16 */
 	io_trap_out,		/* port 17 */
 	io_no_card_out,		/* port 18 */ /* serial port   */
@@ -716,8 +718,9 @@ static void hwctl_out(BYTE data)
         if (data & 128) {
                 cpu_error = IOHALT;
                 cpu_state = STOPPED;
-                return;
-        } else if (data & 1) {
+	}
+
+        if (data & 1) {
 		//printf("\r\n*** ENABLE TIMER ***\r\n");
 		newact.sa_handler = int_timer;
 		memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));
@@ -728,7 +731,7 @@ static void hwctl_out(BYTE data)
 		tim.it_interval.tv_sec = 0;
 		tim.it_interval.tv_usec = 10000;
 		setitimer(ITIMER_REAL, &tim, NULL);
-	} else if (data == 0) {
+	} else {
 		//printf("\r\n*** DISABLE TIMER ***\r\n");
 		newact.sa_handler = SIG_IGN;
 		memset((void *) &newact.sa_mask, 0, sizeof(newact.sa_mask));

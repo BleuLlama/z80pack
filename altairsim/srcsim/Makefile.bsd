@@ -26,7 +26,8 @@ OBJ =   sim0.o \
 	unix_terminal.o \
 	io_config.o \
 	altair-88-2sio.o \
-	tarbell.o
+	tarbell.o \
+	cromemco-dazzler.o
 
 FP =    ../../frontpanel/libfrontpanel.so
 
@@ -92,6 +93,9 @@ altair-88-2sio.o: ../../iodevices/altair-88-2sio.c
 
 tarbell.o: ../../iodevices/tarbell.c
 	$(CC) $(CFLAGS) -I./ ../../iodevices/tarbell.c
+
+cromemco-dazzler.o : ../../iodevices/cromemco-dazzler.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/cromemco-dazzler.c
 
 clean:
 	rm -f *.o

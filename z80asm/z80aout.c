@@ -1,6 +1,6 @@
 /*
  *	Z80 - Assembler
- *	Copyright (C) 1987-2014 by Udo Munk
+ *	Copyright (C) 1987-2016 by Udo Munk
  *
  *	History:
  *	17-SEP-1987 Development under Digital Research CP/M 2.2
@@ -9,6 +9,7 @@
  *	03-FEB-2007 more ANSI C conformance and reduced compiler warnings
  *	18-MAR-2007 use default output file extension dependent on format
  *	04-OCT-2008 fixed comment bug, ';' string argument now working
+ *	13-JAN-2016 fixed buffer overflow, new expression parser from Didier
  */
 
 /*
@@ -48,7 +49,7 @@ static unsigned short hex_adr;		/* current address in hex record */
 static int hex_cnt;			/* current no bytes in hex buffer */
 
 static unsigned char hex_buf[MAXHEX];	/* buffer for one hex record */
-static char hex_out[MAXHEX*2+11];	/* ASCII buffer for one hex record */
+static char hex_out[MAXHEX*2+20];	/* ASCII buffer for one hex record */
 
 /*
  *	print error message to listfile and increase error counter

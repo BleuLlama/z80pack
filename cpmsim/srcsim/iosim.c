@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 1987-2015 by Udo Munk
+ * Copyright (C) 1987-2016 by Udo Munk
  *
  * This module contains a complex I/O-simulation for running
  * CP/M, MP/M, UCSD p-System...

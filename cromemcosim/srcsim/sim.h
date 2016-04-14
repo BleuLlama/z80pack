@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 2014-2015 by Udo Munk
+ * Copyright (C) 2014-2016 by Udo Munk
  *
  * Configuration for a Cromemco Z-1 system
  *
@@ -44,12 +44,12 @@
 /*
  *	The following lines of this file should not be modified by user
  */
-#define COPYR	"Copyright (C) 1987-2015 by Udo Munk"
-#define RELEASE	"1.26"
+#define COPYR	"Copyright (C) 1987-2016 by Udo Munk"
+#define RELEASE	"1.27"
 
 #define USR_COM	"Cromemco Z-1 Simulation"
-#define USR_REL	"1.7"
-#define USR_CPR	"Copyright (C) 2014-2015 by Udo Munk"
+#define USR_REL	"1.8"
+#define USR_CPR	"Copyright (C) 2014-2016 by Udo Munk"
 
 #define LENCMD		80		/* length of command buffers etc */
 

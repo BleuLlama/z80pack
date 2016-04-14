@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 2008-2015 by Udo Munk
+ * Copyright (C) 2008-2016 by Udo Munk
  *
  * Configuration for an IMSAI 8080 system
  *
@@ -11,6 +11,7 @@
  * 23-MAR-14 enabled interrupts, 10ms timer added to iosim
  * xx-JUN-14 added default CPU define
  * 19-JUL-14 added typedef for signed 16bit
+ * 09-MAY-15 added Cromemco DAZZLER to the machine
  */
 
 /*
@@ -38,12 +39,12 @@
 /*
  *	The following lines of this file should not be modified by user
  */
-#define COPYR	"Copyright (C) 1987-2015 by Udo Munk"
-#define RELEASE	"1.26"
+#define COPYR	"Copyright (C) 1987-2016 by Udo Munk"
+#define RELEASE	"1.27"
 
 #define USR_COM	"IMSAI 8080 Simulation"
-#define USR_REL	"1.7"
-#define USR_CPR	"Copyright (C) 2008-2015 by Udo Munk"
+#define USR_REL	"1.8"
+#define USR_CPR	"Copyright (C) 2008-2016 by Udo Munk"
 
 #define LENCMD		80		/* length of command buffers etc */
 

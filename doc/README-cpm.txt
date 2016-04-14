@@ -64,7 +64,7 @@ command.
 
 Copy the the both shell scripts cpmr.sh and cpmw.sh to ~/bin
 or /usr/local/bin. Edit the line with: 
-	diskdir=~/z80pack-1.26/cpmsim/disks
+	diskdir=~/z80pack-1.27/cpmsim/disks
 to the path where you have extracted the z80pack distribution.
 
 cpmr:

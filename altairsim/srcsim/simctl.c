@@ -3,7 +3,7 @@
  *
  * This module allows operation of the system from an Altair 8800 front panel
  *
- * Copyright (C) 2008-2015 by Udo Munk
+ * Copyright (C) 2008-2016 by Udo Munk
  *
  * History:
  * 20-OCT-08 first version finished
@@ -15,8 +15,10 @@
  * 19-APR-14 moved CPU error report into a function
  * 06-JUN-14 forgot to disable timer interrupts when machine switched off
  * 10-JUN-14 increased fp operation timer from 1ms to 100ms
+ * 29-APR-15 added Cromemco DAZZLER to the machine
  */
 
+#include <X11/Xlib.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,6 +29,7 @@
 #include <time.h>
 #include "sim.h"
 #include "simglb.h"
+#include "../../iodevices/cromemco-dazzler.h"
 #include "../../iodevices/unix_terminal.h"
 #include "../../frontpanel/frontpanel.h"
 
@@ -65,6 +68,7 @@ void mon(void)
 		exit(1);
 
 	/* initialize frontpanel */
+	XInitThreads();
 	if (!fp_init("conf/panel.conf")) {
 		puts("frontpanel error");
 		exit(1);
@@ -341,9 +345,11 @@ void reset_clicked(int state, int val)
 			fp_led_address = 0;
 			fp_led_data = *ram;
 			cpu_bus = CPU_WO | CPU_M1 | CPU_MEMR;
+			cromemco_dazzler_off();
 		}
 		break;
 	case FP_SW_DOWN:
+		cromemco_dazzler_off();
 		break;
 	default:
 		break;
@@ -457,6 +463,7 @@ void power_clicked(int state, int val)
 		power--;
 		cpu_state = STOPPED;
 		cpu_error = POWEROFF;
+		cromemco_dazzler_off();
 		break;
 	default:
 		break;
@@ -471,4 +478,5 @@ void quit_callback(void)
 	power--;
 	cpu_state = STOPPED;
 	cpu_error = POWEROFF;
+	cromemco_dazzler_off();
 }

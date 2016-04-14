@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 2014-2015 by Udo Munk
+ * Copyright (C) 2014-2016 by Udo Munk
  *
  * This module of the simulator contains the I/O simulation
  * for a Cromemco Z-1 system
@@ -35,6 +35,7 @@
 #include "../../iodevices/unix_network.h"
 #include "../../iodevices/cromemco-tu-art.h"
 #include "../../iodevices/cromemco-fdc.h"
+#include "../../iodevices/cromemco-dazzler.h"
 
 /*
  *	Forward declarations for I/O functions
@@ -85,7 +86,7 @@ static BYTE (*port_in[256]) (void) = {
 	io_trap_in,			/* port 11 */
 	io_trap_in,			/* port 12 */
 	io_trap_in,			/* port 13 */
-	io_trap_in,			/* port 14 */
+	cromemco_dazzler_flags_in,	/* port 14 */
 	io_trap_in,			/* port 15 */
 	io_trap_in,			/* port 16 */
 	io_trap_in,			/* port 17 */
@@ -348,8 +349,8 @@ static void (*port_out[256]) (BYTE) = {
 	io_trap_out,			/* port 11 */
 	io_trap_out,			/* port 12 */
 	io_trap_out,			/* port 13 */
-	io_trap_out,			/* port 14 */
-	io_trap_out,			/* port 15 */
+	cromemco_dazzler_ctl_out,	/* port 14 */
+	cromemco_dazzler_format_out,	/* port 15 */
 	io_trap_out,			/* port 16 */
 	io_trap_out,			/* port 17 */
 	io_trap_out,			/* port 18 */

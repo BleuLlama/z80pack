@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 1987-2015 by Udo Munk
+ * Copyright (C) 1987-2016 by Udo Munk
  *
  * This modul contains the user interface, a full qualified ICE,
  * for the Z80-CPU simulation.
@@ -35,6 +35,7 @@
  * 06-SEP-14 Release 1.24 bugfixes and improvements
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
  * 18-APR-15 Release 1.26 bugfixes and improvements
+ * 18-JAN-16 Release 1.27 bugfixes and improvements
  */
 
 /*

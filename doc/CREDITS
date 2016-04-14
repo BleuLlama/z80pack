@@ -15,3 +15,9 @@ Mark Garlanger <http://heathkit.garlanger.com/>:
 for the implementation of the Z80 DAA instruction, which passes
 regression tests, and for help with a flag correct implementation
 of the Z80 ADC/SBC instructions, that also passes regression tests.
+
+
+Didier Derny <didier.derny@gmail.com>:
+
+for a node based expression parser for z80asm, that implements
+operator precedence.

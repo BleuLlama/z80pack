@@ -1,7 +1,7 @@
 /*
  * make disk image files for cpmsim
  *
- * Copyright (C) 1988-2015 by Udo Munk
+ * Copyright (C) 1988-2016 by Udo Munk
  *
  * History:
  * 29-APR-88 Development on TARGON/35 with AT&T Unix System V.3
@@ -11,6 +11,7 @@
  * 01-OCT-07 added a huge 512MB harddisk
  * 11-NOV-07 abort if file already exists
  * 09-FEB-14 name changed from format to mkdskimg
+ * 14-JAN-16 make disk file in directory drives if exists, in cwd otherwise
  */
 
 #include <unistd.h>
@@ -18,6 +19,7 @@
 #include <stdio.h>
 #include <memory.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 #define TRACK   	77
 #define SECTOR  	26
@@ -42,8 +44,11 @@ int main(int argc, char *argv[])
 	register int i;
 	int fd;
 	char drive;
+	struct stat sb;
 	static unsigned char sector[128];
-	static char fn[] = "disks/drive?.cpm";
+	static char fn[64];
+	static char ddir[] = "disks";
+	static char dn[] = "drive?.cpm";
 	static char usage[] = "usage: mkdskimg a | b | c | d | i | j | p";
 
 	if (argc != 2) {
@@ -57,7 +62,14 @@ int main(int argc, char *argv[])
 		puts(usage);
 		exit(1);
 	}
-	fn[11] = drive = (char) i;
+	dn[5] = drive = (char) i;
+	if (stat(ddir, &sb) == 0 && S_ISDIR(sb.st_mode)) {
+		strcpy(fn, ddir);
+		strcat(fn, "/");
+		strcat(fn, dn);
+	} else {
+		strcpy(fn, dn);
+	}
 	memset((char *) sector, 0xe5, 128);
 	if ((fd = open(fn, O_RDONLY)) != -1) {
 		printf("disk file %s exists, aborting\n", fn);
