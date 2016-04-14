@@ -9,6 +9,7 @@
  * 01-OCT-06 modified to compile on modern POSIX OS's
  * 18-NOV-06 added a second harddisk
  * 01-OCT-07 added a huge 512MB harddisk
+ * 11-NOV-07 abort if file already exists
  */
 
 #include <unistd.h>
@@ -57,6 +58,10 @@ int main(int argc, char *argv[])
 	}
 	fn[11] = drive = (char) i;
 	memset((char *) sector, 0xe5, 128);
+	if ((fd = open(fn, O_RDONLY)) != -1) {
+		printf("disk file %s exists, aborting\n", fn);
+		exit(1);
+	}
 	if ((fd = creat(fn, 0644)) == -1) {
 		perror("disk file");
 		exit(1);
