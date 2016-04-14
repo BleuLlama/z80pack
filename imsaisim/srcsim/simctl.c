@@ -27,7 +27,7 @@
 
 extern int load_file(char *);
 extern int load_core(void);
-extern void cpu(void);
+extern void cpu_z80(void), cpu_8080(void);
 
 static BYTE fp_led_wait;
 static int cpu_switch;
@@ -212,7 +212,14 @@ void run_cpu(void)
 {
 	cpu_state = CONTIN_RUN;
 	cpu_error = NONE;
-	cpu();
+	switch(cpu) {
+	case Z80:
+		cpu_z80();
+		break;
+	case I8080:
+		cpu_8080();
+		break;
+	}
 	report_error();
 }
 
@@ -223,7 +230,14 @@ void step_cpu(void)
 {
 	cpu_state = SINGLE_STEP;
 	cpu_error = NONE;
-	cpu();
+	switch(cpu) {
+	case Z80:
+		cpu_z80();
+		break;
+	case I8080:
+		cpu_8080();
+		break;
+	}
 	cpu_state = STOPPED;
 	fp_led_wait = 1;
 	report_error();

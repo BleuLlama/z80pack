@@ -35,13 +35,20 @@
 /*#define SNETDEBUG*/	/* server network protocol debugger */
 
 /*
+ *	Default CPU
+ */
+#define Z80             1
+#define I8080           2
+#define DEFAULT_CPU     I8080
+
+/*
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.22"
+#define RELEASE	"1.23"
 
 #define USR_COM	"IMSAI 8080 Simulation"
-#define USR_REL	"1.3"
+#define USR_REL	"1.5"
 #define USR_CPR	"Copyright (C) 2008-2014 by Udo Munk"
 
 #define LENCMD		80		/* length of command buffers etc */
@@ -81,11 +88,6 @@
 #define	OPTRAP4		8		/* illegal 4 byte op-code trap */
 #define	USERINT		9		/* user	interrupt */
 #define POWEROFF	255		/* CPU off, no error */
-
-					/* type of CPU interrupt */
-#define INT_NONE	0
-#define	INT_NMI		1		/* non maskable interrupt */
-#define	INT_INT		2		/* maskable interrupt */
 
 typedef	unsigned short WORD;		/* 16 bit unsigned */
 typedef	unsigned char  BYTE;		/* 8 bit unsigned */

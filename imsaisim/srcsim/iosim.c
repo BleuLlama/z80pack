@@ -685,7 +685,7 @@ static void fp_out(BYTE data)
  */
 static void int_timer(int sig)
 {
-	int_type = INT_INT;
+	int_int = 1;
 	int_data = 0xff;	/* RST 38H for IM 0 */
 }
 

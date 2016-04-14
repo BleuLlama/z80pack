@@ -31,6 +31,7 @@
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
+ * 04-JUN-14 Release 1.23 added 8080 emulation
  */
 
 /*
@@ -50,7 +51,7 @@
 #include "sim.h"
 #include "simglb.h"
 
-extern void cpu(void);
+extern void cpu_z80(void), cpu_8080(void);
 extern void disass(unsigned char **, int);
 extern int exatoi(char *);
 extern int getkey(void);
@@ -179,7 +180,14 @@ static void do_step(void)
 
 	cpu_state = SINGLE_STEP;
 	cpu_error = NONE;
-	cpu();
+	switch(cpu) {
+	case Z80:
+		cpu_z80();
+		break;
+	case I8080:
+		cpu_8080();
+		break;
+	}
 	if (cpu_error == OPHALT)
 		handel_break();
 	cpu_err_msg();
@@ -207,7 +215,14 @@ static void do_trace(char *s)
 	print_head();
 	print_reg();
 	for (i = 0; i <	count; i++) {
-		cpu();
+		switch(cpu) {
+		case Z80:
+			cpu_z80();
+			break;
+		case I8080:
+			cpu_8080();
+			break;
+		}
 		print_reg();
 		if (cpu_error) {
 			if (cpu_error == OPHALT) {
@@ -233,7 +248,14 @@ static void do_go(char *s)
 	cont:
 	cpu_state = CONTIN_RUN;
 	cpu_error = NONE;
-	cpu();
+	switch(cpu) {
+	case Z80:
+		cpu_z80();
+		break;
+	case I8080:
+		cpu_8080();
+		break;
+	}
 	if (cpu_error == OPHALT)
 		if (handel_break())
 			if (!cpu_error)
@@ -270,7 +292,14 @@ static int handel_break(void)
 	PC--;				/* substitute HALT opcode by */
 	*PC = soft[i].sb_oldopc;	/* original opcode */
 	cpu_state = SINGLE_STEP;	/* and execute it */
-	cpu();
+	switch(cpu) {
+	case Z80:
+		cpu_z80();
+		break;
+	case I8080:
+		cpu_8080();
+		break;
+	}
 	*(ram +	soft[i].sb_adr)	= 0x76;	/* restore HALT	opcode again */
 	soft[i].sb_passcount++;		/* increment passcounter */
 	if (soft[i].sb_passcount != soft[i].sb_pass)
@@ -466,17 +495,17 @@ static void do_reg(char *s)
 		print_head();
 		print_reg();
 	} else {
-		if (strncmp(s, "bc'", 3) == 0) {
+		if ((strncmp(s, "bc'", 3) == 0) && (cpu == Z80)) {
 			printf("BC' = %04x : ",	B_ * 256 + C_);
 			fgets(nv, sizeof(nv), stdin);
 			B_ = (exatoi(nv) & 0xffff) / 256;
 			C_ = (exatoi(nv) & 0xffff) % 256;
-		} else if (strncmp(s, "de'", 3)	== 0) {
+		} else if ((strncmp(s, "de'", 3) == 0) && (cpu == Z80)) {
 			printf("DE' = %04x : ",	D_ * 256 + E_);
 			fgets(nv, sizeof(nv), stdin);
 			D_ = (exatoi(nv) & 0xffff) / 256;
 			E_ = (exatoi(nv) & 0xffff) % 256;
-		} else if (strncmp(s, "hl'", 3)	== 0) {
+		} else if ((strncmp(s, "hl'", 3) == 0) && (cpu == Z80)) {
 			printf("HL' = %04x : ",	H_ * 256 + L_);
 			fgets(nv, sizeof(nv), stdin);
 			H_ = (exatoi(nv) & 0xffff) / 256;
@@ -500,11 +529,11 @@ static void do_reg(char *s)
 			fgets(nv, sizeof(nv), stdin);
 			H = (exatoi(nv)	& 0xffff) / 256;
 			L = (exatoi(nv)	& 0xffff) % 256;
-		} else if (strncmp(s, "ix", 2) == 0) {
+		} else if ((strncmp(s, "ix", 2) == 0) && (cpu == Z80)) {
 			printf("IX = %04x : ", IX);
 			fgets(nv, sizeof(nv), stdin);
 			IX = exatoi(nv)	& 0xffff;
-		} else if (strncmp(s, "iy", 2) == 0) {
+		} else if ((strncmp(s, "iy", 2) == 0) && (cpu == Z80)) {
 			printf("IY = %04x : ", IY);
 			fgets(nv, sizeof(nv), stdin);
 			IY = exatoi(nv)	& 0xffff;
@@ -528,7 +557,7 @@ static void do_reg(char *s)
 			printf("P-FLAG = %c : ", (F & P_FLAG) ?	'1' : '0');
 			fgets(nv, sizeof(nv), stdin);
 			F = (exatoi(nv)) ? (F |	P_FLAG)	: (F & ~P_FLAG);
-		} else if (strncmp(s, "fn", 2) == 0) {
+		} else if ((strncmp(s, "fn", 2) == 0) && (cpu == Z80)) {
 			printf("N-FLAG = %c : ", (F & N_FLAG) ?	'1' : '0');
 			fgets(nv, sizeof(nv), stdin);
 			F = (exatoi(nv)) ? (F |	N_FLAG)	: (F & ~N_FLAG);
@@ -544,31 +573,31 @@ static void do_reg(char *s)
 			printf("F' = %02x : ", F_);
 			fgets(nv, sizeof(nv), stdin);
 			F_ = exatoi(nv)	& 0xff;
-		} else if (strncmp(s, "b'", 2) == 0) {
+		} else if ((strncmp(s, "b'", 2) == 0) && (cpu == Z80)) {
 			printf("B' = %02x : ", B_);
 			fgets(nv, sizeof(nv), stdin);
 			B_ = exatoi(nv)	& 0xff;
-		} else if (strncmp(s, "c'", 2) == 0) {
+		} else if ((strncmp(s, "c'", 2) == 0) && (cpu == Z80)) {
 			printf("C' = %02x : ", C_);
 			fgets(nv, sizeof(nv), stdin);
 			C_ = exatoi(nv)	& 0xff;
-		} else if (strncmp(s, "d'", 2) == 0) {
+		} else if ((strncmp(s, "d'", 2) == 0) && (cpu == Z80)) {
 			printf("D' = %02x : ", D_);
 			fgets(nv, sizeof(nv), stdin);
 			D_ = exatoi(nv)	& 0xff;
-		} else if (strncmp(s, "e'", 2) == 0) {
+		} else if ((strncmp(s, "e'", 2) == 0) && (cpu == Z80)) {
 			printf("E' = %02x : ", E_);
 			fgets(nv, sizeof(nv), stdin);
 			E_ = exatoi(nv)	& 0xff;
-		} else if (strncmp(s, "h'", 2) == 0) {
+		} else if ((strncmp(s, "h'", 2) == 0) && (cpu == Z80)) {
 			printf("H' = %02x : ", H_);
 			fgets(nv, sizeof(nv), stdin);
 			H_ = exatoi(nv)	& 0xff;
-		} else if (strncmp(s, "l'", 2) == 0) {
+		} else if ((strncmp(s, "l'", 2) == 0) && (cpu == Z80)) {
 			printf("L' = %02x : ", L_);
 			fgets(nv, sizeof(nv), stdin);
 			L_ = exatoi(nv)	& 0xff;
-		} else if (strncmp(s, "i", 1) == 0) {
+		} else if ((strncmp(s, "i", 1) == 0) && (cpu == Z80)) {
 			printf("I = %02x : ", I);
 			fgets(nv, sizeof(nv), stdin);
 			I = exatoi(nv) & 0xff;
@@ -616,7 +645,13 @@ static void do_reg(char *s)
  */
 static void print_head(void)
 {
+	if (cpu == Z80)
+
 	printf("\nPC   A  SZHPNC I  IFF BC   DE   HL   A'F' B'C' D'E' H'L' IX   IY   SP\n");
+
+	else
+
+	printf("\nPC   A  SZHPC BC   DE   HL   SP\n");
 }
 
 /*
@@ -629,14 +664,22 @@ static void print_reg(void)
 	printf("%c", F & Z_FLAG	? '1' :	'0');
 	printf("%c", F & H_FLAG	? '1' :	'0');
 	printf("%c", F & P_FLAG	? '1' :	'0');
-	printf("%c", F & N_FLAG	? '1' :	'0');
+	if (cpu == Z80)
+		printf("%c", F & N_FLAG	? '1' :	'0');
 	printf("%c", F & C_FLAG	? '1' :	'0');
-	printf(" %02x ", I);
-	printf("%c", IFF & 1 ? '1' : '0');
-	printf("%c", IFF & 2 ? '1' : '0');
-	printf("  %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %04x %04x %04x\n",
+	if (cpu == Z80) {
+		printf(" %02x ", I);
+		printf("%c", IFF & 1 ? '1' : '0');
+		printf("%c", IFF & 2 ? '1' : '0');
+	}
+	if (cpu == Z80) {
+		printf("  %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %04x %04x %04x\n",
 		 B, C, D, E, H,	L, A_, F_, B_, C_, D_, E_, H_, L_, IX, IY,
 		 (unsigned int)(STACK - ram));
+	} else {
+		printf(" %02x%02x %02x%02x %02x%02x %04x\n",
+		 B, C, D, E, H,	L, (unsigned int)(STACK - ram));
+	}
 }
 
 /*
@@ -734,10 +777,16 @@ static void do_hist(char *s)
 				else
 					sa = -1;
 			}
-			printf("%04x AF=%04x BC=%04x DE=%04x HL=%04x IX=%04x IY=%04x SP=%04x\n",
-			       his[i].h_adr, his[i].h_af, his[i].h_bc,
-			       his[i].h_de, his[i].h_hl, his[i].h_ix,
-			       his[i].h_iy, his[i].h_sp);
+			if (cpu == Z80) {
+				printf("%04x AF=%04x BC=%04x DE=%04x HL=%04x IX=%04x IY=%04x SP=%04x\n",
+					his[i].h_adr, his[i].h_af, his[i].h_bc,
+					his[i].h_de, his[i].h_hl, his[i].h_ix,
+					his[i].h_iy, his[i].h_sp);
+			} else {
+				printf("%04x AF=%04x BC=%04x DE=%04x HL=%04x SP=%04x\n",
+					his[i].h_adr, his[i].h_af, his[i].h_bc,
+					his[i].h_de, his[i].h_hl, his[i].h_sp);
+			}
 			l++;
 			if (l == 20) {
 				l = 0;
@@ -810,7 +859,14 @@ static void do_clock(void)
 	cpu_error = NONE;
 	signal(SIGALRM,	timeout);	/* initialise timer interrupt handler */
 	alarm(3);			/* start 3 second timer */
-	cpu();				/* start CPU */
+	switch(cpu) {			/* start CPU */
+	case Z80:
+		cpu_z80();
+		break;
+	case I8080:
+		cpu_8080();
+		break;
+	}
 	*(ram +	0x0000)	= save[0];	/* restore memory locations */
 	*(ram +	0x0001)	= save[1];	/* 0000H - 0002H */
 	*(ram +	0x0002)	= save[2];

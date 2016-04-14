@@ -2,6 +2,7 @@
 
 ln ../../z80sim/sim0.c sim0.c
 ln ../../z80sim/sim1.c sim1.c
+ln ../../z80sim/sim1a.c sim1a.c
 ln ../../z80sim/sim2.c sim2.c
 ln ../../z80sim/sim3.c sim3.c
 ln ../../z80sim/sim4.c sim4.c

@@ -29,6 +29,7 @@
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
+ * 04-JUN-14 Release 1.23 added 8080 emulation
  */
 
 #include <stdio.h>

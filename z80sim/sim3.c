@@ -28,10 +28,11 @@
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
+ * 04-JUN-14 Release 1.23 added 8080 emulation
  */
 
 /*
- *	Like the function "cpu()" this one emulates multi byte opcodes
+ *	Like the function "cpu_z80()" this one emulates multi byte opcodes
  *	starting with 0xdd
  */
 
@@ -1019,7 +1020,7 @@ static int op_ldxdn(void)		/* LD (IX+d),n */
 
 static int op_undoc_ldixl(void)		/* LD IXL,A */
 {
-	if (z_flag)
+	if (u_flag)
 		trap_dd();
 
 	IX = (IX & 0xff00) | A;
@@ -1031,7 +1032,7 @@ static int op_undoc_cpixl(void)		/* CP IXL */
 	register int i;
 	register BYTE P;
 
-	if (z_flag)
+	if (u_flag)
 		trap_dd();
 
 	P = IX & 0xff;

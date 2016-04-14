@@ -28,11 +28,14 @@
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
+ * 04-JUN-14 Release 1.23 added 8080 emulation
  */
 
 /*
  *	Declaration of variables in simglb.c
  */
+
+extern int	cpu;
 
 extern BYTE	A, B, C, D, E, H, L, A_, B_, C_, D_, E_, H_, L_,
 		*PC, *STACK, I, IFF;
@@ -49,11 +52,11 @@ extern BYTE	cpu_bus;
 extern BYTE	ram[],*wrk_ram, cpu_state, int_data;
 
 extern int	s_flag, l_flag, m_flag, x_flag, break_flag, i_flag, f_flag,
-		cpu_error, int_type, int_mode, cntl_c, cntl_bs,
+		cpu_error, int_nmi, int_int, int_mode, cntl_c, cntl_bs,
 		parity[], sb_next, int_protection;
 
 #ifdef Z80_UNDOC
-extern int	z_flag;
+extern int	u_flag;
 #endif
 
 extern int	tmax;

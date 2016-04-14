@@ -28,6 +28,7 @@
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
+ * 04-JUN-14 Release 1.23 added 8080 emulation
  */
 
 /*
@@ -60,7 +61,7 @@ extern int exatoi(char *);
 int main(int argc, char *argv[])
 {
 	register char *s, *p;
-	register char *pn = argv[0];
+	char *pn = argv[0];
 
 #ifdef CPU_SPEED
 	f_flag = CPU_SPEED;
@@ -77,8 +78,8 @@ int main(int argc, char *argv[])
 				l_flag = 1;
 				break;
 #ifdef Z80_UNDOC
-			case 'z':	/* trap undocumented Z80 ops */
-				z_flag = 1;
+			case 'u':	/* trap undocumented Z80 ops */
+				u_flag = 1;
 				break;
 #endif
 			case 'i':	/* trap I/O on unused ports */
@@ -102,20 +103,28 @@ int main(int argc, char *argv[])
 				*p = '\0';
 				s--;
 				break;
+			case '8':
+				cpu = I8080;
+				break;
+			case 'z':
+				cpu = Z80;
+				break;
 			case '?':
 				goto usage;
 			default:
 				printf("illegal option %c\n", *s);
 #ifndef Z80_UNDOC
-usage:				printf("usage:\t%s -s -l -i -mn -fn -xfilename\n", pn);
+usage:				printf("usage:\t%s -z -8 -s -l -i -mn -fn -xfilename\n", pn);
 #else
-usage:				printf("usage:\t%s -s -l -i -z -mn -fn -xfilename\n", pn);
+usage:				printf("usage:\t%s -z -8 -s -l -i -u -mn -fn -xfilename\n", pn);
 #endif
+				puts("\tz = emulate Zilog Z80");
+				puts("\t8 = emulate Intel 8080");
 				puts("\ts = save core and cpu");
 				puts("\tl = load core and cpu");
 				puts("\ti = trap on I/O to unused ports");
 #ifdef Z80_UNDOC
-				puts("\tz = trap on undocumented Z80 ops");
+				puts("\tu = trap on undocumented Z80 ops");
 #endif
 				puts("\tm = init memory with n");
 				puts("\tf = CPU frequency n in MHz");
@@ -124,13 +133,27 @@ usage:				printf("usage:\t%s -s -l -i -z -mn -fn -xfilename\n", pn);
 			}
 
 	putchar('\n');
-	puts("#######  #####    ###            #####    ###   #     #");
-	puts("     #  #     #  #   #          #     #    #    ##   ##");
-	puts("    #   #     # #     #         #          #    # # # #");
-	puts("   #     #####  #     #  #####   #####     #    #  #  #");
-	puts("  #     #     # #     #               #    #    #     #");
-	puts(" #      #     #  #   #          #     #    #    #     #");
-	puts("#######  #####    ###            #####    ###   #     #");
+
+	if (cpu == Z80) {
+puts("#######  #####    ###            #####    ###   #     #");
+puts("     #  #     #  #   #          #     #    #    ##   ##");
+puts("    #   #     # #     #         #          #    # # # #");
+puts("   #     #####  #     #  #####   #####     #    #  #  #");
+puts("  #     #     # #     #               #    #    #     #");
+puts(" #      #     #  #   #          #     #    #    #     #");
+puts("#######  #####    ###            #####    ###   #     #");
+
+	} else {
+
+puts(" #####    ###     #####    ###            #####    ###   #     #");
+puts("#     #  #   #   #     #  #   #          #     #    #    ##   ##");
+puts("#     # #     #  #     # #     #         #          #    # # # #");
+puts(" #####  #     #   #####  #     #  #####   #####     #    #  #  #");
+puts("#     # #     #  #     # #     #               #    #    #     #");
+puts("#     #  #   #   #     #  #   #          #     #    #    #     #");
+puts(" #####    ###     #####    ###            #####    ###   #     #");
+	}
+
 	printf("\nRelease %s, %s\n", RELEASE, COPYR);
 	if (f_flag > 0)
 		printf("\nCPU speed is %d MHz\n", f_flag);
@@ -143,6 +166,8 @@ usage:				printf("usage:\t%s -s -l -i -z -mn -fn -xfilename\n", pn);
 
 	wrk_ram	= PC = ram;
 	STACK = ram + 0xffff;
+	if (cpu == I8080)	/* the unused flag bits are documented for */
+		F = 2;		/* the 8080, so start with bit 1 set */
 	memset((char *)	ram, m_flag, 65536);
 	if (l_flag)
 		if (load_core())
@@ -365,7 +390,7 @@ static int load_hex(char *fn)
 		s++;
 		if (addr < saddr)
 			saddr = addr;
-		if (addr > eaddr)
+		if (addr >= eaddr)
 			eaddr = addr + count - 1;
 		s += 2;
 		for (i = 0; i < count; i++) {

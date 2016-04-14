@@ -43,7 +43,7 @@ int boot(void);
 
 extern int load_file(char *);
 extern int load_core(void);
-extern void cpu(void);
+extern void cpu_z80(void), cpu_8080(void);
 
 struct termios old_term, new_term;
 
@@ -66,7 +66,14 @@ void mon(void)
 	/* start CPU emulation */
 	cpu_state = CONTIN_RUN;
 	cpu_error = NONE;
-	cpu();
+	switch(cpu) {
+	case Z80:
+		cpu_z80();
+		break;
+	case I8080:
+		cpu_8080();
+		break;
+	}
 
 	/* reset terminal */
 	reset_unix_terminal();

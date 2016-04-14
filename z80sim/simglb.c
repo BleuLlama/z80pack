@@ -28,6 +28,7 @@
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
+ * 04-JUN-14 Release 1.23 added 8080 emulation
  */
 
 /*
@@ -37,6 +38,11 @@
 #include "sim.h"
 
 #define MAXCHAN	5	/* max number of channel for I/O busy detect */
+
+/*
+ *	Type of CPU, either Z80 or 8080
+ */
+int cpu = DEFAULT_CPU;
 
 /*
  *	CPU Registers
@@ -116,12 +122,13 @@ int x_flag;			/* flag	for -x option */
 int i_flag;			/* flag for -i option */
 int f_flag;			/* flag for -f option */
 #ifdef Z80_UNDOC
-int z_flag;			/* flag for -z option */
+int u_flag;			/* flag for -u option */
 #endif
 char xfn[LENCMD];		/* buffer for filename (option -x) */
 BYTE cpu_state;			/* status of CPU emulation */
 int cpu_error;			/* error status of CPU emulation */
-int int_type;			/* type	of interrupt */
+int int_nmi;;			/* non maskable interrupt */
+int int_int;			/* interrupt */
 int tmax;			/* max t-stats to execute in 10ms */
 int int_mode;			/* CPU interrupt mode (IM 0, IM 1, IM 2) */
 BYTE int_data;			/* data from interrupting device on data bus */
@@ -135,7 +142,7 @@ int cntl_bs;			/* flag	for cntl-\ entered */
 int busy_loop_cnt[MAXCHAN];	/* counters for I/O busy loop detection */
 
 /*
- *	Table to get parity as fast as possible
+ *	Precompiled table to get parity as fast as possible
  */
 int parity[256] = {
 		0 /* 00000000 */, 1 /* 00000001	*/, 1 /* 00000010 */,

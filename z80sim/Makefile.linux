@@ -5,6 +5,7 @@ LFLAGS = -s
 
 OBJ =	sim0.o \
 	sim1.o \
+	sim1a.o \
 	sim2.o \
 	sim3.o \
 	sim4.o \
@@ -24,8 +25,11 @@ z80sim : $(OBJ)
 sim0.o : sim0.c	sim.h simglb.h
 	$(CC) $(CFLAGS) sim0.c
 
-sim1.o : sim1.c	sim.h simglb.h
+sim1.o : sim1.c sim.h simglb.h
 	$(CC) $(CFLAGS) sim1.c
+
+sim1a.o : sim1a.c sim.h simglb.h
+	$(CC) $(CFLAGS) sim1a.c
 
 sim2.o : sim2.c	sim.h simglb.h
 	$(CC) $(CFLAGS) sim2.c
