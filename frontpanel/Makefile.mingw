@@ -14,7 +14,7 @@ CFLAGS = -c -DDLL_EXPORT -mms-bitfields -O3 -Wno-deprecated \
 	$(INCLUDE) $(DEFINES)
 
 default: $(OBJS) 
-	g++ -shared -Wl,--out-implib,libfrontpanel.a $(LDFLAGS) $(OBJS) \
+	$(CC) -shared -Wl,--out-implib,libfrontpanel.a $(LDFLAGS) $(OBJS) \
 	-llibjpeg -lopengl32 -lgdi32 -lglu32 -lpthread \
 	-o libfrontpanel.dll
 

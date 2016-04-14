@@ -11,7 +11,7 @@
  *
  * History:
  * 20-OCT-08 first version finished
- * 20-MAR-14 ignore carriage return too, neccessary for the Windows port
+ * 20-MAR-14 ignore carriage return too, necessary for the Windows port
  */
 
 extern void io_config(void);

@@ -79,7 +79,7 @@ void imsai_fif_out(BYTE data)
 	 * multiple times for this descriptor.
 	 *
 	 * The command is OR'ed with a descriptor number 0x0 - 0xf, so
-	 * there can be 16 different disk decriptors that need to be
+	 * there can be 16 different disk descriptors that need to be
 	 * remembered.
 	 */
 	switch (fdstate) {
@@ -106,7 +106,7 @@ void imsai_fif_out(BYTE data)
 		fdstate++;
 		break;
 
-	case 2: /* MSB of disk decriptor address */
+	case 2: /* MSB of disk descriptor address */
 		fdaddr[descno] += data << 8;
 		fdstate = 0;
 		break;
@@ -197,7 +197,7 @@ void disk_io(int addr)
 		break;
 
 	default: /* ignore all other drives */
-		 /* IMDOS sends unit 3 intermediant for drive C: & D: */
+		 /* IMDOS sends unit 3 intermediate for drive C: & D: */
 		*(ram + addr + DD_RESULT) = 0;
 		return;
 	}

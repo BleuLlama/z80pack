@@ -11,13 +11,13 @@
  *
  * History:
  * 20-OCT-08 first version finished
- * 20-MAR-14 ignore carriage return too, neccessary for the Windows port
+ * 20-MAR-14 ignore carriage return too, necessary for the Windows port
  */
 
 #include <stdio.h>
 #include <string.h>
 
-#define BUFSIZE 256	/* max line lenght of command buffer */
+#define BUFSIZE 256	/* max line length of command buffer */
 
 extern int sio_upper_case;	/* SIO boards translate input to upper case */
 extern int sio_strip_parity;	/* SIO boards strip parity from output */

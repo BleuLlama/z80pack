@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -27,10 +27,11 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
- *	This modul contains all the global variables
+ *	This module contains all the global variables
  */
 
 #include "sim.h"
@@ -41,7 +42,7 @@
  *	CPU Registers
  */
 BYTE A,B,C,D,E,H,L;		/* Z80 primary registers */
-int  F;				/* normaly 8-Bit, but int is faster */
+int  F;				/* normally 8-Bit, but int is faster */
 WORD IX, IY;
 BYTE A_,B_,C_,D_,E_,H_,L_;	/* Z80 alternate registers */
 int  F_;
@@ -50,7 +51,7 @@ BYTE *STACK;			/* Z80 stackpointer */
 BYTE I;				/* Z80 interrupt register */
 BYTE IFF;			/* Z80 interrupt flags */
 long R;				/* Z80 refresh register */
-				/* is normaly a 8 bit register	*/
+				/* is normally a 8 bit register	*/
 				/* the 32 bits are used to measure the */
 				/* clock frequency */
 
@@ -100,7 +101,7 @@ BYTE *t_end = ram + 65535;	/* end address for measurement */
 #ifdef FRONTPANEL
 unsigned long long fp_clock;
 WORD fp_led_address;		/* lights for address bus */
-BYTE fp_led_data;		/* ligths for data bus */
+BYTE fp_led_data;		/* lights for data bus */
 WORD address_switch;		/* address and programmed input switches */
 BYTE fp_led_output;		/* IMSAI programmed output */
 #endif
@@ -123,7 +124,8 @@ int cpu_error;			/* error status of CPU emulation */
 int int_type;			/* type	of interrupt */
 int tmax;			/* max t-stats to execute in 10ms */
 int int_mode;			/* CPU interrupt mode (IM 0, IM 1, IM 2) */
-BYTE int_code;			/* instruction for IM 0 */
+BYTE int_data;			/* data from interrupting device on data bus */
+int int_protection = 0;		/* to delay interrupts after EI */
 int cntl_c;			/* flag	for cntl-c entered */
 int cntl_bs;			/* flag	for cntl-\ entered */
 
@@ -133,9 +135,9 @@ int cntl_bs;			/* flag	for cntl-\ entered */
 int busy_loop_cnt[MAXCHAN];	/* counters for I/O busy loop detection */
 
 /*
- *	Table to get parrity as fast as possible
+ *	Table to get parity as fast as possible
  */
-int parrity[256] = {
+int parity[256] = {
 		0 /* 00000000 */, 1 /* 00000001	*/, 1 /* 00000010 */,
 		0 /* 00000011 */, 1 /* 00000100	*/, 0 /* 00000101 */,
 		0 /* 00000110 */, 1 /* 00000111	*/, 1 /* 00001000 */,

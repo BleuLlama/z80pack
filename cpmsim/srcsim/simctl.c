@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -23,8 +23,11 @@
  * 06-AUG-08 Release 1.15 many improvements and Windows support via Cygwin
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
- * 24-JAN-14 Release 1.18 some improvments here and there
+ * 24-JAN-14 Release 1.18 some improvements here and there
  * 02-MAR-14 Release 1.19 source cleanup and improvements
+ * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
+ * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 #include <unistd.h>
@@ -45,7 +48,7 @@ extern void cpu(void);
 struct termios old_term, new_term;
 
 /*
- *	This function initializes the terminal, loads boot code
+ *	This function initialises the terminal, loads boot code
  *	and then the Z80 CPU emulation is started.
  */
 void mon(void)
@@ -54,7 +57,10 @@ void mon(void)
 	if (boot())
 		exit(1);
 
-	/* initialize terminal */
+	/* empty buffer for teletype */
+	fflush(stdout);
+
+	/* initialise terminal */
 	set_unix_terminal();
 
 	/* start CPU emulation */

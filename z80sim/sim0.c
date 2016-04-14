@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -27,13 +27,14 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
- *	This modul contains the 'main()' function of the simulator,
- *	where the options are checked and variables are initialized.
- *	After initialization of the UNIX interrupts ( int_on() )
- *	and initialization of the I/O simulation ( init_io() )
+ *	This module contains the 'main()' function of the simulator,
+ *	where the options are checked and variables are initialised.
+ *	After initialisation of the UNIX interrupts ( int_on() )
+ *	and initialisation of the I/O simulation ( init_io() )
  *	the user interface ( mon() ) is called.
  */
 
@@ -83,7 +84,7 @@ int main(int argc, char *argv[])
 			case 'i':	/* trap I/O on unused ports */
 				i_flag = 1;
 				break;
-			case 'm':	/* initialize Z80 memory */
+			case 'm':	/* initialise Z80 memory */
 				m_flag = exatoi(s+1);
 				s += strlen(s+1);
 				break;
@@ -117,7 +118,7 @@ usage:				printf("usage:\t%s -s -l -i -z -mn -fn -xfilename\n", pn);
 				puts("\tz = trap on undocumented Z80 ops");
 #endif
 				puts("\tm = init memory with n");
-				puts("\tf = CPU frequenzy n in MHz");
+				puts("\tf = CPU frequency n in MHz");
 				puts("\tx = load and execute filename");
 				exit(1);
 			}
@@ -290,22 +291,22 @@ int load_file(char *s)
 static int load_mos(int fd, char *fn)
 {
 	BYTE fileb[3];
-	unsigned count,	readed;
+	unsigned count,	readn;
 	int rc = 0;
 
 	read(fd, (char *) fileb, 3);	/* read load address */
 	if (wrk_ram == NULL)		/* and set if not given */
 		wrk_ram	= ram +	(fileb[2] * 256	+ fileb[1]);
 	count =	ram + 65535 - wrk_ram;
-	if ((readed = read(fd, (char *)	wrk_ram, count)) == count) {
+	if ((readn = read(fd, (char *)	wrk_ram, count)) == count) {
 		puts("Too much to load, stopped at 0xffff");
 		rc = 1;
 	}
 	close(fd);
 	printf("\nLoader statistics for file %s:\n", fn);
 	printf("START : %04x\n", (unsigned int)(wrk_ram - ram));
-	printf("END   : %04x\n", (unsigned int)(wrk_ram - ram + readed - 1));
-	printf("LOADED: %04x\n\n", readed);
+	printf("END   : %04x\n", (unsigned int)(wrk_ram - ram + readn - 1));
+	printf("LOADED: %04x\n\n", readn);
 	PC = wrk_ram;
 	return(rc);
 }
@@ -364,7 +365,8 @@ static int load_hex(char *fn)
 		s++;
 		if (addr < saddr)
 			saddr = addr;
-		eaddr = addr + count - 1;
+		if (addr > eaddr)
+			eaddr = addr + count - 1;
 		s += 2;
 		for (i = 0; i < count; i++) {
 			data = (*s <= '9') ? (*s - '0') << 4 :
@@ -378,10 +380,11 @@ static int load_hex(char *fn)
 	}
 
 	fclose(fd);
+	count = eaddr - saddr + 1;
 	printf("\nLoader statistics for file %s:\n", fn);
-	printf("START : %04x\n", saddr);
-	printf("END   : %04x\n", eaddr);
-	printf("LOADED: %04x\n\n", eaddr - saddr + 1);
+	printf("START : %04xH\n", saddr);
+	printf("END   : %04xH\n", eaddr);
+	printf("LOADED: %04xH (%d)\n\n", count, count);
 	PC = wrk_ram = ram + saddr;
 
 	return(0);

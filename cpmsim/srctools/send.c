@@ -22,7 +22,7 @@ int fdout, fdin;
 
 int main(int argc,char *argv[])
 {
-	register int readed;
+	register int readn;
 
 	if (argc != 2) {
 		puts("usage: send filname &");
@@ -36,10 +36,10 @@ int main(int argc,char *argv[])
 		perror("pipe auxin");
 		exit(1);
 	}
-	while ((readed = read(fdin, buf, BUFSIZ)) == BUFSIZ)
+	while ((readn = read(fdin, buf, BUFSIZ)) == BUFSIZ)
 		sendbuf(BUFSIZ);
-	if (readed)
-		sendbuf(readed);
+	if (readn)
+		sendbuf(readn);
 	close(fdin);
 	close(fdout);
 	return(0);

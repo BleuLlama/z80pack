@@ -7,7 +7,7 @@
  *	28-JUN-1988 Switched to Unix System V.3
  *	21-OCT-2006 changed to ANSI C for modern POSIX OS's
  *	03-FEB-2007 more ANSI C conformance and reduced compiler warnings
- *	18-MAR-2007 use default output file extension dependend on format
+ *	18-MAR-2007 use default output file extension dependent on format
  *	04-OCT-2008 fixed comment bug, ';' string argument now working
  */
 
@@ -33,7 +33,7 @@
 #define OUTHEX		3	/*		     Intel hex */
 #define OUTDEF		OUTMOS	/* default object format */
 #define COMMENT		';'	/* inline comment character */
-#define LINCOM		'*'	/* comment line if in columne 1 */
+#define LINCOM		'*'	/* comment line if in column 1 */
 #define LABSEP		':'	/* label separator */
 #define STRSEP		'\''	/* string separator */
 #define ENDFILE		"END"	/* end of source */
@@ -112,12 +112,12 @@ struct inc {
 #define REGIIY		20	/* register indirect IY */
 #define REGISP		21	/* register indirect SP */
 #define FLGNC		30	/* flag no carry */
-#define FLGNZ		31	/* flag not zerro */
-#define FLGZ		32	/* flag zerro */
+#define FLGNZ		31	/* flag not zero */
+#define FLGZ		32	/* flag zero */
 #define FLGM		33	/* flag minus */
 #define FLGP		34	/* flag plus */
-#define FLGPE		35	/* flag parrity even */
-#define FLGPO		36	/* flag parrity odd */
+#define FLGPE		35	/* flag parity even */
+#define FLGPO		36	/* flag parity odd */
 #define NOOPERA		98	/* no operand */
 #define NOREG		99	/* operand isn't register */
 
@@ -130,7 +130,7 @@ struct inc {
 #define E_MULSYM	3	/* multiple defined symbol */
 #define E_UNDSYM	4	/* undefined symbol */
 #define E_VALOUT	5	/* value out of bounds */
-#define E_MISPAR	6	/* missing parren */
+#define E_MISPAR	6	/* missing paren */
 #define E_MISHYP	7	/* missing string separator */
 #define E_MEMOVR	8	/* memory override (ORG) */
 #define E_MISIFF	9	/* missing IF at ELSE or ENDIF */

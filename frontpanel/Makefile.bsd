@@ -3,15 +3,17 @@ SRCS = jpeg.cpp lpanel.cpp lp_gfx.cpp lp_main.cpp lp_utils.cpp lp_window.cpp \
 
 OBJS = $(SRCS:.cpp=.o)
 
-CC = g++
+# g++ 4.9 doesn't find the includes in /usr/local/include, so use c++
+
+CC = c++
 
 # compiler switches
 
-INCLUDE = -I/opt/X11/include
+INCLUDE = -I/usr/local/include
 DEFINES = 
 
 CFLAGS = -c -O3 -fPIC -Wno-deprecated $(INCLUDE) $(DEFINES)
-LDFLAGS = -shared -L/usr/X11/lib -L/usr/local/lib -ljpeg -lgl -lglu -lX11
+LDFLAGS = -shared
 
 default: $(OBJS) 
 	$(CC) $(LDFLAGS) $(OBJS) -o libfrontpanel.so

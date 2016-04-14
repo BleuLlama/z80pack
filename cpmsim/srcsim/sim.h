@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -23,9 +23,11 @@
  * 06-AUG-08 Release 1.15 many improvements and Windows support via Cygwin
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
- * 24-JAN-14 Release 1.18 some improvments here and there
+ * 24-JAN-14 Release 1.18 some improvements here and there
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
+ * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
@@ -35,8 +37,8 @@
 #define CPU_SPEED 0	/* default CPU speed */
 #define Z80_UNDOC	/* compile undocumented Z80 instructions */
 #define WANT_INT	/* interrupt for MP/M */
-/*#define WANT_SPC*/	/* faster and normaly not needed with CP/M */
-/*#define WANT_PCC*/	/* faster and normaly not needed with CP/M */
+/*#define WANT_SPC*/	/* faster and normally not needed with CP/M */
+/*#define WANT_PCC*/	/* faster and normally not needed with CP/M */
 /*#define CNTL_C*/	/* don't abort simulation with cntl-c */
 #define CNTL_BS		/* emergency exit with cntl-\ :-) */
 #define WANT_TIM	/* run length measurement needed to adjust CPU speed */
@@ -52,7 +54,7 @@
 /*#define SNETDEBUG*/	/* server network protocol debugger */
 
 /*
- * forking and pipes are working now with cygwin in 2014,
+ * forking and pipes are working now with Cygwin in 2014,
  * but SIGIO on BSD sockets is not yet
  */
 #ifdef __CYGWIN__
@@ -64,7 +66,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.21"
+#define RELEASE	"1.22"
 
 #define LENCMD		80		/* length of command buffers etc */
 

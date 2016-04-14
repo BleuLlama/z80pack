@@ -14,7 +14,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -30,6 +30,7 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
@@ -78,7 +79,7 @@ static void (*port_out[256]) (BYTE) = {
  *	It will be called from the CPU simulation before
  *	any operation with the Z80 is possible.
  *
- *	In this sample I/O simulation we initialize all
+ *	In this sample I/O simulation we initialise all
  *	unused port with an error trap handler, so that
  *	simulation stops at I/O on the unused ports.
  *
@@ -129,7 +130,7 @@ void io_out(BYTE adr, BYTE data)
 /*
  *	I/O input trap function
  *	This function should be added into all unused
- *	entrys of the input port array. It stops the
+ *	entries of the input port array. It stops the
  *	emulation with an I/O error.
  */
 static BYTE io_trap_in(void)
@@ -144,7 +145,7 @@ static BYTE io_trap_in(void)
 /*
  *	I/O trap function
  *	This function should be added into all unused
- *	entrys of the output port array. It stops the
+ *	entries of the output port array. It stops the
  *	emulation with an I/O error.
  */
 static void io_trap_out(BYTE data)

@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -27,6 +27,7 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 #include <unistd.h>
@@ -393,6 +394,9 @@ void cpu(void)
 	register int states;
 #endif
 #endif
+#ifdef WANT_INT
+	BYTE *p;
+#endif
 
 	do {
 
@@ -430,7 +434,7 @@ void cpu(void)
 #ifdef WANT_TIM		/* check for start address of runtime measurement */
 		if (PC == t_start && !t_flag) {
 			t_flag = 1;	/* switch measurement on */
-			t_states = 0L;	/* initialize counted T-states */
+			t_states = 0L;	/* initialise counted T-states */
 		}
 #endif
 
@@ -454,9 +458,13 @@ void cpu(void)
 			case INT_INT:	/* maskable interrupt */
 				if (IFF != 3)
 					break;
+				if (int_protection) { /* protect first instr */
+					int_protection = 0; /* after EI */
+					continue;
+				}
 				IFF = 0;
 				switch (int_mode) {
-				case 0:
+				case 0:		/* IM 0 */
 #ifdef WANT_SPC
 					if (STACK <= ram)
 						STACK =	ram + 65536L;
@@ -467,7 +475,7 @@ void cpu(void)
 						STACK =	ram + 65536L;
 #endif
 					*--STACK = (PC - ram);
-					switch (int_code) {
+					switch (int_data) {
 					case 0xc7: /* RST 00H */
 						PC = ram + 0;
 						break;
@@ -497,7 +505,7 @@ void cpu(void)
 						break;
 					}
 					break;
-				case 1:
+				case 1:		/* IM 1 */
 #ifdef WANT_SPC
 					if (STACK <= ram)
 						STACK =	ram + 65536L;
@@ -510,7 +518,21 @@ void cpu(void)
 					*--STACK = (PC - ram);
 					PC = ram + 0x38;
 					break;
-				case 2:
+				case 2:		/* IM 2 */
+#ifdef WANT_SPC
+					if (STACK <= ram)
+						STACK =	ram + 65536L;
+#endif
+					*--STACK = (PC - ram) >> 8;
+#ifdef WANT_SPC
+					if (STACK <= ram)
+						STACK =	ram + 65536L;
+#endif
+					*--STACK = (PC - ram);
+					p = ram + ((I << 8) + int_data);
+					PC = ram + *p;
+					p++;
+					PC += *p << 8;
 					break;
 				}
 				break;
@@ -656,13 +678,14 @@ static int op_daa(void)			/* DAA */
 	}
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(4);
 }
 
 static int op_ei(void)			/* EI */
 {
 	IFF = 3;
+	int_protection = 1;		/* protect next instruction */
 	return(4);
 }
 
@@ -1551,7 +1574,7 @@ static int op_anda(void)		/* AND A */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(4);
 }
@@ -1562,7 +1585,7 @@ static int op_andb(void)		/* AND B */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(4);
 }
@@ -1573,7 +1596,7 @@ static int op_andc(void)		/* AND C */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(4);
 }
@@ -1584,7 +1607,7 @@ static int op_andd(void)		/* AND D */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(4);
 }
@@ -1595,7 +1618,7 @@ static int op_ande(void)		/* AND E */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(4);
 }
@@ -1606,7 +1629,7 @@ static int op_andh(void)		/* AND H */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(4);
 }
@@ -1617,7 +1640,7 @@ static int op_andl(void)		/* AND L */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(4);
 }
@@ -1634,7 +1657,7 @@ static int op_andhl(void)		/* AND (HL) */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(7);
 }
@@ -1651,7 +1674,7 @@ static int op_andn(void)		/* AND n */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(7);
 }
@@ -1660,7 +1683,7 @@ static int op_ora(void)			/* OR A */
 {
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1670,7 +1693,7 @@ static int op_orb(void)			/* OR B */
 	A |= B;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1680,7 +1703,7 @@ static int op_orc(void)			/* OR C */
 	A |= C;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1690,7 +1713,7 @@ static int op_ord(void)			/* OR D */
 	A |= D;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1700,7 +1723,7 @@ static int op_ore(void)			/* OR E */
 	A |= E;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1710,7 +1733,7 @@ static int op_orh(void)			/* OR H */
 	A |= H;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1720,7 +1743,7 @@ static int op_orl(void)			/* OR L */
 	A |= L;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1736,7 +1759,7 @@ static int op_orhl(void)		/* OR (HL)	*/
 	A |= *(ram + (H	<< 8) +	L);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(7);
 }
@@ -1752,7 +1775,7 @@ static int op_orn(void)			/* OR n */
 	A |= *PC++;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(7);
 }
@@ -1770,7 +1793,7 @@ static int op_xorb(void)		/* XOR B */
 	A ^= B;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1780,7 +1803,7 @@ static int op_xorc(void)		/* XOR C */
 	A ^= C;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1790,7 +1813,7 @@ static int op_xord(void)		/* XOR D */
 	A ^= D;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1800,7 +1823,7 @@ static int op_xore(void)		/* XOR E */
 	A ^= E;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1810,7 +1833,7 @@ static int op_xorh(void)		/* XOR H */
 	A ^= H;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1820,7 +1843,7 @@ static int op_xorl(void)		/* XOR L */
 	A ^= L;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(4);
 }
@@ -1836,7 +1859,7 @@ static int op_xorhl(void)		/* XOR (HL) */
 	A ^= *(ram + (H	<< 8) +	L);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(7);
 }
@@ -1852,7 +1875,7 @@ static int op_xorn(void)		/* XOR n */
 	A ^= *PC++;
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(7);
 }

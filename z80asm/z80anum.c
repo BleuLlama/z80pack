@@ -7,13 +7,13 @@
  *	28-JUN-1988 Switched to Unix System V.3
  *	21-OCT-2006 changed to ANSI C for modern POSIX OS's
  *	03-FEB-2007 more ANSI C conformance and reduced compiler warnings
- *	18-MAR-2007 use default output file extension dependend on format
+ *	18-MAR-2007 use default output file extension dependent on format
  *	04-OCT-2008 fixed comment bug, ';' string argument now working
  *	22-FEB-2014 fixed is...() compiler warnings
  */
 
 /*
- *	modul with numercial computation and conversion
+ *	module with numerical computation and conversion
  */
 
 #include <stdlib.h>
@@ -174,11 +174,11 @@ hyp_error:
 }
 
 /*
- *	get typ of operand
+ *	get type of operand
  *
  *	Input: pointer to string with operand
  *
- *	Output: operand typ
+ *	Output: operand type
  */
 int get_type(char *s)
 {
@@ -203,7 +203,7 @@ int get_type(char *s)
 		return(OPEMOD);
 	else if (*s == '<')		/* logical shift left */
 		return(OPESHL);
-	else if (*s == '>')		/* logical shift rigth */
+	else if (*s == '>')		/* logical shift right */
 		return(OPESHR);
 	else if (*s == '|')		/* logical OR */
 		return(OPELOR);

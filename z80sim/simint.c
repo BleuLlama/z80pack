@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -27,12 +27,13 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
  *	This module contain the interrupt handlers for the OS:
  *
- *	int_on()	: initialize interrupt handlers
+ *	int_on()	: initialise interrupt handlers
  *	int_off()	: reset interrupts to default
  *	user_int()	: handler for user interrupt (CNTL-C)
  *	quit_int()	: handler for signal "quit" (CNTL-\)
@@ -48,7 +49,7 @@
 #include "simglb.h"
 
 static void user_int(int), quit_int(int), term_int(int);
-extern void exit_io(void), int_off();
+extern void exit_io(void);
 extern struct termios old_term;
 
 void int_on(void)

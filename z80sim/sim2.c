@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -27,6 +27,7 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
@@ -407,7 +408,7 @@ static int op_srla(void)		/* SRL A */
 	F &= ~(H_FLAG |	N_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -418,7 +419,7 @@ static int op_srlb(void)		/* SRL B */
 	F &= ~(H_FLAG |	N_FLAG);
 	(B) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(B & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -429,7 +430,7 @@ static int op_srlc(void)		/* SRL C */
 	F &= ~(H_FLAG |	N_FLAG);
 	(C) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(C & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -440,7 +441,7 @@ static int op_srld(void)		/* SRL D */
 	F &= ~(H_FLAG |	N_FLAG);
 	(D) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(D & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -451,7 +452,7 @@ static int op_srle(void)		/* SRL E */
 	F &= ~(H_FLAG |	N_FLAG);
 	(E) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(E & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[E]) ? (F &= ~P_FLAG) :(F |= P_FLAG);
+	(parity[E]) ? (F &= ~P_FLAG) :(F |= P_FLAG);
 	return(8);
 }
 
@@ -462,7 +463,7 @@ static int op_srlh(void)		/* SRL H */
 	F &= ~(H_FLAG |	N_FLAG);
 	(H) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(H & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -473,7 +474,7 @@ static int op_srll(void)		/* SRL L */
 	F &= ~(H_FLAG |	N_FLAG);
 	(L) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(L & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -493,7 +494,7 @@ static int op_srlhl(void)		/* SRL (HL) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -510,7 +511,7 @@ static int op_slaa(void)		/* SLA A */
 	F &= ~(H_FLAG |	N_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -521,7 +522,7 @@ static int op_slab(void)		/* SLA B */
 	F &= ~(H_FLAG |	N_FLAG);
 	(B) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(B & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -532,7 +533,7 @@ static int op_slac(void)		/* SLA C */
 	F &= ~(H_FLAG |	N_FLAG);
 	(C) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(C & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -543,7 +544,7 @@ static int op_slad(void)		/* SLA D */
 	F &= ~(H_FLAG |	N_FLAG);
 	(D) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(D & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -554,7 +555,7 @@ static int op_slae(void)		/* SLA E */
 	F &= ~(H_FLAG |	N_FLAG);
 	(E) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(E & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -565,7 +566,7 @@ static int op_slah(void)		/* SLA H */
 	F &= ~(H_FLAG |	N_FLAG);
 	(H) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(H & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -576,7 +577,7 @@ static int op_slal(void)		/* SLA L */
 	F &= ~(H_FLAG |	N_FLAG);
 	(L) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(L & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -596,7 +597,7 @@ static int op_slahl(void)		/* SLA (HL) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -617,7 +618,7 @@ static int op_rlra(void)		/* RL A */
 	F &= ~(H_FLAG |	N_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -632,7 +633,7 @@ static int op_rlb(void)			/* RL B */
 	F &= ~(H_FLAG |	N_FLAG);
 	(B) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(B & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -647,7 +648,7 @@ static int op_rlc(void)			/* RL C */
 	F &= ~(H_FLAG |	N_FLAG);
 	(C) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(C & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -662,7 +663,7 @@ static int op_rld(void)			/* RL D */
 	F &= ~(H_FLAG |	N_FLAG);
 	(D) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(D & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -677,7 +678,7 @@ static int op_rle(void)			/* RL E */
 	F &= ~(H_FLAG |	N_FLAG);
 	(E) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(E & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -692,7 +693,7 @@ static int op_rlh(void)			/* RL H */
 	F &= ~(H_FLAG |	N_FLAG);
 	(H) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(H & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[H]) ? (F &= ~P_FLAG) :(F |= P_FLAG);
+	(parity[H]) ? (F &= ~P_FLAG) :(F |= P_FLAG);
 	return(8);
 }
 
@@ -707,7 +708,7 @@ static int op_rll(void)			/* RL L */
 	F &= ~(H_FLAG |	N_FLAG);
 	(L) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(L & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -730,7 +731,7 @@ static int op_rlhl(void)		/* RL (HL) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -751,7 +752,7 @@ static int op_rrra(void)		/* RR A */
 	F &= ~(H_FLAG |	N_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -766,7 +767,7 @@ static int op_rrb(void)			/* RR B */
 	F &= ~(H_FLAG |	N_FLAG);
 	(B) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(B & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -781,7 +782,7 @@ static int op_rrc(void)			/* RR C */
 	F &= ~(H_FLAG |	N_FLAG);
 	(C) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(C & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -796,7 +797,7 @@ static int op_rrd(void)			/* RR D */
 	F &= ~(H_FLAG |	N_FLAG);
 	(D) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(D & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -811,7 +812,7 @@ static int op_rre(void)			/* RR E */
 	F &= ~(H_FLAG |	N_FLAG);
 	(E) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(E & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -826,7 +827,7 @@ static int op_rrh(void)			/* RR H */
 	F &= ~(H_FLAG |	N_FLAG);
 	(H) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(H & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -841,7 +842,7 @@ static int op_rrl(void)			/* RR L */
 	F &= ~(H_FLAG |	N_FLAG);
 	(L) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(L & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -864,7 +865,7 @@ static int op_rrhl(void)		/* RR (HL) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -885,7 +886,7 @@ static int op_rrcra(void)		/* RRC A */
 	if (i) A |= 128;
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -900,7 +901,7 @@ static int op_rrcb(void)		/* RRC B */
 	if (i) B |= 128;
 	(B) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(B & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -915,7 +916,7 @@ static int op_rrcc(void)		/* RRC C */
 	if (i) C |= 128;
 	(C) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(C & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -930,7 +931,7 @@ static int op_rrcd(void)		/* RRC D */
 	if (i) D |= 128;
 	(D) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(D & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -945,7 +946,7 @@ static int op_rrce(void)		/* RRC E */
 	if (i) E |= 128;
 	(E) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(E & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -960,7 +961,7 @@ static int op_rrch(void)		/* RRC H */
 	if (i) H |= 128;
 	(H) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(H & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -975,7 +976,7 @@ static int op_rrcl(void)		/* RRC L */
 	if (i) L |= 128;
 	(L) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(L & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -998,7 +999,7 @@ static int op_rrchl(void)		/* RRC (HL) */
 	if (i) *p |= 128;
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -1019,7 +1020,7 @@ static int op_rlcra(void)		/* RLC A */
 	if (i) A |= 1;
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1034,7 +1035,7 @@ static int op_rlcb(void)		/* RLC B */
 	if (i) B |= 1;
 	(B) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(B & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1049,7 +1050,7 @@ static int op_rlcc(void)		/* RLC C */
 	if (i) C |= 1;
 	(C) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(C & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1064,7 +1065,7 @@ static int op_rlcd(void)		/* RLC D */
 	if (i) D |= 1;
 	(D) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(D & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1079,7 +1080,7 @@ static int op_rlce(void)		/* RLC E */
 	if (i) E |= 1;
 	(E) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(E & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1094,7 +1095,7 @@ static int op_rlch(void)		/* RLC H */
 	if (i) H |= 1;
 	(H) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(H & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1109,7 +1110,7 @@ static int op_rlcl(void)		/* RLC L */
 	if (i) L |= 1;
 	(L) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(L & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1132,7 +1133,7 @@ static int op_rlchl(void)		/* RLC (HL) */
 	if (i) *p |= 1;
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -1153,7 +1154,7 @@ static int op_sraa(void)		/* SRA A */
 	F &= ~(H_FLAG |	N_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1168,7 +1169,7 @@ static int op_srab(void)		/* SRA B */
 	F &= ~(H_FLAG |	N_FLAG);
 	(B) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(B & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1183,7 +1184,7 @@ static int op_srac(void)		/* SRA C */
 	F &= ~(H_FLAG |	N_FLAG);
 	(C) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(C & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1198,7 +1199,7 @@ static int op_srad(void)		/* SRA D */
 	F &= ~(H_FLAG |	N_FLAG);
 	(D) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(D & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1213,7 +1214,7 @@ static int op_srae(void)		/* SRA E */
 	F &= ~(H_FLAG |	N_FLAG);
 	(E) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(E & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1228,7 +1229,7 @@ static int op_srah(void)		/* SRA H */
 	F &= ~(H_FLAG |	N_FLAG);
 	(H) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(H & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1243,7 +1244,7 @@ static int op_sral(void)		/* SRA L */
 	F &= ~(H_FLAG |	N_FLAG);
 	(L) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(L & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(8);
 }
 
@@ -1266,7 +1267,7 @@ static int op_srahl(void)		/* SRA (HL) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif

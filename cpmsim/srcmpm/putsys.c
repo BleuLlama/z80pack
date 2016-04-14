@@ -23,7 +23,7 @@
 int main(void)
 {
 	unsigned char sector[128];
-	int fd, drivea, readed;
+	int fd, drivea, readn;
 
 	/* open drive A for writing */
 	if ((drivea = open("../disks/drivea.cpm", O_WRONLY)) == -1) {
@@ -47,7 +47,7 @@ int main(void)
 		exit(1);
 	}
 	/* read from mpmldr.bin and write to disk in drive A */
-	while ((readed = read(fd, (char *) sector, 128)) == 128)
+	while ((readn = read(fd, (char *) sector, 128)) == 128)
 		write(drivea, (char *) sector, 128);
 	write(drivea, (char *) sector, 128);
 	close(fd);

@@ -7,7 +7,7 @@
  *	28-JUN-1988 Switched to Unix System V.3
  *	21-OCT-2006 changed to ANSI C for modern POSIX OS's
  *	03-FEB-2007 more ANSI C conformance and reduced compiler warnings
- *	18-MAR-2007 use default output file extension dependend on format
+ *	18-MAR-2007 use default output file extension dependent on format
  *	04-OCT-2008 fixed comment bug, ';' string argument now working
  *	22-FEB-2014 fixed is...() compiler warnings
  */
@@ -465,7 +465,7 @@ comment:
 
 /*
  *	get opcode into s from source line l
- *	converts to uper case
+ *	converts to upper case
  */
 char *get_opcode(char *s, char *l)
 {

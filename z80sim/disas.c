@@ -12,7 +12,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -28,6 +28,7 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 #include <stdio.h>
@@ -725,7 +726,8 @@ static int ddfd(char *s, unsigned char **p)
 		ireg = regiy;
 	b2 = *(*p + 1);
 	if (b2 >= 0x70 && b2 <=	0x77) {
-		sprintf(Disass_Str, "LD\t(%s+%02X),%s\n", ireg, *(*p	+ 2), reg[b2 & 7]);
+		sprintf(Disass_Str, "LD\t(%s+%02X),%s\n", ireg, *(*p + 2),
+			reg[b2 & 7]);
 		return(3);
 	}
 	switch (b2) {
@@ -738,11 +740,11 @@ static int ddfd(char *s, unsigned char **p)
 		len = 2;
 		break;
 	case 0x21:
-		sprintf(Disass_Str, "LD\t%s,%04X\n",	ireg, *(*p + 2)	+ (*(*p	+ 3) <<	8));
+		sprintf(Disass_Str, "LD\t%s,%04X\n", ireg, *(*p + 2) + (*(*p	+ 3) <<	8));
 		len = 4;
 		break;
 	case 0x22:
-		sprintf(Disass_Str, "LD\t(%04X),%s\n", *(*p + 2) + (*(*p + 3) << 8),	ireg);
+		sprintf(Disass_Str, "LD\t(%04X),%s\n", *(*p + 2) + (*(*p + 3) << 8), ireg);
 		len = 4;
 		break;
 	case 0x23:
@@ -757,7 +759,7 @@ static int ddfd(char *s, unsigned char **p)
 		len = 2;
 		break;
 	case 0x2a:
-		sprintf(Disass_Str, "LD\t%s,(%04X)\n", ireg,	*(*p + 2) + (*(*p + 3) << 8));
+		sprintf(Disass_Str, "LD\t%s,(%04X)\n", ireg, *(*p + 2) + (*(*p + 3) << 8));
 		len = 4;
 		break;
 	case 0x2b:
@@ -765,10 +767,10 @@ static int ddfd(char *s, unsigned char **p)
 		len = 2;
 		break;
 	case 0x34:
-		sprintf(Disass_Str, "INC\t(%s+%02X)\n", ireg, *(*p +	2));
+		sprintf(Disass_Str, "INC\t(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0x35:
-		sprintf(Disass_Str, "DEC\t(%s+%02X)\n", ireg, *(*p +	2));
+		sprintf(Disass_Str, "DEC\t(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0x36:
 		sprintf(Disass_Str, "LD\t(%s+%02X),%02X\n", ireg, *(*p + 2),	*(*p + 3));
@@ -800,28 +802,28 @@ static int ddfd(char *s, unsigned char **p)
 		sprintf(Disass_Str, "LD\tA,(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0x86:
-		sprintf(Disass_Str, "ADD\tA,(%s+%02X)\n", ireg, *(*p	+ 2));
+		sprintf(Disass_Str, "ADD\tA,(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0x8e:
-		sprintf(Disass_Str, "ADC\tA,(%s+%02X)\n", ireg, *(*p	+ 2));
+		sprintf(Disass_Str, "ADC\tA,(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0x96:
-		sprintf(Disass_Str, "SUB\t(%s+%02X)\n", ireg, *(*p +	2));
+		sprintf(Disass_Str, "SUB\t(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0x9e:
-		sprintf(Disass_Str, "SBC\tA,(%s+%02X)\n", ireg, *(*p	+ 2));
+		sprintf(Disass_Str, "SBC\tA,(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0xa6:
-		sprintf(Disass_Str, "AND\t(%s+%02X)\n", ireg, *(*p +	2));
+		sprintf(Disass_Str, "AND\t(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0xae:
-		sprintf(Disass_Str, "XOR\t(%s+%02X)\n", ireg, *(*p +	2));
+		sprintf(Disass_Str, "XOR\t(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0xb6:
-		sprintf(Disass_Str, "OR\t(%s+%02X)\n", ireg,	*(*p + 2));
+		sprintf(Disass_Str, "OR\t(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0xbe:
-		sprintf(Disass_Str, "CP\t(%s+%02X)\n", ireg,	*(*p + 2));
+		sprintf(Disass_Str, "CP\t(%s+%02X)\n", ireg, *(*p + 2));
 		break;
 	case 0xcb:
 		switch (*(*p + 3)) {
@@ -832,10 +834,10 @@ static int ddfd(char *s, unsigned char **p)
 			sprintf(Disass_Str, "RRC\t(%s+%02X)\n", ireg, *(*p +	2));
 			break;
 		case 0x16:
-			sprintf(Disass_Str, "RL\t(%s+%02X)\n", ireg,	*(*p + 2));
+			sprintf(Disass_Str, "RL\t(%s+%02X)\n", ireg, *(*p + 2));
 			break;
 		case 0x1e:
-			sprintf(Disass_Str, "RR\t(%s+%02X)\n", ireg,	*(*p + 2));
+			sprintf(Disass_Str, "RR\t(%s+%02X)\n", ireg, *(*p + 2));
 			break;
 		case 0x26:
 			sprintf(Disass_Str, "SLA\t(%s+%02X)\n", ireg, *(*p +	2));
@@ -928,7 +930,7 @@ static int ddfd(char *s, unsigned char **p)
 		len = 2;
 		break;
 	case 0xe3:
-		sprintf(Disass_Str, "EX\t(SP),%s\n",	ireg);
+		sprintf(Disass_Str, "EX\t(SP),%s\n", ireg);
 		len = 2;
 		break;
 	case 0xe5:

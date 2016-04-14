@@ -14,7 +14,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -30,10 +30,11 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
- *	This modul is an ICE type user interface to debug Z80 programs
+ *	This module is an ICE type user interface to debug Z80 programs
  *	on a host system.
  */
 
@@ -786,10 +787,10 @@ static void do_count(char *s)
  *	into memory locations 0000H to 0002H the following
  *	code will be stored:
  *		LOOP: JP LOOP
- *	It uses 10 T states for each execution. A 3 secound
+ *	It uses 10 T states for each execution. A 3 second
  *	timer is started and then the CPU. For every opcode
  *	fetch the R register is incremented by one and after
- *	the timer is down and stopps the emulation, the clock
+ *	the timer is down and stops the emulation, the clock
  *	speed of the CPU is calculated with:
  *		f = R /	300000
  */
@@ -805,10 +806,10 @@ static void do_clock(void)
 	*(ram +	0x0002)	= 0x00;
 	PC = ram + 0x0000;		/* set PC to this code */
 	R = 0L;				/* clear refresh register */
-	cpu_state = CONTIN_RUN;		/* initialize CPU */
+	cpu_state = CONTIN_RUN;		/* initialise CPU */
 	cpu_error = NONE;
-	signal(SIGALRM,	timeout);	/* initialize timer interrupt handler */
-	alarm(3);			/* start 3 secound timer */
+	signal(SIGALRM,	timeout);	/* initialise timer interrupt handler */
+	alarm(3);			/* start 3 second timer */
 	cpu();				/* start CPU */
 	*(ram +	0x0000)	= save[0];	/* restore memory locations */
 	*(ram +	0x0001)	= save[1];	/* 0000H - 0002H */
@@ -841,7 +842,7 @@ static void do_show(void)
 #else
 	i = 0;
 #endif
-	printf("No. of entrys in history memory: %d\n",	i);
+	printf("No. of entries in history memory: %d\n",	i);
 #ifdef SBSIZE
 	i = SBSIZE;
 #else

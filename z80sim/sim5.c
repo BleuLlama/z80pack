@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -27,6 +27,7 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
@@ -576,7 +577,7 @@ static int op_andyd(void)		/* AND (IY+d) */
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	F |= H_FLAG;
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(N_FLAG |	C_FLAG);
 	return(19);
 }
@@ -592,7 +593,7 @@ static int op_xoryd(void)		/* XOR (IY+d) */
 	A ^= *(ram + IY	+ (signed char) *PC++);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(19);
 }
@@ -608,7 +609,7 @@ static int op_oryd(void)		/* OR (IY+d) */
 	A |= *(ram + IY	+ (signed char) *PC++);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	F &= ~(H_FLAG |	N_FLAG | C_FLAG);
 	return(19);
 }

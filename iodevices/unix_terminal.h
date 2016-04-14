@@ -5,13 +5,14 @@
  *
  * Copyright (C) 2008-2014 by Udo Munk
  *
- * This modul contains initialization and reset functions for
- * the POSIX line discipline, so that stdin/stdout can be used
+ * This module contains initialisation and reset functions for
+ * the POSIX/BSD line discipline, so that stdin/stdout can be used
  * as terminal for ancient machines.
  *
  * History:
  * 24-SEP-08 first version finished
  * 16-JAN-14 discard input at reset
+ * 15-APR-14 added some more c_cc's used on BSD systems
  */
 
 #include <termios.h>

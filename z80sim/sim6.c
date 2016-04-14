@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -27,6 +27,7 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
@@ -779,7 +780,7 @@ static int op_rlcixd(int data)		/* RLC (IX+d) */
 	if (i) *p |= 1;
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -808,7 +809,7 @@ static int op_rrcixd(int data)		/* RRC (IX+d) */
 	if (i) *p |= 128;
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -837,7 +838,7 @@ static int op_rlixd(int data)		/* RL (IX+d) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -866,7 +867,7 @@ static int op_rrixd(int data)		/* RR (IX+d) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -892,7 +893,7 @@ static int op_slaixd(int data)		/* SLA (IX+d) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -921,7 +922,7 @@ static int op_sraixd(int data)		/* SRA (IX+d) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif
@@ -947,7 +948,7 @@ static int op_srlixd(int data)		/* SRL (IX+d) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
 	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
-	(parrity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
 #ifdef BUS_8080
 	cpu_bus = 0;
 #endif

@@ -61,7 +61,7 @@ Running the Altair emulation is the same, just change to directory
 comes with 2D model only.
 
 The default CPU speed for the Altair and IMSAI emulations is 2 MHz as
-with the original machines. This can be changed with the commandline
+with the original machines. This can be changed with the command line
 option -fx, where x is the desired CPU speed in MHz. With a value of 0
 the CPU speed is unlimited and the emulation runs as fast as possible.
 

@@ -7,7 +7,7 @@
  *	28-JUN-1988 Switched to Unix System V.3
  *	21-OCT-2006 changed to ANSI C for modern POSIX OS's
  *	03-FEB-2007 more ANSI C conformance and reduced compiler warnings
- *	18-MAR-2007 use default output file extension dependend on format
+ *	18-MAR-2007 use default output file extension dependent on format
  *	04-OCT-2008 fixed comment bug, ';' string argument now working
  */
 
@@ -23,19 +23,19 @@ char *infiles[MAXFN],		/* source filenames */
      objfn[LENFN + 1],		/* object filename */
      lstfn[LENFN + 1],		/* listing filename */
      *srcfn,			/* filename of current processed source file */
-     line[MAXLINE],		/* buffer for one line souce */
+     line[MAXLINE],		/* buffer for one line source */
      tmp[MAXLINE],		/* temporary buffer */
      label[SYMSIZE+1],		/* buffer for label */
      opcode[MAXLINE],		/* buffer for opcode */
      operand[MAXLINE],		/* buffer for operand */
      ops[OPCARRAY],		/* buffer for generated object code */
-     title[MAXLINE];		/* buffer for titel of souce */
+     title[MAXLINE];		/* buffer for title of source */
 
 int  list_flag,			/* flag for option -l */
      sym_flag,			/* flag for option -s */
      ver_flag,			/* flag for option -v */
      dump_flag,			/* flag for option -x */
-     pc,			/* programm counter */
+     pc,			/* program counter */
      pass,			/* processed pass */
      iflevel,			/* IF nesting level */
      gencode = 1,		/* flag for conditional object code */
@@ -48,7 +48,7 @@ int  list_flag,			/* flag for option -l */
 				/* = 3: address from <sd_val>, no data */
 				/* = 4: suppress whole line */
      sd_val,			/* output value for PSEUDO opcodes */
-     prg_adr,			/* start address of programm */
+     prg_adr,			/* start address of program */
      prg_flag,			/* flag for prg_adr valid */
      out_form = OUTDEF,		/* format of object file */
      symsize;			/* size of symarray */

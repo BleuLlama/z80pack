@@ -14,7 +14,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -30,6 +30,7 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
@@ -44,7 +45,7 @@
 #define	CNTL_C		/* cntl-c will stop running emulation */
 #define	CNTL_BS		/* cntl-\ will stop running emulation */
 /*#define WANT_TIM*/	/* activate runtime measurement */
-/*#define HISIZE 100*/	/* number of entrys in history */
+/*#define HISIZE 100*/	/* number of entries in history */
 /*#define SBSIZE 4*/	/* number of software breakpoints */
 /*#define FRONTPANEL*/	/* no frontpanel emulation */
 /*#define BUS_8080*/	/* no emulation of 8080 bus status */
@@ -64,7 +65,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define	COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define	RELEASE	"1.21"
+#define	RELEASE	"1.22"
 
 #define	LENCMD		80		/* length of command buffers etc */
 

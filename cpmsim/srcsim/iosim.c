@@ -13,7 +13,7 @@
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
  * 19-MAY-89 Additions for CP/M 3.0 and MP/M
  * 23-DEC-90 Ported to COHERENT 3.0
- * 10-JUN-92 Some optimization done
+ * 10-JUN-92 Some optimisation done
  * 25-JUN-92 Flush output of stdout only at every OUT to port 0
  * 25-JUN-92 Comments in english and ported to COHERENT 4.0
  * 05-OCT-06 modified to compile on modern POSIX OS's
@@ -35,9 +35,10 @@
  * 07-APR-08 added port to set/get CPU speed
  * 13-AUG-08 work on console I/O busy waiting detection
  * 24-AUG-08 changed terminal line discipline to not add CR if LF send
- * xx-OCT-08 some improvments here and there
- * xx-JAN-14 some improvments here and there
+ * xx-OCT-08 some improvements here and there
+ * xx-JAN-14 some improvements here and there
  * 02-MAR-14 source cleanup and improvements
+ * 03-MAI-14 improved network code, telnet negotiation rewritten
  */
 
 /*
@@ -52,8 +53,8 @@
  *	 2 - printer status
  *	 3 - printer data
  *
- *	 4 - auxilary status
- *	 5 - auxilary data
+ *	 4 - auxiliary status
+ *	 5 - auxiliary data
  *
  *	10 - FDC drive
  *	11 - FDC track
@@ -66,7 +67,7 @@
  *
  *	17 - FDC sector high
  *
- *	20 - MMU initialization
+ *	20 - MMU initialisation
  *	21 - MMU bank select
  *	22 - MMU select segment size (in pages a 256 bytes)
  *
@@ -107,10 +108,11 @@
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include "sim.h"
 #include "simglb.h"
 
-#define BUFSIZE 256		/* max line lenght of command buffer */
+#define BUFSIZE 256		/* max line length of command buffer */
 #define MAX_BUSY_COUNT 10	/* max counter to detect I/O busy waiting
 				   on the console status port */
 
@@ -132,7 +134,7 @@ struct dskdef {
 
 static BYTE drive;		/* current drive A..P (0..15) */
 static BYTE track;		/* current track (0..255) */
-static int sector;		/* current sektor (0..65535) */
+static int sector;		/* current sector (0..65535) */
 static BYTE status;		/* status of last I/O operation on FDC */
 static BYTE dmadl;		/* current DMA address destination low */
 static BYTE dmadh;		/* current DMA address destination high */
@@ -171,12 +173,13 @@ static int aux_out;		/* fd for file "auxiliaryout.cpm" */
 #endif
 
 #ifdef NETWORKING
+
+#define TELNET_TIMEOUT 800	/* telnet negotiation timeout in milliseconds */
+
 static int ss[NUMSOC];		/* server socket descriptors */
 static int ssc[NUMSOC];		/* connected server socket descriptors */
 static int ss_port[NUMSOC];	/* TCP/IP port for server sockets */
 static int ss_telnet[NUMSOC];	/* telnet protocol flag for server sockets */
-static char char_mode[3] = {255, 251, 3}; /* telnet negotiation */
-static char will_echo[3] = {255, 251, 1}; /* telnet negotiation */
 static int cs;			/* client socket #1 descriptor */
 static int cs_port;		/* TCP/IP port for cs */
 static char cs_host[BUFSIZE];	/* hostname for cs */
@@ -223,16 +226,16 @@ static struct dskdef disks[16] = {
  *      | bank 0 |  | bank 1 |              | bank n |
  *      +--------+  +--------+  ..........  +--------+
  *
- * This is an example for 48KB segments as it was implemented originaly.
+ * This is an example for 48KB segments as it was implemented originally.
  * The segment size now can be configured via port 22.
- * If the segment size isn't configured the default is 48KB as it was
+ * If the segment size isn't configured the default is 48 KB as it was
  * before, to maintain compatibility.
  */
 #define MAXSEG 16		/* max. number of memory banks */
-#define SEGSIZ 49152		/* default size of one bank = 48KBytes */
+#define SEGSIZ 49152		/* default size of one bank = 48 KBytes */
 static char *mmu[MAXSEG];	/* MMU with pointers to the banks */
 static int selbnk;		/* current bank */
-static int maxbnk;		/* number of initialized banks */
+static int maxbnk;		/* number of initialised banks */
 static int segsize;		/* segment size of one bank, default 48KB */
 
 /*
@@ -293,7 +296,7 @@ static void int_timer(int);
 
 #ifdef NETWORKING
 static void net_server_config(void), net_client_config(void);
-static void init_server_socket(int);
+static void init_server_socket(int), telnet_negotiation(int);
 #ifdef TCPASYNC
 static void int_io(int);
 #endif
@@ -826,8 +829,8 @@ static void (*port_out[256]) (BYTE) = {
 };
 
 /*
- *	This function initializes the I/O handlers:
- *	1. Initialize the MMU with NULL pointers and defaults.
+ *	This function initialises the I/O handlers:
+ *	1. Initialise the MMU with NULL pointers and defaults.
  *	2. Open the files which emulate the disk drives.
  *	   Errors for opening one of the drives results
  *	   in a NULL pointer for fd in the dskdef structure,
@@ -900,7 +903,7 @@ void init_io(void)
 
 #ifdef NETWORKING
 /*
- * initialize a server socket
+ * initialise a server socket
  */
 static void init_server_socket(int n)
 {
@@ -918,7 +921,7 @@ static void init_server_socket(int n)
 	}
 	if (setsockopt(ss[n], SOL_SOCKET, SO_REUSEADDR, (void *)&on,
 	    sizeof(on)) == -1) {
-		perror("server socket options");
+		perror("setsockopt SO_REUSEADDR on server socket");
 		exit(1);
 	}
 #ifdef TCPASYNC
@@ -1176,6 +1179,7 @@ static BYTE cons1_in(void)
 	socklen_t alen;
 	struct sockaddr_in fsin;
 	int go_away;
+	int on = 1;
 
 	p[0].fd = ss[0];
 	p[0].events = POLLIN;
@@ -1199,11 +1203,13 @@ static BYTE cons1_in(void)
 			ssc[0] = 0;
 		}
 
-		if (ss_telnet[0]) {
-			write(ssc[0], &char_mode, 3);
-			write(ssc[0], &will_echo, 3);
+		if (setsockopt(ssc[0], IPPROTO_TCP, TCP_NODELAY,
+		    (void *)&on, sizeof(on)) == -1) {
+			perror("setsockopt TCP_NODELAY on server socket");
 		}
 
+		if (ss_telnet[0])
+			telnet_negotiation(ssc[0]);
 	}
 ss0_done:
 #endif
@@ -1242,6 +1248,7 @@ static BYTE cons2_in(void)
 	socklen_t alen;
 	struct sockaddr_in fsin;
 	int go_away;
+	int on = 1;
 
 	p[0].fd = ss[1];
 	p[0].events = POLLIN;
@@ -1265,11 +1272,13 @@ static BYTE cons2_in(void)
 			ssc[1] = 0;
 		}
 
-		if (ss_telnet[1]) {
-			write(ssc[1], &char_mode, 3);
-			write(ssc[1], &will_echo, 3);
+		if (setsockopt(ssc[1], IPPROTO_TCP, TCP_NODELAY,
+		    (void *)&on, sizeof(on)) == -1) {
+			perror("setsockopt TCP_NODELAY on server socket");
 		}
 
+		if (ss_telnet[1])
+			telnet_negotiation(ssc[1]);
 	}
 ss1_done:
 #endif
@@ -1308,6 +1317,7 @@ static BYTE cons3_in(void)
 	socklen_t alen;
 	struct sockaddr_in fsin;
 	int go_away;
+	int on = 1;
 
 	p[0].fd = ss[2];
 	p[0].events = POLLIN;
@@ -1331,11 +1341,13 @@ static BYTE cons3_in(void)
 			ssc[2] = 0;
 		}
 
-		if (ss_telnet[2]) {
-			write(ssc[2], &char_mode, 3);
-			write(ssc[2], &will_echo, 3);
+		if (setsockopt(ssc[2], IPPROTO_TCP, TCP_NODELAY,
+		    (void *)&on, sizeof(on)) == -1) {
+			perror("setsockopt TCP_NODELAY on server socket");
 		}
 
+		if (ss_telnet[2])
+			telnet_negotiation(ssc[2]);
 	}
 ss2_done:
 #endif
@@ -1374,6 +1386,7 @@ static BYTE cons4_in(void)
 	socklen_t alen;
 	struct sockaddr_in fsin;
 	int go_away;
+	int on = 1;
 
 	p[0].fd = ss[3];
 	p[0].events = POLLIN;
@@ -1397,11 +1410,13 @@ static BYTE cons4_in(void)
 			ssc[3] = 0;
 		}
 
-		if (ss_telnet[3]) {
-			write(ssc[3], &char_mode, 3);
-			write(ssc[3], &will_echo, 3);
+		if (setsockopt(ssc[3], IPPROTO_TCP, TCP_NODELAY,
+		    (void *)&on, sizeof(on)) == -1) {
+			perror("setsockopt TCP_NODELAY on server socket");
 		}
 
+		if (ss_telnet[3])
+			telnet_negotiation(ssc[3]);
 	}
 ss3_done:
 #endif
@@ -1437,6 +1452,7 @@ static BYTE nets1_in(void)
 	struct sockaddr_in sin;
 	struct hostent *host;
 	struct pollfd p[1];
+	int on = 1;
 
 	if ((cs == 0) && (cs_port != 0)) {
 		host = gethostbyname(&cs_host[0]);
@@ -1455,6 +1471,10 @@ static BYTE nets1_in(void)
 			cpu_error = IOERROR;
 			cpu_state = STOPPED;
 			return((BYTE) 0);
+		}
+		if (setsockopt(cs, IPPROTO_TCP, TCP_NODELAY,
+		    (void *)&on, sizeof(on)) == -1) {
+			perror("setsockopt TCP_NODELAY on client socket");
 		}
 	}
 
@@ -1580,10 +1600,6 @@ static BYTE cond1_in(void)
 	}
 	if (ss_telnet[0] && (c == '\r'))
 		read(ssc[0], &x, 1);
-	if (ss_telnet[0] && ((BYTE) c == 0xff)) {
-		read(ssc[0], &x, 1);
-		read(ssc[0], &x, 1);
-	}
 #ifdef SNETDEBUG
 	if (sdirection != 1) {
 		printf("\n<- ");
@@ -1619,10 +1635,6 @@ static BYTE cond2_in(void)
 	}
 	if (ss_telnet[1] && (c == '\r'))
 		read(ssc[1], &x, 1);
-	if (ss_telnet[1] && ((BYTE) c == 0xff)) {
-		read(ssc[1], &x, 1);
-		read(ssc[1], &x, 1);
-	}
 #ifdef SNETDEBUG
 	if (sdirection != 1) {
 		printf("\n<- ");
@@ -1658,10 +1670,6 @@ static BYTE cond3_in(void)
 	}
 	if (ss_telnet[2] && (c == '\r'))
 		read(ssc[2], &x, 1);
-	if (ss_telnet[2] && ((BYTE) c == 0xff)) {
-		read(ssc[2], &x, 1);
-		read(ssc[2], &x, 1);
-	}
 #ifdef SNETDEBUG
 	if (sdirection != 1) {
 		printf("\n<- ");
@@ -1697,10 +1705,6 @@ static BYTE cond4_in(void)
 	}
 	if (ss_telnet[3] && (c == '\r'))
 		read(ssc[3], &x, 1);
-	if (ss_telnet[3] && ((BYTE) c == 0xff)) {
-		read(ssc[3], &x, 1);
-		read(ssc[3], &x, 1);
-	}
 #ifdef SNETDEBUG
 	if (sdirection != 1) {
 		printf("\n<- ");
@@ -2242,8 +2246,8 @@ static void dmah_out(BYTE data)
 }
 
 /*
- *	I/O handler for read MMU initialization:
- *	return number of initialized MMU banks
+ *	I/O handler for read MMU initialisation:
+ *	return number of initialised MMU banks
  */
 static BYTE mmui_in(void)
 {
@@ -2251,7 +2255,7 @@ static BYTE mmui_in(void)
 }
 
 /*
- *	I/O handler for write MMU initialization:
+ *	I/O handler for write MMU initialisation:
  *	for the FIRST call the memory for the wanted number of banks
  *	is allocated and pointers to the memory is stored in the MMU array
  */
@@ -2316,7 +2320,7 @@ static BYTE mmuc_in(void)
 
 /*
  *	I/O handler for write MMU segment size configuration:
- *	set the size of the bank segements in pages a 256 bytes
+ *	set the size of the bank segments in pages a 256 bytes
  *	must be done before any banks are allocated
  */
 static void mmuc_out(BYTE data)
@@ -2360,7 +2364,7 @@ static void clkc_out(BYTE data)
  *		4 - high byte number of days since 1.1.1978
  *		5 - day of month in BCD or decimal
  *		6 - month in BCD or decimal
- *		7 - year in BCD or decomal
+ *		7 - year in BCD or decimal
  *	for every other clock command a 0 is returned
  */
 static BYTE clkd_in(void)
@@ -2592,12 +2596,12 @@ static BYTE speedh_in(void)
 }
 
 /*
- *	timer interrupt causes maskerable CPU interrupt
+ *	timer interrupt causes maskable CPU interrupt
  */
 static void int_timer(int sig)
 {
 	int_type = INT_INT;
-	int_code = 0xff;	/* RST 38H for IM 0 */
+	int_data = 0xff;	/* RST 38H for IM 0 */
 }
 
 #if defined(NETWORKING) && defined(TCPASYNC)
@@ -2611,6 +2615,7 @@ static void int_io(int sig)
 	socklen_t alen;
 	struct pollfd p[NUMSOC];
 	int go_away;
+	int on = 1;
 
 	for (i = 0; i < NUMSOC; i++) {
 		p[i].fd = ss[i];
@@ -2639,12 +2644,55 @@ static void int_io(int sig)
 				ssc[i] = 0;
 			}
 
-			if (ss_telnet[i]) {
-				write(ssc[i], &char_mode, 3);
-				write(ssc[i], &will_echo, 3);
+			if (setsockopt(ssc[i], IPPROTO_TCP, TCP_NODELAY,
+			    (void *)&on, sizeof(on)) == -1) {
+				perror("setsockopt TCP_NODELAY on server socket");
 			}
 
+			if (ss_telnet[i])
+				telnet_negotiation(ssc[i]);
 		}
+	}
+}
+#endif
+
+#ifdef NETWORKING
+/*
+ *	do the telnet option negotiation
+ */
+void telnet_negotiation(int fd)
+{
+	static char will_echo[3] = {255, 251, 1};
+	static char char_mode[3] = {255, 251, 3};
+	struct pollfd p[1];
+	BYTE c[3];
+
+	/* send the telnet options we need */
+	write(fd, &char_mode, 3);
+	write(fd, &will_echo, 3);
+
+	/* and reject all others offered */
+	p[0].fd = fd;
+	p[0].events = POLLIN;
+	while (1) {
+		/* wait for input */
+		p[0].revents = 0;
+		poll(p, 1, TELNET_TIMEOUT);
+
+		/* done if no more input */
+		if (! p[0].revents)
+			break;
+
+		/* else read the option */
+		read(fd, &c, 3);
+		//printf("telnet: %d %d %d\r\n", c[0], c[1], c[2]);
+		if (c[2] == 1 || c[2] == 3)
+			continue;	/* ignore answers to our requests */
+		if (c[1] == 251)	/* and reject other options */
+			c[1] = 254;
+		else if (c[1] == 253)
+			c[1] = 252;
+		write(fd, &c, 3);
 	}
 }
 #endif

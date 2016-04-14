@@ -27,7 +27,7 @@
 /*#define HISIZE  1000*//* no history */
 /*#define SBSIZE  10*/	/* no breakpoints */
 #define FRONTPANEL	/* emulate a machines frontpanel */
-#define BUS_8080	/* emulate 8080 bus status for frontpanel */
+#define BUS_8080	/* emulate 8080 bus status for front panel */
 /*#define PIPES*/	/* use named pipes for auxiliary device */
 /*#define NETWORKING*/	/* TCP/IP networked serial ports */
 /*#define NUMSOC 4 */	/* number of server sockets */
@@ -39,7 +39,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.21"
+#define RELEASE	"1.22"
 
 #define USR_COM	"Altair 8800 Simulation"
 #define USR_REL	"1.4"

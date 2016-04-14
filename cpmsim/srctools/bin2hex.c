@@ -107,7 +107,7 @@ int main(int argc,char *argv[])/*Main routine*/
 //  fprintf(outp,":020000020000FC\n");/*Start Header*/
   fsub = fsize - fpoint;
   if (fsub > 0x20) {
-  	fprintf(outp,":20%04X00",(unsigned int) adrs);/*Hex line Header*/
+  	fprintf(outp,":20%04X00",(unsigned int) adrs); /*Hex line Header*/
     csum = 0x20 + (adrs>>8) + (adrs & 0xFF);
     adrs += 0x20;
   }
@@ -118,38 +118,38 @@ int main(int argc,char *argv[])/*Main routine*/
   }
   while (fsub > 0){
     ch = fgetc(inp);
-    fprintf(outp,"%02X",ch);/*Put data*/
+    fprintf(outp,"%02X",ch); /*Put data*/
     cnt++; fpoint++;
     fsub = fsize - fpoint;
     csum = ch + csum;
     if((fsub == 0)||(cnt == 0x20)){
       cnt = 0; csum = 0xFF & (~csum + 1);
-      fprintf(outp,"%02X\n",csum);/*Put checksum*/
+      fprintf(outp,"%02X\n",csum); /*Put checksum*/
       if(fsub == 0) break;
       if(adrs > 0xFFFF){
 		ofsa = 0x1000 + ofsa;
 		adrs = 0;
-		fprintf(outp,":02000002%04X",ofsa);/*Change offset address*/
+		fprintf(outp,":02000002%04X",ofsa); /*Change offset address*/
 		csum = 0x02 + 0x02 + (ofsa>>8) + (ofsa & 0xFF);
 		csum = 0xFF & (~csum + 1);
         fprintf(outp,"%02X\n", csum);
       }
       adrs = 0xFFFF & adrs;
 	  if (fsub > 0x20) {
-  		fprintf(outp,":20%04X00", (unsigned int) adrs);/*Next Hex line Header*/
+  		fprintf(outp,":20%04X00", (unsigned int) adrs); /*Next Hex line Header*/
     	csum = 0x20 + (adrs>>8) + (adrs & 0xFF);
         adrs += 0x20;
       }
       else {
       	if(fsub > 0){
-  			fprintf(outp, ":%02X%04X00", (unsigned int) fsub, (unsigned int) adrs);/*Next Hex line Header*/
+  			fprintf(outp, ":%02X%04X00", (unsigned int) fsub, (unsigned int) adrs); /*Next Hex line Header*/
     		csum = fsub + (adrs>>8) + (adrs & 0xFF);
         	adrs += fsub;
         }
       }
     }
   }
-  if (eofrec == 0) fprintf(outp,":00000001FF\n");/*End footer*/
+  if (eofrec == 0) fprintf(outp,":00000001FF\n"); /*End footer*/
   fflush (outp);
 
   fstat(fileno(outp), &statbuf);

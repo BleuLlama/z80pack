@@ -30,7 +30,7 @@ int main(void)
 	unsigned char header[3];
 	unsigned char sector[128];
 	register int i;
-	int fd, drivea, readed;
+	int fd, drivea, readn;
 
 	/* open drive A for writing */
 	if ((drivea = open("../disks/drivea.cpm", O_WRONLY)) == -1) {
@@ -43,7 +43,7 @@ int main(void)
 		exit(1);
 	}
 	/* read and check 3 byte header */
-	if ((readed = read(fd, (char *) header, 3)) != 3) {
+	if ((readn = read(fd, (char *) header, 3)) != 3) {
 		perror("file boot.bin");
 		exit(1);
 	}
@@ -66,7 +66,7 @@ int main(void)
 	lseek(fd, (long) 17 * 128, SEEK_SET);
 	/* read CCP and BDOS from cpm.bin and write them to disk in drive A */
 	for (i = 0; i < 44; i++) {
-		if ((readed = read(fd, (char *) sector, 128)) != 128) {
+		if ((readn = read(fd, (char *) sector, 128)) != 128) {
 			perror("file cpm.bin");
 			exit(1);
 		}
@@ -79,7 +79,7 @@ int main(void)
 		exit(1);
 	}
 	/* read and check 3 byte header */
-	if ((readed = read(fd, (char *) header, 3)) != 3) {
+	if ((readn = read(fd, (char *) header, 3)) != 3) {
 		perror("file bios.bin");
 		exit(1);
 	}
@@ -89,7 +89,7 @@ int main(void)
 	}
 	/* read BIOS from bios.bin and write it to disk in drive A */
 	i = 0;
-	while ((readed = read(fd, (char *) sector, 128)) == 128) {
+	while ((readn = read(fd, (char *) sector, 128)) == 128) {
 		write(drivea, (char *) sector, 128);
 		i++;
 		if (i == 6) {
@@ -97,7 +97,7 @@ int main(void)
 			goto stop;
 		}
 	}
-	if (readed > 0) {
+	if (readn > 0) {
 		write(drivea, (char *) sector, 128);
 	}
 stop:

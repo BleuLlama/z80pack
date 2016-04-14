@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2008-2014 by Udo Munk
  *
- * This module of the simulator contains the I/O simlation
+ * This module of the simulator contains the I/O simulation
  * for an IMSAI 8080 system
  *
  * History:
@@ -563,7 +563,7 @@ static void (*port_out[256]) (BYTE) = {
 	io_trap_out,		/* port	252 */
 	imsai_fif_out,		/* port	253 */ /* FIF disk controller */
 	io_no_card_out,		/* port	254 */ /* memory write protect */
-	fp_out			/* port	255 */ /* frontpanel */
+	fp_out			/* port	255 */ /* front panel */
 };
 
 /*
@@ -616,7 +616,7 @@ void io_out(BYTE adr, BYTE data)
 /*
  *	I/O input trap function
  *	This function should be added into all unused
- *	entrys of the input port array. It stops the
+ *	entries of the input port array. It stops the
  *	emulation with an I/O error.
  */
 static BYTE io_trap_in(void)
@@ -641,7 +641,7 @@ static BYTE io_no_card_in(void)
 /*
  *	I/O output trap function
  *	This function should be added into all unused
- *	entrys of the output port array. It stops the
+ *	entries of the output port array. It stops the
  *	emulation with an I/O error.
  */
 static void io_trap_out(BYTE data)
@@ -686,7 +686,7 @@ static void fp_out(BYTE data)
 static void int_timer(int sig)
 {
 	int_type = INT_INT;
-	int_code = 0xff;	/* RST 38H for IM 0 */
+	int_data = 0xff;	/* RST 38H for IM 0 */
 }
 
 /*
@@ -695,6 +695,7 @@ static void int_timer(int sig)
  *	and for RST 38H interrupts every 10ms.
  *
  *	bit 0 = 1	start interrupt timer
+ *	bit 0 = 0	stop interrupt timer
  *	bit 7 = 1	halt emulation via I/O
  */
 static void hwctl_out(BYTE data)
@@ -716,6 +717,7 @@ static void hwctl_out(BYTE data)
 		tim.it_interval.tv_usec = 10000;
 		setitimer(ITIMER_REAL, &tim, NULL);
 	} else if (data == 0) {
+		//printf("\r\n*** DISABLE TIMER ***\r\n");
 		newact.sa_handler = SIG_IGN;
 		sigaction(SIGALRM, &newact, NULL);
 		tim.it_value.tv_sec = 0;

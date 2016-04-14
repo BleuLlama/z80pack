@@ -11,7 +11,7 @@
  * 09-FEB-90 Release 1.4  Ported to TARGON/31 M10/30
  * 20-DEC-90 Release 1.5  Ported to COHERENT 3.0
  * 10-JUN-92 Release 1.6  long casting problem solved with COHERENT 3.2
- *			  and some optimization
+ *			  and some optimisation
  * 25-JUN-92 Release 1.7  comments in english and ported to COHERENT 4.0
  * 02-OCT-06 Release 1.8  modified to compile on modern POSIX OS's
  * 18-NOV-06 Release 1.9  modified to work with CP/M sources
@@ -27,6 +27,7 @@
  * 02-MAR-14 Release 1.19 source cleanup and improvements
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
+ * 29-MAY-14 Release 1.22 improved networking and bugfixes
  */
 
 /*
@@ -444,7 +445,7 @@ static int op_inaic(void)		/* IN A,(C) */
 	F &= ~(N_FLAG |	H_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(12);
 }
 
@@ -462,7 +463,7 @@ static int op_inbic(void)		/* IN B,(C) */
 	F &= ~(N_FLAG |	H_FLAG);
 	(B) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(B & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(12);
 }
 
@@ -480,7 +481,7 @@ static int op_incic(void)		/* IN C,(C) */
 	F &= ~(N_FLAG |	H_FLAG);
 	(C) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(C & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(12);
 }
 
@@ -498,7 +499,7 @@ static int op_indic(void)		/* IN D,(C) */
 	F &= ~(N_FLAG |	H_FLAG);
 	(D) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(D & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(12);
 }
 
@@ -516,7 +517,7 @@ static int op_ineic(void)		/* IN E,(C) */
 	F &= ~(N_FLAG |	H_FLAG);
 	(E) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(E & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(12);
 }
 
@@ -534,7 +535,7 @@ static int op_inhic(void)		/* IN H,(C) */
 	F &= ~(N_FLAG |	H_FLAG);
 	(H) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(H & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(12);
 }
 
@@ -552,7 +553,7 @@ static int op_inlic(void)		/* IN L,(C) */
 	F &= ~(N_FLAG |	H_FLAG);
 	(L) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(L & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(12);
 }
 
@@ -1464,7 +1465,7 @@ static int op_oprld(void)	/* RLD (HL) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(18);
 }
 
@@ -1492,6 +1493,6 @@ static int op_oprrd(void)	/* RRD (HL) */
 	F &= ~(H_FLAG |	N_FLAG);
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
-	(parrity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
 	return(18);
 }
