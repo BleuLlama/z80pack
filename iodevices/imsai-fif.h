@@ -11,6 +11,7 @@
  * 18-JAN-14 first version finished
  * 02-MAR-14 improvements
  * 23-MAR-14 got all 4 disk drives working
+ *    AUG-14 some improvements after seeing the original IMSAI BIOS
  */
 
 extern BYTE imsai_fif_in(void);

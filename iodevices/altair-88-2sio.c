@@ -10,6 +10,8 @@
  * History:
  * 20-OCT-08 first version finished
  * 31-JAN-14 use correct name from the manual
+ * 19-JUN-14 added config parameter for droping nulls after CR/LF
+ * 17-JUL-14 don't block on read from terminal
  */
 
 #include <unistd.h>
@@ -22,6 +24,7 @@
 
 int sio_upper_case;
 int sio_strip_parity;
+int sio_drop_nulls;
 
 /*
  * read status register
@@ -63,6 +66,14 @@ void altair_sio2_status_out(BYTE data)
 BYTE altair_sio2_data_in(void)
 {
 	BYTE data;
+	struct pollfd p[1];
+
+	p[0].fd = fileno(stdin);
+	p[0].events = POLLIN;
+	p[0].revents = 0;
+	poll(p, 1, 0);
+	if (!(p[0].revents & POLLIN))
+		return(0);
 
 	read(fileno(stdin), &data, 1);
 	if (sio_upper_case)
@@ -73,13 +84,15 @@ BYTE altair_sio2_data_in(void)
 /*
  * write data register
  *
- * can be configured to strip parity bit, because some old software won't
+ * can be configured to strip parity bit and drop nulls send after CR/LF,
+ * because some old software won't
  */
 void altair_sio2_data_out(BYTE data)
 {
 	/* often send after CR/LF to give tty printer some time */
-	if ((data == 127) || (data == 255) || (data == 0))
-		return;
+	if (sio_drop_nulls)
+		if ((data == 127) || (data == 255) || (data == 0))
+			return;
 
 	if (sio_strip_parity)
 		data &= 0x7f;

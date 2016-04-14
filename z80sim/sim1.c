@@ -29,6 +29,7 @@
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
+ * 06-SEP-14 Release 1.24 bugfixes and improvements
  */
 
 #include <unistd.h>
@@ -441,7 +442,14 @@ void cpu_z80(void)
 
 #ifdef WANT_INT		/* CPU interrupt handling */
 		if (int_nmi) {		/* non maskable interrupt */
-			IFF <<= 1;
+			IFF <<= 1 & 3;
+#ifdef BUS_8080
+			cpu_bus = CPU_STACK;
+#endif
+#ifdef FRONTPANEL
+			fp_clock += 22000;
+			fp_sampleLightGroup(0, 0);
+#endif
 #ifdef WANT_SPC
 			if (STACK <= ram)
 				STACK =	ram + 65536L;
@@ -464,6 +472,20 @@ void cpu_z80(void)
 				goto leave;
 			}
 			IFF = 0;
+#ifdef BUS_8080
+			cpu_bus = CPU_WO | CPU_M1 | CPU_INTA;
+#endif
+#ifdef FRONTPANEL
+			fp_clock += 22000;
+			fp_sampleLightGroup(0, 0);
+#endif
+#ifdef BUS_8080
+			cpu_bus = CPU_STACK;
+#endif
+#ifdef FRONTPANEL
+			fp_clock += 22000;
+			fp_sampleLightGroup(0, 0);
+#endif
 			switch (int_mode) {
 			case 0:		/* IM 0 */
 #ifdef WANT_SPC
@@ -552,7 +574,7 @@ leave:
 		if (f_flag) {		/* adjust CPU speed */
 			if (t > tmax) {
 				timer.tv_sec = 0;
-				timer.tv_nsec = 10000000;
+				timer.tv_nsec = 10000000L;
 				nanosleep(&timer, NULL);
 				t = 0;
 			}
@@ -620,6 +642,16 @@ static int op_halt(void)		/* HALT */
 			R += 9999;
 		}
 
+	if (int_int) {
+#ifdef BUS_8080
+		cpu_bus = CPU_INTA | CPU_WO | CPU_HLTA | CPU_M1;
+#endif
+#ifdef FRONTPANEL
+		fp_clock += 7;
+		fp_sampleLightGroup(0, 0);
+#endif
+	}
+
 	busy_loop_cnt[0] = 0;
 
 	return(4);
@@ -652,6 +684,14 @@ static int op_cpl(void)			/* CPL */
 	return(4);
 }
 
+/*
+ * This is my original implementation of the DAA instruction.
+ * It implements the instruction as described in Z80 data sheets
+ * and books, but it won't pass the ex.com instruction exerciser.
+ * Below is a contributed implementation active, that also passes
+ * the tests done by ex.com.
+ */
+#if 0
 static int op_daa(void)			/* DAA */
 {
 	if (F &	N_FLAG)	{		/* subtractions */
@@ -678,6 +718,47 @@ static int op_daa(void)			/* DAA */
 	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
 	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
 	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	return(4);
+}
+#endif
+
+/*
+ * This implementation was contributed by Mark Garlanger,
+ * see http://heathkit.garlanger.com/
+ * It passes the instruction exerciser test from ex.com
+ * and likely is more correct.
+ */
+static int op_daa(void)			/* DAA */
+{
+	int tmp_a = A;
+	int low_nibble = A & 0x0f;
+	int carry = (F & C_FLAG);
+
+	if (F & N_FLAG) {		/* subtraction */
+		int adjustment = (carry || (tmp_a > 0x99)) ? 0x160 : 0x00;
+
+		if ((F & H_FLAG) || (low_nibble > 9)) {
+			if (low_nibble > 5) {
+				F &= ~H_FLAG;
+			}
+			tmp_a = (tmp_a - 6) & 0xff;
+		}
+		tmp_a -= adjustment;
+        } else {			/* addition */
+		if ((low_nibble > 9) || (F & H_FLAG)) {
+			(low_nibble > 9) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+			tmp_a += 6;
+		}
+		if (((tmp_a & 0x1f0) > 0x90) || carry) {
+			tmp_a += 0x60;
+		}
+	}
+
+	(carry || (tmp_a & 0x100)) ?  (F |= C_FLAG) : (F &= ~C_FLAG);
+	A = (tmp_a & 0xff);
+	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
+	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) : (F |= P_FLAG);
 	return(4);
 }
 

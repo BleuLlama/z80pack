@@ -13,6 +13,8 @@
  * 14-MAR-14 added Tarbell SD FDC and printer port
  * 15-MAR-14 modified printer port for Tarbell CP/M 1.4 BIOS
  * 23-MAR-14 added 10ms timer interrupt for Kildalls timekeeper PL/M program
+ * 16-JUL-14 unused I/O ports need to return FF, see survey.mac
+ * 18-JUL-14 completed all ports used, so that survey would find them
  */
 
 #include <unistd.h>
@@ -36,10 +38,10 @@ static int printer;		/* fd for file "printer.cpm" */
  */
 static BYTE io_trap_in(void), io_no_card_in(void);
 static void io_trap_out(BYTE), io_no_card_out(BYTE);
-static BYTE fp_in(void);
-static void hwctl_out(BYTE);
-static BYTE lpt_in(void);
-static void lpt_out(BYTE);
+static BYTE hwctl_in(void), fp_in(void);
+static void hwctl_out(BYTE), fp_out(BYTE);
+static BYTE lpt_status_in(void), lpt_data_in(void);
+static void lpt_status_out(BYTE), lpt_data_out(BYTE);
 
 /*
  *	This array contains function pointers for every
@@ -112,8 +114,8 @@ static BYTE (*port_in[256]) (void) = {
 	io_trap_in,		/* port	63 */
 	io_trap_in,		/* port	64 */
 	io_trap_in,		/* port	65 */
-	lpt_in,			/* port	66 */ /* printer status */
-	io_no_card_in,		/* port	67 */ /* printer data */
+	lpt_status_in,		/* port	66 */ /* printer status */
+	lpt_data_in,		/* port	67 */ /* printer data */
 	io_trap_in,		/* port	68 */
 	io_trap_in,		/* port	69 */
 	io_trap_in,		/* port	70 */
@@ -174,7 +176,7 @@ static BYTE (*port_in[256]) (void) = {
 	io_trap_in,		/* port	125 */
 	io_trap_in,		/* port	126 */
 	io_trap_in,		/* port	127 */
-	io_no_card_in,		/* port	128 */ /* virtual hardware control */
+	hwctl_in,		/* port	128 */ /* virtual hardware control */
 	io_trap_in,		/* port	129 */
 	io_trap_in,		/* port	130 */
 	io_trap_in,		/* port	131 */
@@ -375,8 +377,8 @@ static void (*port_out[256]) (BYTE) = {
 	io_trap_out,		/* port	63 */
 	io_trap_out,		/* port	64 */
 	io_trap_out,		/* port	65 */
-	io_no_card_out,		/* port	66 */ /* printer status */
-	lpt_out,		/* port	67 */ /* printer data */
+	lpt_status_out,		/* port	66 */ /* printer status */
+	lpt_data_out,		/* port	67 */ /* printer data */
 	io_trap_out,		/* port	68 */
 	io_trap_out,		/* port	69 */
 	io_trap_out,		/* port	70 */
@@ -564,7 +566,7 @@ static void (*port_out[256]) (BYTE) = {
 	tarbell_ext_out,	/* port	252 */ /* Tarbell 1011D extended cmd */
 	io_trap_out,		/* port	253 */
 	io_trap_out,		/* port	254 */
-	io_no_card_out		/* port	255 */ /* front panel */
+	fp_out			/* port	255 */ /* front panel */
 };
 
 /*
@@ -626,7 +628,7 @@ static BYTE io_trap_in(void)
 		cpu_error = IOTRAPIN;
 		cpu_state = STOPPED;
 	}
-	return((BYTE) 0x00);
+	return((BYTE) 0xff);
 }
 
 /*
@@ -636,7 +638,7 @@ static BYTE io_trap_in(void)
  */
 static BYTE io_no_card_in(void)
 {
-	return((BYTE) 0x00);
+	return((BYTE) 0xff);
 }
 
 /*
@@ -674,12 +676,28 @@ static BYTE fp_in(void)
 }
 
 /*
+ *	Ouput to front panel switch port won't do anything
+ */
+static void fp_out(BYTE data)
+{
+	data++; /* to avoid compiler warning */
+}
+
+/*
  *	timer interrupt causes RST 38 in IM 0 and IM 1
  */
 static void int_timer(int sig)
 {
 	int_int = 1;
 	int_data = 0xff;	/* RST 38H for IM 0 */
+}
+
+/*
+ *	Input from virtual hardware control port
+ */
+static BYTE hwctl_in(void)
+{
+	return((BYTE) 0);
 }
 
 /*
@@ -719,9 +737,17 @@ static void hwctl_out(BYTE data)
 }
 
 /*
+ *	Input from data printer port
+ */
+static BYTE lpt_data_in(void)
+{
+	return((BYTE) 0);
+}
+
+/*
  *	Print data into the printer file
  */
-static void lpt_out(BYTE data)
+static void lpt_data_out(BYTE data)
 {
 	if ((data != '\r') && (data != 0x00)) {
 again:
@@ -739,9 +765,17 @@ again:
 
 /*
  *	I/O handler for line printer status in:
- *	Our printer files never is busy, so always return ready.
+ *	Our printer file never is busy, so always return ready.
  */
-static BYTE lpt_in(void)
+static BYTE lpt_status_in(void)
 {
 	return((BYTE) 3);
+}
+
+/*
+ *	Output to line printer status port won't do anything
+ */
+static void lpt_status_out(BYTE data)
+{
+	data++; /* to avoid compiler warning */
 }

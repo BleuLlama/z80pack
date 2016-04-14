@@ -39,6 +39,7 @@
  * xx-JAN-14 some improvements here and there
  * 02-MAR-14 source cleanup and improvements
  * 03-MAI-14 improved network code, telnet negotiation rewritten
+ * 16-JUL-14 unused I/O ports need to return FF, see survey.mac
  */
 
 /*
@@ -1113,7 +1114,7 @@ static BYTE io_trap_in(void)
 		cpu_error = IOTRAPIN;
 		cpu_state = STOPPED;
 	}
-	return((BYTE) 0x00);
+	return((BYTE) 0xff);
 }
 
 /*

@@ -29,6 +29,7 @@
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
+ * 06-SEP-14 Release 1.24 bugfixes and improvements
  */
 
 #include <unistd.h>
@@ -439,7 +440,24 @@ void cpu_8080(void)
 				int_protection = 0; /* after EI */
 				goto leave;
 			}
+
 			IFF = 0;
+#ifdef BUS_8080
+			cpu_bus = CPU_WO | CPU_M1 | CPU_INTA;
+#endif
+
+#ifdef FRONTPANEL
+			fp_clock += 22000;
+			fp_sampleLightGroup(0, 0);
+#endif
+
+#ifdef BUS_8080
+			cpu_bus = CPU_STACK;
+#endif
+#ifdef FRONTPANEL
+			fp_clock += 22000;
+			fp_sampleLightGroup(0, 0);
+#endif
 
 #ifdef WANT_SPC
 			if (STACK <= ram)
@@ -496,7 +514,7 @@ leave:
 		if (f_flag) {		/* adjust CPU speed */
 			if (t > tmax) {
 				timer.tv_sec = 0;
-				timer.tv_nsec = 10000000;
+				timer.tv_nsec = 10000000L;
 				nanosleep(&timer, NULL);
 				t = 0;
 			}
@@ -571,6 +589,16 @@ static int op_hlt(void)			/* HLT */
 			nanosleep(&timer, NULL);
 			R += 9999;
 		}
+
+	if (int_int) {
+#ifdef BUS_8080
+		cpu_bus = CPU_INTA | CPU_WO | CPU_HLTA | CPU_M1;
+#endif
+#ifdef FRONTPANEL
+		fp_clock += 7;
+		fp_sampleLightGroup(0, 0);
+#endif
+	}
 
 	busy_loop_cnt[0] = 0;
 
@@ -2804,6 +2832,8 @@ static int op_poppsw(void)		/* POP PSW */
 	fp_sampleLightGroup(0, 0);
 #endif
 	F = *STACK++;
+	F &= ~(N2_FLAG | N1_FLAG);
+	F |= N_FLAG;
 #ifdef WANT_SPC
 	if (STACK >= ram + 65536L)
 		STACK =	ram;

@@ -8,3 +8,10 @@ and patiently answered all my questions.
 Stefano Bodrato <stefano_bodrato@hotmail.com>:
 
 for the Windows port of the frontpanel library.
+
+
+Mark Garlanger <http://heathkit.garlanger.com/>:
+
+for the implementation of the Z80 DAA instruction, which passes
+regression tests, and for help with a flag correct implementation
+of the Z80 ADC/SBC instructions, that also passes regression tests.

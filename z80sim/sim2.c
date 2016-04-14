@@ -29,6 +29,7 @@
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
+ * 06-SEP-14 Release 1.24 bugfixes and improvements
  */
 
 /*
@@ -114,6 +115,12 @@ static int op_tb4l(void), op_tb5l(void), op_tb6l(void), op_tb7l(void);
 static int op_tb0hl(void), op_tb1hl(void), op_tb2hl(void), op_tb3hl(void);
 static int op_tb4hl(void), op_tb5hl(void), op_tb6hl(void), op_tb7hl(void);
 
+#ifdef Z80_UNDOC
+static int op_undoc_slla(void), op_undoc_sllb(void), op_undoc_sllc(void);
+static int op_undoc_slld(void), op_undoc_slle(void);
+static int op_undoc_sllh(void), op_undoc_slll(void), op_undoc_sllhl(void);
+#endif
+
 int op_cb_handel(void)
 {
 	register int t;
@@ -167,6 +174,7 @@ int op_cb_handel(void)
 		op_sral,			/* 0x2d	*/
 		op_srahl,			/* 0x2e	*/
 		op_sraa,			/* 0x2f	*/
+#ifndef Z80_UNDOC
 		trap_cb,			/* 0x30	*/
 		trap_cb,			/* 0x31	*/
 		trap_cb,			/* 0x32	*/
@@ -175,6 +183,16 @@ int op_cb_handel(void)
 		trap_cb,			/* 0x35	*/
 		trap_cb,			/* 0x36	*/
 		trap_cb,			/* 0x37	*/
+#else
+		op_undoc_sllb,
+		op_undoc_sllc,
+		op_undoc_slld,
+		op_undoc_slle,
+		op_undoc_sllh,
+		op_undoc_slll,
+		op_undoc_sllhl,
+		op_undoc_slla,
+#endif
 		op_srlb,			/* 0x38	*/
 		op_srlc,			/* 0x39	*/
 		op_srld,			/* 0x3a	*/
@@ -2852,3 +2870,140 @@ static int op_tb7hl(void)		/* BIT 7,(HL) */
 	}
 	return(12);
 }
+
+/**********************************************************************/
+/**********************************************************************/
+/*********       UNDOCUMENTED Z80 INSTRUCTIONS, BEWARE!      **********/
+/**********************************************************************/
+/**********************************************************************/
+
+#ifdef Z80_UNDOC
+
+static int op_undoc_slla(void)		/* SLL A */
+{
+	if (u_flag)
+		trap_cb();
+
+	(A & 128) ? (F |= C_FLAG) : (F &= ~C_FLAG);
+	A = A << 1 | 1;
+	F &= ~(H_FLAG |	N_FLAG);
+	(A) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
+	(A & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
+	(parity[A]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	return(8);
+}
+
+static int op_undoc_sllb(void)		/* SLL B */
+{
+	if (u_flag)
+		trap_cb();
+
+	(B & 128) ? (F |= C_FLAG) : (F &= ~C_FLAG);
+	B = B << 1 | 1;
+	F &= ~(H_FLAG |	N_FLAG);
+	(B) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
+	(B & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
+	(parity[B]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	return(8);
+}
+
+static int op_undoc_sllc(void)		/* SLL C */
+{
+	if (u_flag)
+		trap_cb();
+
+	(C & 128) ? (F |= C_FLAG) : (F &= ~C_FLAG);
+	C = C << 1 | 1;
+	F &= ~(H_FLAG |	N_FLAG);
+	(C) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
+	(C & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
+	(parity[C]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	return(8);
+}
+
+static int op_undoc_slld(void)		/* SLL D */
+{
+	if (u_flag)
+		trap_cb();
+
+	(D & 128) ? (F |= C_FLAG) : (F &= ~C_FLAG);
+	D = D << 1 | 1;
+	F &= ~(H_FLAG |	N_FLAG);
+	(D) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
+	(D & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
+	(parity[D]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	return(8);
+}
+
+static int op_undoc_slle(void)		/* SLL E */
+{
+	if (u_flag)
+		trap_cb();
+
+	(E & 128) ? (F |= C_FLAG) : (F &= ~C_FLAG);
+	E = E << 1 | 1;
+	F &= ~(H_FLAG |	N_FLAG);
+	(E) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
+	(E & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
+	(parity[E]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	return(8);
+}
+
+static int op_undoc_sllh(void)		/* SLL H */
+{
+	if (u_flag)
+		trap_cb();
+
+	(H & 128) ? (F |= C_FLAG) : (F &= ~C_FLAG);
+	H = H << 1 | 1;
+	F &= ~(H_FLAG |	N_FLAG);
+	(H) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
+	(H & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
+	(parity[H]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	return(8);
+}
+
+static int op_undoc_slll(void)		/* SLL L */
+{
+	if (u_flag)
+		trap_cb();
+
+	(L & 128) ? (F |= C_FLAG) : (F &= ~C_FLAG);
+	L = L << 1 | 1;
+	F &= ~(H_FLAG |	N_FLAG);
+	(L) ? (F &= ~Z_FLAG) : (F |= Z_FLAG);
+	(L & 128) ? (F |= S_FLAG) : (F &= ~S_FLAG);
+	(parity[L]) ? (F &= ~P_FLAG) :	(F |= P_FLAG);
+	return(8);
+}
+
+static int op_undoc_sllhl(void)		/* SLL (HL) */
+{
+	register BYTE *p;
+
+	if (u_flag)
+		trap_cb();
+
+#ifdef BUS_8080
+	cpu_bus = CPU_WO | CPU_MEMR;
+#endif
+#ifdef FRONTPANEL
+	fp_sampleLightGroup(0, 0);
+#endif
+	p = ram	+ (H <<	8) + L;
+	(*p & 128) ? (F	|= C_FLAG) : (F	&= ~C_FLAG);
+	*p = *p << 1 | 1;
+	F &= ~(H_FLAG |	N_FLAG);
+	(*p) ? (F &= ~Z_FLAG) :	(F |= Z_FLAG);
+	(*p & 128) ? (F	|= S_FLAG) : (F	&= ~S_FLAG);
+	(parity[*p]) ?	(F &= ~P_FLAG) : (F |= P_FLAG);
+#ifdef BUS_8080
+	cpu_bus = 0;
+#endif
+#ifdef FRONTPANEL
+	fp_sampleLightGroup(0, 0);
+#endif
+	return(15);
+}
+
+#endif

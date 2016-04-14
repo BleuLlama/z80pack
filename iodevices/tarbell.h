@@ -10,6 +10,7 @@
  * History:
  * 13-MAR-2014 first fully working version
  * 15-MAR-2014 some improvements for CP/M 1.3 & 1.4
+ * 17-MAR-2014 close(fd) was missing in write sector lseek error case
  */
 
 extern BYTE tarbell_stat_in(void), tarbell_track_in(void);

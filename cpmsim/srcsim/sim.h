@@ -28,6 +28,8 @@
  * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
+ * 04-JUN-14 Release 1.23 added 8080 emulation
+ * 20-JUL-14 Release 1.24 bugfixes and improvements
  */
 
 /*
@@ -73,7 +75,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.23"
+#define RELEASE	"1.24"
 
 #define LENCMD		80		/* length of command buffers etc */
 
@@ -114,6 +116,7 @@
 #define POWEROFF	255		/* CPU off, no error */
 
 typedef	unsigned short WORD;		/* 16 bit unsigned */
+typedef	signed short   SWORD;		/* 16 bit signed */
 typedef	unsigned char  BYTE;		/* 8 bit unsigned */
 
 #ifdef HISIZE

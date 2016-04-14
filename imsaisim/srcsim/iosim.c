@@ -11,6 +11,7 @@
  * 19-JAN-14 unused I/O ports need to return 00 and not FF
  * 02-MAR-14 source cleanup and improvements
  * 23-MAR-14 added 10ms timer interrupt for Kildalls timekeeper PL/M program
+ * 16-JUL-14 unused I/O ports need to return FF, see survey.mac
  */
 
 #include <unistd.h>
@@ -53,7 +54,7 @@ static BYTE (*port_in[256]) (void) = {
 	io_no_card_in,		/* port	5 */
 	io_trap_in,		/* port	6 */
 	io_trap_in,		/* port	7 */
-	io_no_card_in,		/* port	8 */ /* SIO C not connected */
+	io_no_card_in,		/* port	8 */ /* SIO Control for 1 and 2 */
 	io_trap_in,		/* port	9 */
 	io_trap_in,		/* port	10 */
 	io_trap_in,		/* port	11 */
@@ -292,7 +293,7 @@ static BYTE (*port_in[256]) (void) = {
 	io_trap_in,		/* port	244 */
 	io_trap_in,		/* port	245 */
 	lpt_in,			/* port	246 */ /* IMSAI PTR-300 line printer */
-	io_trap_in,		/* port	247 */
+	io_no_card_in,		/* port	247 */ /* prio interrupt controller */
 	io_trap_in,		/* port	248 */
 	io_trap_in,		/* port	249 */
 	io_trap_in,		/* port	250 */
@@ -316,7 +317,7 @@ static void (*port_out[256]) (BYTE) = {
 	io_no_card_out,		/* port	5 */
 	io_trap_out,		/* port	6 */
 	io_trap_out,		/* port	7 */
-	io_no_card_out,		/* port	8 */ /* SIO C not connected */
+	io_no_card_out,		/* port	8 */ /* SIO Control for 1 and 2 */
 	io_trap_out,		/* port	9 */
 	io_trap_out,		/* port	10 */
 	io_trap_out,		/* port	11 */
@@ -555,7 +556,7 @@ static void (*port_out[256]) (BYTE) = {
 	io_trap_out,		/* port	244 */
 	io_trap_out,		/* port	245 */
 	lpt_out,		/* port	246 */ /* IMSAI PTR-300 line printer */
-	io_trap_out,		/* port	247 */
+	io_no_card_out,		/* port	247 */ /* prio interrupt controller */
 	io_trap_out,		/* port	248 */
 	io_trap_out,		/* port	249 */
 	io_trap_out,		/* port	250 */
@@ -625,7 +626,7 @@ static BYTE io_trap_in(void)
 		cpu_error = IOTRAPIN;
 		cpu_state = STOPPED;
 	}
-	return((BYTE) 0x00);
+	return((BYTE) 0xff);
 }
 
 /*
@@ -635,7 +636,7 @@ static BYTE io_trap_in(void)
  */
 static BYTE io_no_card_in(void)
 {
-	return((BYTE) 0x00);
+	return((BYTE) 0xff);
 }
 
 /*
@@ -749,7 +750,7 @@ again:
 /*
  *	I/O handler for line printer in:
  *	The IMSAI line printer returns F4 for ready and F0 for busy.
- *	Our printer files never is busy, so always return ready.
+ *	Our printer file never is busy, so always return ready.
  */
 static BYTE lpt_in(void)
 {

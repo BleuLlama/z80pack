@@ -9,6 +9,8 @@
  *
  * History:
  * 20-OCT-08 first version finished
+ * 19-JUN-14 added config parameter for droping nulls after CR/LF
+ * 18-JUL-14 don't block on read from terminal
  */
 
 extern BYTE imsai_sio2_status_in(void);

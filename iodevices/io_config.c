@@ -12,6 +12,7 @@
  * History:
  * 20-OCT-08 first version finished
  * 20-MAR-14 ignore carriage return too, necessary for the Windows port
+ * 19-JUN-14 added config parameter for droping nulls after CR/LF
  */
 
 #include <stdio.h>
@@ -21,6 +22,7 @@
 
 extern int sio_upper_case;	/* SIO boards translate input to upper case */
 extern int sio_strip_parity;	/* SIO boards strip parity from output */
+extern int sio_drop_nulls;	/* SIO boards drop nulls after CR/LF */
 
 void io_config(void)
 {
@@ -54,6 +56,18 @@ void io_config(void)
 					break;
 				case '1':
 					sio_strip_parity = 1;
+					break;
+				default:
+					printf("iodev.conf: illegal value for %s: %s\n", t1, t2);
+					break;
+				}
+			} else if (!strcmp(t1, "sio_drop_nulls")) {
+				switch (*t2) {
+				case '0':
+					sio_drop_nulls = 0;
+					break;
+				case '1':
+					sio_drop_nulls = 1;
 					break;
 				default:
 					printf("iodev.conf: illegal value for %s: %s\n", t1, t2);

@@ -10,6 +10,8 @@
  * 02-MAR-14 source cleanup and improvements
  * 14-MAR-14 added Tarbell SD FDC and printer port
  * 23-MAR-14 enabled interrupts, 10ms timer added to iosim
+ * xx-JUN-14 added default CPU define
+ * 19-JUL-14 added typedef for signed 16bit
  */
 
 /*
@@ -17,7 +19,7 @@
  *	by user for her/his own purpose.
  */
 #define CPU_SPEED 2	/* default CPU speed */
-/*#define Z80_UNDOC*/	/* compile undocumented Z80 instructions */
+/*#define Z80_UNDOC*/	/* don't compile undocumented Z80 instructions */
 #define WANT_INT	/* interrupt for stuff */
 #define WANT_SPC	/* activate SP over-/underrun handling 0000<->FFFF */
 #define WANT_PCC	/* activate PC overrun handling FFFF->0000 */
@@ -46,10 +48,10 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.23"
+#define RELEASE	"1.24"
 
 #define USR_COM	"Altair 8800 Simulation"
-#define USR_REL	"1.5"
+#define USR_REL	"1.6"
 #define USR_CPR	"Copyright (C) 2008-2014 by Udo Munk"
 
 #define LENCMD		80		/* length of command buffers etc */
@@ -91,6 +93,7 @@
 #define POWEROFF	255		/* CPU off, no error */
 
 typedef	unsigned short WORD;		/* 16 bit unsigned */
+typedef	signed short   SWORD;		/* 16 bit signed */
 typedef	unsigned char  BYTE;		/* 8 bit unsigned */
 
 #ifdef HISIZE

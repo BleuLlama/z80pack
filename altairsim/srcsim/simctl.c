@@ -13,12 +13,15 @@
  * 14-MAR-14 added Tarbell SD FDC and printer port
  * 15-APR-14 added fflush() for teletype
  * 19-APR-14 moved CPU error report into a function
+ * 06-JUN-14 forgot to disable timer interrupts when machine switched off
+ * 10-JUN-14 increased fp operation timer from 1ms to 100ms
  */
 
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <termios.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <time.h>
 #include "sim.h"
@@ -54,6 +57,11 @@ static void quit_callback(void);
 void mon(void)
 {
 	struct timespec timer;
+	struct sigaction newact;
+
+	/*load memory from file */
+	if (load())
+		exit(1);
 
 	/* initialize frontpanel */
 	if (!fp_init("conf/panel.conf")) {
@@ -87,9 +95,6 @@ void mon(void)
 	fp_addSwitchCallback("SW_PROTECT", protect_clicked, 0);
 	fp_addSwitchCallback("SW_PWR", power_clicked, 0);
 
-	/*load memory from file */
-	load();
-
 	/* empty buffer for teletype */
 	fflush(stdout);
 
@@ -116,9 +121,13 @@ void mon(void)
 		}
 
 		timer.tv_sec = 0;
-		timer.tv_nsec = 1000000L;
+		timer.tv_nsec = 100000000L;
 		nanosleep(&timer, NULL);
 	}
+
+	/* timer interrupts off */
+	newact.sa_handler = SIG_IGN;
+	sigaction(SIGALRM, &newact, NULL);
 
 	/* reset terminal */
 	reset_unix_terminal();
@@ -419,6 +428,11 @@ void power_clicked(int state, int val)
 		power++;
 		cpu_bus = CPU_WO | CPU_M1 | CPU_MEMR;
 		fp_led_wait = 1;
+#ifndef __CYGWIN__
+		system("tput clear");
+#else
+		system("cmd /c cls");	/* note: doesn't work */
+#endif
 		break;
 	case FP_SW_UP:
 		if (!power)

@@ -11,6 +11,7 @@
  * 13-MAR-2014 first fully working version
  * 15-MAR-2014 some improvements for CP/M 1.3 & 1.4
  * 17-MAR-2014 close(fd) was missing in write sector lseek error case
+ *    AUG-2014 some improvements
  */
 
 #include <unistd.h>
@@ -38,7 +39,7 @@ static int fd;			/* fd for disk file i/o */
 static int dcnt;		/* data counter read/write */
 static BYTE buf[SEC_SZ];	/* buffer for one sector */
 
-/* this are our disk drives */
+/* these are our disk drives */
 static char *disks[4] = {
 	"disks/drivea.dsk",
 	"disks/driveb.dsk",
@@ -256,7 +257,6 @@ BYTE tarbell_data_in(void)
 		break;
 
 	default:
-		printf("tarbell: read in wrong state\r\n");
 		return((BYTE) 0);
 		break;
 	}
@@ -342,6 +342,5 @@ BYTE tarbell_wait_in(void)
  */
 void tarbell_ext_out(BYTE data)
 {
-	disk = ~data >> 4 & 3;	/* get disk # */
-	//printf("tarbell select: cmd = %02x, disk = %d\r\n", data, disk);
+	disk = ~data >> 4 & 3;		/* get disk # */
 }

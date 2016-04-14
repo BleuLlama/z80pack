@@ -32,6 +32,7 @@
  * 29-MAR-14 Release 1.21 many improvements
  * 29-MAY-14 Release 1.22 improved networking and bugfixes
  * 04-JUN-14 Release 1.23 added 8080 emulation
+ * 06-SEP-14 Release 1.24 bugfixes and improvements
  */
 
 /*
@@ -140,7 +141,7 @@ static BYTE io_trap_in(void)
 		cpu_error = IOTRAPIN;
 		cpu_state = STOPPED;
 	}
-	return((BYTE) 0);
+	return((BYTE) 0xff);
 }
 
 /*

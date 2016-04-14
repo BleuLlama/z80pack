@@ -7,13 +7,15 @@
  *
  * Emulation of an IMSAI FIF S100 board
  *
- * This emulation was reverse engineered from running IMDOS on the machine.
- * I do not have the manual for this board, so there might be bugs.
+ * This emulation was reverse engineered from running IMDOS on the machine,
+ * and from reading the CP/M 1.3 BIOS and boot sources from IMSAI.
+ * I do not have the manual for this board, so there still might be bugs.
  *
  * History:
  * 18-JAN-14 first working version finished
  * 02-MAR-14 improvements
  * 23-MAR-14 got all 4 disk drives working
+ *    AUG-14 some improvements after seeing the original IMSAI CP/M 1.3 BIOS
  */
 
 #include <unistd.h>
@@ -24,13 +26,13 @@
 #include "simglb.h"
 
 /* offsets in disk descriptor */
-#define DD_UNIT		0
-#define DD_RESULT	1
-#define DD_NN		2
-#define DD_TRACK	3
-#define DD_SECTOR	4
-#define DD_DMAL		5
-#define DD_DMAH		6
+#define DD_UNIT		0	/* unit/command */
+#define DD_RESULT	1	/* result code */
+#define DD_NN		2	/* track number high, not used */
+#define DD_TRACK	3	/* track number low */
+#define DD_SECTOR	4	/* sector number */
+#define DD_DMAL		5	/* DMA address low */
+#define DD_DMAH		6	/* DMA address high */
 
 /* FD command in disk descriptor unit/command field */
 #define WRITE_SEC	1
@@ -45,7 +47,7 @@
 
 //#define DEBUG		/* so we can see what the FIF is asked to do */
 
-/* this are our disk drives */
+/* these are our disk drives */
 static char *disks[4] = {
 	"disks/drivea.dsk",
 	"disks/driveb.dsk",
@@ -55,7 +57,6 @@ static char *disks[4] = {
 
 BYTE imsai_fif_in(void)
 {
-	//printf("FIF: input wanted?\r\n");
 	return(0);
 }
 
@@ -67,24 +68,24 @@ void imsai_fif_out(BYTE data)
 
 	void disk_io(int);
 
-	//printf("FIF i/o = %02x\r\n", data);
-
 	/*
-	 * The controller understands two commands:
+	 * The controller understands these commands:
 	 * 0x10: set address of a disk descriptor from the following two out's
 	 * 0x00: do the work as setup in the disk descriptor
+	 * 0x20: reset a drive to home position, the lower digit contains
+	 *       the drive to reset, 0x2f for all drives
 	 *
-	 * The address only needs to be set once, the OS then can adjust
+	 * The dd address only needs to be set once, the OS then can adjust
 	 * the wanted I/O in the descriptor and send the 0x00 command
 	 * multiple times for this descriptor.
 	 *
-	 * The command is OR'ed with a descriptor number 0x0 - 0xf, so
-	 * there can be 16 different disk descriptors that need to be
-	 * remembered.
+	 * The commands 0x10 and 0x00 are OR'ed with a descriptor number
+	 * 0x0 - 0xf, so there can be 16 different disk descriptors that
+	 * need to be remembered.
 	 */
 	switch (fdstate) {
 	case 0:	/* start of command phase */
-		switch (data & 0x10) {
+		switch (data & 0xf0) {
 		case 0x00:	/* do what disk descriptor says */
 			descno = data & 0xf;
 			disk_io(fdaddr[descno]);
@@ -95,8 +96,11 @@ void imsai_fif_out(BYTE data)
 			fdstate++;
 			break;
 	
+		case 0x20:	/* reset drive(s) */
+			break;	/* no mechanical drives, so nothing to do */
+
 		default:
-			printf("FIFO: cmd %02x?\r\n", data);
+			printf("FIF: unknown cmd %02x\r\n", data);
 			return;
 		}
 		break;
@@ -112,7 +116,7 @@ void imsai_fif_out(BYTE data)
 		break;
 
 	default:
-		printf("FIF: state error\r\n");
+		printf("FIF: internal state error\r\n");
 		cpu_error = IOERROR;
 		cpu_state = STOPPED;
 		break;
@@ -123,8 +127,7 @@ void imsai_fif_out(BYTE data)
  *	Here we do the disk I/O.
  *
  *	The status byte in the disk descriptor is set as follows:
- *	0 - ok
- *	1 - ok
+ *	1 - OK
  *	2 - illegal drive
  *	3 - no disk in drive
  *	4 - illegal track
@@ -132,10 +135,17 @@ void imsai_fif_out(BYTE data)
  *	6 - seek error
  *	7 - read error
  *	8 - write error
- *	15 - other error
+ *	15 - invalid command
  *
- *	The error codes will abort disk I/O, but I don't know which
- *	error codes the real controller would set.
+ *	These error codes will abort disk I/O, but this are not the ones
+ *	the real controller would set. Without FIF manual the real error
+ *	codes are not known yet.
+ *	In the original IMSAI BIOS the upper 4 bits of the error code
+ *	are described as "error class" and used as error code for CP/M.
+ *	One error code is explicitely tested, so it is known:
+ *		0A1H - drive not ready
+ *	The IMSAI BIOS waits forever until the drive door is closed, for
+ *	now I leave the used code as is, so that the IO is aborted.
  */
 void disk_io(int addr)
 {
@@ -168,18 +178,8 @@ void disk_io(int addr)
 	sector = *(ram + addr + DD_SECTOR);
 	dma_addr = (*(ram + addr + DD_DMAH) * 256) + *(ram + addr + DD_DMAL);
 
-	/* convert unit to internal disk no */
+	/* convert IMSAI unit bit to internal disk no */
 	switch (unit) {
-	/*
-	 * Disk unit 0 seems to be special somehow, the format program uses
-	 * it to check if there are disks in drives. I don't know what the
-	 * real controller would do with this command, but the result code 0
-	 * here makes the format program working.
-	 */
-	case 0:
-		*(ram + addr + DD_RESULT) = 0;
-		return;
-
 	case 1:	/* IMDOS drive A: */
 		disk = 0;
 		break;
@@ -196,15 +196,15 @@ void disk_io(int addr)
 		disk = 3;
 		break;
 
-	default: /* ignore all other drives */
+	default: /* set error code for all other drives */
 		 /* IMDOS sends unit 3 intermediate for drive C: & D: */
-		*(ram + addr + DD_RESULT) = 0;
+		 /* and the IMDOS format program sends unit 0 */
+		*(ram + addr + DD_RESULT) = 2;
 		return;
 	}
 
 	/* try to open disk image for the wanted operation */
 	if ((fd = open(disks[disk], O_RDWR)) == -1) {
-		//printf("FIF: no disk in unit %d\r\n", unit);
 		*(ram + addr + DD_RESULT) = 3;
 		return;
 	}
@@ -277,8 +277,7 @@ void disk_io(int addr)
 		*(ram + addr + DD_RESULT) = 1;
 		break;
 
-	default:
-		//printf("FIF: unknown cmd %02x\r\n", cmd);
+	default:	/* unknown command */
 		*(ram + addr + DD_RESULT) = 15;
 		break;
 	}
