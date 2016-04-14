@@ -24,6 +24,7 @@
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
  * 24-JAN-14 Release 1.18 bug fixes and improvements
+ * 02-MAR-14 Release 1.19 source cleanup and improvements
  */
 
 #include <unistd.h>
@@ -40,7 +41,6 @@
 void check_gui_break(void);
 #endif
 
-static int op_notimpl(void);
 static int op_nop(void), op_halt(void), op_scf(void);
 static int op_ccf(void), op_cpl(void), op_daa(void);
 static int op_ei(void), op_di(void);
@@ -522,17 +522,6 @@ void cpu(void)
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_M1 | CPU_MEMR;
 #endif
-}
-
-/*
- *	Trap not implemented opcodes. This function may be usefull
- *	later to trap some wanted opcodes.
- */
-static int op_notimpl(void)
-{
-	cpu_error = OPTRAP1;
-	cpu_state = STOPPED;
-	return(0);
 }
 
 static int op_nop(void)			/* NOP */

@@ -1,6 +1,10 @@
-;Edits:
-;    30-Jun-08 KJL
-;       - Created from IMSAI 8K BASIC Version 1.4 manual
+;EDITS:
+;    30-JUN-08 KJL
+;       - CREATED FROM IMSAI 8K BASIC VERSION 1.4 MANUAL
+;
+;    07-FEB-14 UM
+;	- FIXED TYPOS, MATCHES MANUAL NOW
+;
 ;---------------------------------------------------------
 ; BASIC30.ASM   1.4     05/19/77        JRB     8K BASIC
 ; BASICS2.ASM   1.401   05/11/77        DK      8K BASIC
@@ -4329,7 +4333,7 @@ NOTCR:  CPI     15H     ;TEST IF CONTROL-U
         CALL    CRLF    ;GET CR/LF
         JMP     REIN    ;GO RE-ENTER
 NOTCO:  CPI     7FH     ;TEST IF RUBOUT
-        JNZ     NOTCH   ;BRIF NOT
+        JNZ     NOTBS   ;BRIF NOT
         LDA     TAPES   ;GET PAPER TAPE SW
         RAR             ;TEST IF LOAD
         JC      TREAD   ;IGNORE IF LOAD
@@ -5638,6 +5642,7 @@ RECI:   CALL    CASI    ;GET TYPE
         LXI     H,0     ;INITIAL CHECKSUM
 RECI1:  CALL    CASI    ;INPUT BYTE
         STAX    D       ;STORE IT
+	INX	D
         CALL    CKSUM   ;UPDATE CKSUM, PUT ADDR IN LIGHTS
         DCR     B       ;LOOP ON COUNT
         JNZ     RECI1

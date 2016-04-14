@@ -27,6 +27,7 @@
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
  * 24-JAN-14 Release 1.18 bug fixes and improvements
+ * 02-MAR-14 Release 1.19 source cleanup and improvements
  */
 
 /*
@@ -47,18 +48,27 @@
  *	Forward declarations of the I/O functions
  *	for all port addresses.
  */
-static BYTE io_trap(void);
+static BYTE io_trap_in(void);
+static void io_trap_out(BYTE);
 static BYTE p001_in(void);
 static void p001_out(BYTE);
 
 /*
- *	This two dimensional array contains function pointers
- *	for every I/O port (0 - 255), to do the required I/O.
- *	The first entry is for input, the second for output.
+ *	This array contains function pointers for every input
+ *	I/O port (0 - 255), to do the required I/O.
  */
-static BYTE (*port[256][2]) () = {
-	{ io_trap, io_trap },		/* port 0 */
-	{ p001_in, p001_out }		/* port	1 */
+static BYTE (*port_in[256]) (void) = {
+	 io_trap_in,		/* port 0 */
+	 p001_in		/* port	1 */
+};
+
+/*
+ *	This array contains function pointers for every output
+ *	I/O port (0 - 255), to do the required I/O.
+ */
+static void (*port_out[256]) (BYTE) = {
+	io_trap_out,		/* port 0 */
+	p001_out		/* port	1 */
 };
 
 /*
@@ -77,8 +87,10 @@ void init_io(void)
 {
 	register int i;
 
-	for (i = 2; i <= 255; i++)
-		port[i][0] = port[i][1]	= io_trap;
+	for (i = 2; i <= 255; i++) {
+		port_in[i] = io_trap_in;
+		port_out[i] = io_trap_out;
+	}
 }
 
 /*
@@ -99,7 +111,7 @@ void exit_io(void)
  */
 BYTE io_in(BYTE adr)
 {
-	return((*port[adr][0]) ());
+	return((*port_in[adr]) ());
 }
 
 /*
@@ -109,22 +121,38 @@ BYTE io_in(BYTE adr)
  */
 void io_out(BYTE adr, BYTE data)
 {
-	(*port[adr][1])	(data);
+	(*port_out[adr]) (data);
 }
 
 /*
- *	I/O trap function
+ *	I/O input trap function
  *	This function should be added into all unused
- *	entrys of the port array. It stops the emulation
- *	with an I/O error.
+ *	entrys of the input port array. It stops the
+ *	emulation with an I/O error.
  */
-static BYTE io_trap(void)
+static BYTE io_trap_in(void)
 {
 	if (i_flag) {
 		cpu_error = IOTRAP;
 		cpu_state = STOPPED;
 	}
 	return((BYTE) 0);
+}
+
+/*
+ *	I/O trap function
+ *	This function should be added into all unused
+ *	entrys of the output port array. It stops the
+ *	emulation with an I/O error.
+ */
+static void io_trap_out(BYTE data)
+{
+	data++; /* to avoid compiler warning */
+
+	if (i_flag) {
+		cpu_error = IOTRAP;
+		cpu_state = STOPPED;
+	}
 }
 
 /*

@@ -48,10 +48,9 @@ BYTE imsai_sio2_status_in(void)
 /*
  * write status register
  */
-BYTE imsai_sio2_status_out(BYTE data)
+void imsai_sio2_status_out(BYTE data)
 {
-	data = data;
-	return(0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
@@ -75,11 +74,11 @@ BYTE imsai_sio2_data_in(void)
  *
  * can be configured to strip parity bit, because some old software won't
  */
-BYTE imsai_sio2_data_out(BYTE data)
+void imsai_sio2_data_out(BYTE data)
 {
 	/* often send after CR/LF to give tty printer some time */
 	if ((data == 127) || (data == 255) || (data == 0))
-		return(0);
+		return;
 
 	if (sio_strip_parity)
 		data &= 0x7f;
@@ -95,5 +94,5 @@ again:
 		}
 	}
 	fflush(stdout);
-	return(0);
+	return;
 }

@@ -5,10 +5,11 @@
  *
  * Copyright (C) 2008-2014 by Udo Munk
  *
- * Partial emulation of an Altair 88SIO-2 S100 board
+ * Partial emulation of an Altair 88-2SIO S100 board
  *
  * History:
  * 20-OCT-08 first version finished
+ * 31-JAN-14 use correct name from the manual
  */
 
 #include <unistd.h>
@@ -48,10 +49,9 @@ BYTE altair_sio2_status_in(void)
 /*
  * write status register
  */
-BYTE altair_sio2_status_out(BYTE data)
+void altair_sio2_status_out(BYTE data)
 {
-	data = data;
-	return(0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
@@ -75,11 +75,11 @@ BYTE altair_sio2_data_in(void)
  *
  * can be configured to strip parity bit, because some old software won't
  */
-BYTE altair_sio2_data_out(BYTE data)
+void altair_sio2_data_out(BYTE data)
 {
 	/* often send after CR/LF to give tty printer some time */
 	if ((data == 127) || (data == 255) || (data == 0))
-		return(0);
+		return;
 
 	if (sio_strip_parity)
 		data &= 0x7f;
@@ -95,5 +95,4 @@ again:
 		}
 	}
 	fflush(stdout);
-	return(0);
 }

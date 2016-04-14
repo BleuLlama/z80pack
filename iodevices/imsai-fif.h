@@ -9,7 +9,8 @@
  *
  * History:
  * 18-JAN-14 first version finished
+ * 02-MAR-14 improvements
  */
 
 extern BYTE imsai_fif_in(void);
-extern BYTE imsai_fif_out(BYTE);
+extern void imsai_fif_out(BYTE);

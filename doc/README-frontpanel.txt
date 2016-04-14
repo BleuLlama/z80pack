@@ -18,7 +18,7 @@ This library needs to be in the LD_LIBRARY_PATH for the runtime linker,
 so that the emulation programs can find this library. On my systems I
 copy the library to /usr/local/lib and my ~/.profile includes:
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
 I have seen systems where this won't work, on such systems I copied the
 library to /usr/lib, so that it was found by the programs.
@@ -46,9 +46,12 @@ cd ~/z80pack-x.y/imsaisim
 rm conf
 ln -s conf_2d conf
 
+The 3D model also can be switched between 2D and 3D with the v-key pressed
+in the frontpanel window.
+
 Running the Altair emulation is the same, just change to directory
-~/z80pack-x.y and run program altairsim. The Altair emulation comes
-with 2D model only.
+~/z80pack-x.y/altairsim and run program altairsim. The Altair emulation
+comes with 2D model only.
 
 The default CPU speed for the Altair and IMSAI emulations is 2 MHz as
 with the original machines. This can be changed with the commandline

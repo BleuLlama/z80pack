@@ -24,6 +24,7 @@
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
  * 24-JAN-14 Release 1.18 bug fixes and improvements
+ * 02-MAR-14 Release 1.19 source cleanup and improvements
  */
 
 /*
@@ -98,6 +99,8 @@ BYTE *t_end = ram + 65535;	/* end address for measurement */
 unsigned long long fp_clock;
 WORD fp_led_address;		/* lights for address bus */
 BYTE fp_led_data;		/* ligths for data bus */
+WORD address_switch;		/* address and programmed input switches */
+BYTE fp_led_output;		/* IMSAI programmed output */
 #endif
 
 /*

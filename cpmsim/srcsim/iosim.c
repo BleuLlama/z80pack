@@ -37,6 +37,7 @@
  * 24-AUG-08 changed terminal line discipline to not add CR if LF send
  * xx-OCT-08 some improvments here and there
  * xx-JAN-14 some improvments here and there
+ * 02-MAR-14 source cleanup and improvements
  */
 
 /*
@@ -237,31 +238,52 @@ static int segsize;		/* segment size of one bank, default 48KB */
 /*
  *	Forward declaration of the I/O handlers for all used ports
  */
-static BYTE io_trap(void);
-static BYTE cond_in(void), cond_out(BYTE), cons_in(void), cons_out(BYTE);
-static BYTE prtd_in(void), prtd_out(BYTE), prts_in(void), prts_out(BYTE);
-static BYTE auxd_in(void), auxd_out(BYTE), auxs_in(void), auxs_out(BYTE);
-static BYTE fdcd_in(void), fdcd_out(BYTE);
-static BYTE fdct_in(void), fdct_out(BYTE);
-static BYTE fdcs_in(void), fdcs_out(BYTE);
-static BYTE fdcsh_in(void), fdcsh_out(BYTE);
-static BYTE fdco_in(void), fdco_out(BYTE);
-static BYTE fdcx_in(void), fdcx_out(BYTE);
-static BYTE dmal_in(void), dmal_out(BYTE);
-static BYTE dmah_in(void), dmah_out(BYTE);
-static BYTE mmui_in(void), mmui_out(BYTE), mmus_in(void), mmus_out(BYTE);
-static BYTE mmuc_in(void), mmuc_out(BYTE);
-static BYTE clkc_in(void), clkc_out(BYTE), clkd_in(void), clkd_out(BYTE);
-static BYTE time_in(void), time_out(BYTE);
-static BYTE delay_in(void), delay_out(BYTE);
-static BYTE hwctl_in(void), hwctl_out(BYTE);
-static BYTE speedl_in(void), speedl_out(BYTE);
-static BYTE speedh_in(void), speedh_out(BYTE);
-static BYTE cond1_in(void), cond1_out(BYTE), cons1_in(void), cons1_out(BYTE);
-static BYTE cond2_in(void), cond2_out(BYTE), cons2_in(void), cons2_out(BYTE);
-static BYTE cond3_in(void), cond3_out(BYTE), cons3_in(void), cons3_out(BYTE);
-static BYTE cond4_in(void), cond4_out(BYTE), cons4_in(void), cons4_out(BYTE);
-static BYTE netd1_in(void), netd1_out(BYTE), nets1_in(void), nets1_out(BYTE);
+static BYTE io_trap_in(void);
+static void io_trap_out(BYTE);
+static BYTE cond_in(void), cons_in(void);
+static void cond_out(BYTE), cons_out(BYTE);
+static BYTE prtd_in(void), prts_in(void);
+static void prtd_out(BYTE), prts_out(BYTE);
+static BYTE auxd_in(void), auxs_in(void);
+static void auxd_out(BYTE), auxs_out(BYTE);
+static BYTE fdcd_in(void);
+static void fdcd_out(BYTE);
+static BYTE fdct_in(void);
+static void fdct_out(BYTE);
+static BYTE fdcs_in(void);
+static void fdcs_out(BYTE);
+static BYTE fdcsh_in(void);
+static void fdcsh_out(BYTE);
+static BYTE fdco_in(void);
+static void fdco_out(BYTE);
+static BYTE fdcx_in(void);
+static void fdcx_out(BYTE);
+static BYTE dmal_in(void);
+static void dmal_out(BYTE);
+static BYTE dmah_in(void);
+static void dmah_out(BYTE);
+static BYTE mmui_in(void), mmus_in(void), mmuc_in(void);
+static void mmui_out(BYTE), mmus_out(BYTE), mmuc_out(BYTE);
+static BYTE clkc_in(void), clkd_in(void);
+static void clkc_out(BYTE), clkd_out(BYTE);
+static BYTE time_in(void);
+static void time_out(BYTE);
+static BYTE delay_in(void);
+static void delay_out(BYTE);
+static BYTE hwctl_in(void);
+static void hwctl_out(BYTE);
+static BYTE speedl_in(void), speedh_in(void);
+static void speedl_out(BYTE), speedh_out(BYTE);
+static BYTE cond1_in(void), cons1_in(void);
+static void cond1_out(BYTE), cons1_out(BYTE);
+static BYTE cond2_in(void), cons2_in(void);
+static void cond2_out(BYTE), cons2_out(BYTE);
+static BYTE cond3_in(void), cons3_in(void);
+static void cond3_out(BYTE), cons3_out(BYTE);
+static BYTE cond4_in(void), cons4_in(void);
+static void cond4_out(BYTE), cons4_out(BYTE);
+static BYTE netd1_in(void), nets1_in(void);
+static void netd1_out(BYTE), nets1_out(BYTE);
 
 /*
  *	Forward declaration of support functions
@@ -278,266 +300,529 @@ static void int_io(int);
 #endif
 
 /*
- *	This array contains two function pointers for every
- *	active port, one for input and one for output.
+ *	This array contains function pointers for every
+ *	input port.
  */
-static BYTE (*port[256][2]) () = {
-	{ cons_in, cons_out },		/* port 0 */
-	{ cond_in, cond_out },		/* port 1 */
-	{ prts_in, prts_out },		/* port 2 */
-	{ prtd_in, prtd_out },		/* port 3 */
-	{ auxs_in, auxs_out },		/* port 4 */
-	{ auxd_in, auxd_out },		/* port 5 */
-	{ io_trap, io_trap  },		/* port 6 */
-	{ io_trap, io_trap  },		/* port 7 */
-	{ io_trap, io_trap  },		/* port 8 */
-	{ io_trap, io_trap  },		/* port 9 */
-	{ fdcd_in, fdcd_out },		/* port 10 */
-	{ fdct_in, fdct_out },		/* port 11 */
-	{ fdcs_in, fdcs_out },		/* port 12 */
-	{ fdco_in, fdco_out },		/* port 13 */
-	{ fdcx_in, fdcx_out },		/* port 14 */
-	{ dmal_in, dmal_out },		/* port 15 */
-	{ dmah_in, dmah_out },		/* port 16 */
-	{ fdcsh_in, fdcsh_out },	/* port 17 */
-	{ io_trap, io_trap  },		/* port 18 */
-	{ io_trap, io_trap  },		/* port 19 */
-	{ mmui_in, mmui_out },		/* port 20 */
-	{ mmus_in, mmus_out },		/* port 21 */
-	{ mmuc_in, mmuc_out },		/* port 22 */
-	{ io_trap, io_trap  },		/* port 23 */
-	{ io_trap, io_trap  },		/* port 24 */
-	{ clkc_in, clkc_out },		/* port 25 */
-	{ clkd_in, clkd_out },		/* port 26 */
-	{ time_in, time_out },		/* port 27 */
-	{ delay_in, delay_out  },	/* port 28 */
-	{ hwctl_in, hwctl_out  },	/* port 29 */
-	{ speedl_in, speedl_out  },	/* port 30 */
-	{ speedh_in, speedh_out  },	/* port 31 */
-	{ io_trap, io_trap  },		/* port 32 */
-	{ io_trap, io_trap  },		/* port 33 */
-	{ io_trap, io_trap  },		/* port 34 */
-	{ io_trap, io_trap  },		/* port 35 */
-	{ io_trap, io_trap  },		/* port 36 */
-	{ io_trap, io_trap  },		/* port 37 */
-	{ io_trap, io_trap  },		/* port 38 */
-	{ io_trap, io_trap  },		/* port 39 */
-	{ cons1_in, cons1_out  },	/* port 40 */
-	{ cond1_in, cond1_out  },	/* port 41 */
-	{ cons2_in, cons2_out  },	/* port 42 */
-	{ cond2_in, cond2_out  },	/* port 43 */
-	{ cons3_in, cons3_out  },	/* port 44 */
-	{ cond3_in, cond3_out  },	/* port 45 */
-	{ cons4_in, cons4_out  },	/* port 46 */
-	{ cond4_in, cond4_out  },	/* port 47 */
-	{ io_trap, io_trap  },		/* port 48 */
-	{ io_trap, io_trap  },		/* port 49 */
-	{ nets1_in, nets1_out  },	/* port 50 */
-	{ netd1_in, netd1_out  },	/* port 51 */
-	{ io_trap, io_trap  },		/* port 52 */
-	{ io_trap, io_trap  },		/* port 53 */
-	{ io_trap, io_trap  },		/* port 54 */
-	{ io_trap, io_trap },		/* port	55 */
-	{ io_trap, io_trap },		/* port	56 */
-	{ io_trap, io_trap },		/* port	57 */
-	{ io_trap, io_trap },		/* port	58 */
-	{ io_trap, io_trap },		/* port	59 */
-	{ io_trap, io_trap },		/* port	60 */
-	{ io_trap, io_trap },		/* port	61 */
-	{ io_trap, io_trap },		/* port	62 */
-	{ io_trap, io_trap },		/* port	63 */
-	{ io_trap, io_trap },		/* port	64 */
-	{ io_trap, io_trap },		/* port	65 */
-	{ io_trap, io_trap },		/* port	66 */
-	{ io_trap, io_trap },		/* port	67 */
-	{ io_trap, io_trap },		/* port	68 */
-	{ io_trap, io_trap },		/* port	69 */
-	{ io_trap, io_trap },		/* port	70 */
-	{ io_trap, io_trap },		/* port	71 */
-	{ io_trap, io_trap },		/* port	72 */
-	{ io_trap, io_trap },		/* port	73 */
-	{ io_trap, io_trap },		/* port	74 */
-	{ io_trap, io_trap },		/* port	75 */
-	{ io_trap, io_trap },		/* port	76 */
-	{ io_trap, io_trap },		/* port	77 */
-	{ io_trap, io_trap },		/* port	78 */
-	{ io_trap, io_trap },		/* port	79 */
-	{ io_trap, io_trap },		/* port	80 */
-	{ io_trap, io_trap },		/* port	81 */
-	{ io_trap, io_trap },		/* port	82 */
-	{ io_trap, io_trap },		/* port	83 */
-	{ io_trap, io_trap },		/* port	84 */
-	{ io_trap, io_trap },		/* port	85 */
-	{ io_trap, io_trap },		/* port	86 */
-	{ io_trap, io_trap },		/* port	87 */
-	{ io_trap, io_trap },		/* port	88 */
-	{ io_trap, io_trap },		/* port	89 */
-	{ io_trap, io_trap },		/* port	90 */
-	{ io_trap, io_trap },		/* port	91 */
-	{ io_trap, io_trap },		/* port	92 */
-	{ io_trap, io_trap },		/* port	93 */
-	{ io_trap, io_trap },		/* port	94 */
-	{ io_trap, io_trap },		/* port	95 */
-	{ io_trap, io_trap },		/* port	96 */
-	{ io_trap, io_trap },		/* port	97 */
-	{ io_trap, io_trap },		/* port	98 */
-	{ io_trap, io_trap },		/* port	99 */
-	{ io_trap, io_trap },		/* port	100 */
-	{ io_trap, io_trap },		/* port 101 */
-	{ io_trap, io_trap },		/* port	102 */
-	{ io_trap, io_trap },		/* port	103 */
-	{ io_trap, io_trap },		/* port	104 */
-	{ io_trap, io_trap },		/* port	105 */
-	{ io_trap, io_trap },		/* port	106 */
-	{ io_trap, io_trap },		/* port	107 */
-	{ io_trap, io_trap },		/* port	108 */
-	{ io_trap, io_trap },		/* port	109 */
-	{ io_trap, io_trap },		/* port	110 */
-	{ io_trap, io_trap },		/* port	111 */
-	{ io_trap, io_trap },		/* port	112 */
-	{ io_trap, io_trap },		/* port	113 */
-	{ io_trap, io_trap },		/* port	114 */
-	{ io_trap, io_trap },		/* port	115 */
-	{ io_trap, io_trap },		/* port	116 */
-	{ io_trap, io_trap },		/* port	117 */
-	{ io_trap, io_trap },		/* port	118 */
-	{ io_trap, io_trap },		/* port	119 */
-	{ io_trap, io_trap },		/* port	120 */
-	{ io_trap, io_trap },		/* port	121 */
-	{ io_trap, io_trap },		/* port	122 */
-	{ io_trap, io_trap },		/* port	123 */
-	{ io_trap, io_trap },		/* port	124 */
-	{ io_trap, io_trap },		/* port	125 */
-	{ io_trap, io_trap },		/* port	126 */
-	{ io_trap, io_trap },		/* port	127 */
-	{ io_trap, io_trap },		/* port	128 */
-	{ io_trap, io_trap },		/* port	129 */
-	{ io_trap, io_trap },		/* port	130 */
-	{ io_trap, io_trap },		/* port	131 */
-	{ io_trap, io_trap },		/* port	132 */
-	{ io_trap, io_trap },		/* port	133 */
-	{ io_trap, io_trap },		/* port	134 */
-	{ io_trap, io_trap },		/* port	135 */
-	{ io_trap, io_trap },		/* port	136 */
-	{ io_trap, io_trap },		/* port	137 */
-	{ io_trap, io_trap },		/* port	138 */
-	{ io_trap, io_trap },		/* port	139 */
-	{ io_trap, io_trap },		/* port	140 */
-	{ io_trap, io_trap },		/* port	141 */
-	{ io_trap, io_trap },		/* port	142 */
-	{ io_trap, io_trap },		/* port	143 */
-	{ io_trap, io_trap },		/* port	144 */
-	{ io_trap, io_trap },		/* port	145 */
-	{ io_trap, io_trap },		/* port	146 */
-	{ io_trap, io_trap },		/* port	147 */
-	{ io_trap, io_trap },		/* port	148 */
-	{ io_trap, io_trap },		/* port	149 */
-	{ io_trap, io_trap },		/* port	150 */
-	{ io_trap, io_trap },		/* port	151 */
-	{ io_trap, io_trap },		/* port	152 */
-	{ io_trap, io_trap },		/* port	153 */
-	{ io_trap, io_trap },		/* port	154 */
-	{ io_trap, io_trap },		/* port	155 */
-	{ io_trap, io_trap },		/* port	156 */
-	{ io_trap, io_trap },		/* port	157 */
-	{ io_trap, io_trap },		/* port	158 */
-	{ io_trap, io_trap },		/* port	159 */
-	{ io_trap, io_trap },		/* port	160 */
-	{ io_trap, io_trap },		/* port	161 */
-	{ io_trap, io_trap },		/* port	162 */
-	{ io_trap, io_trap },		/* port	163 */
-	{ io_trap, io_trap },		/* port	164 */
-	{ io_trap, io_trap },		/* port	165 */
-	{ io_trap, io_trap },		/* port	166 */
-	{ io_trap, io_trap },		/* port	167 */
-	{ io_trap, io_trap },		/* port	168 */
-	{ io_trap, io_trap },		/* port	169 */
-	{ io_trap, io_trap },		/* port	170 */
-	{ io_trap, io_trap },		/* port	171 */
-	{ io_trap, io_trap },		/* port	172 */
-	{ io_trap, io_trap },		/* port	173 */
-	{ io_trap, io_trap },		/* port	174 */
-	{ io_trap, io_trap },		/* port	175 */
-	{ io_trap, io_trap },		/* port	176 */
-	{ io_trap, io_trap },		/* port	177 */
-	{ io_trap, io_trap },		/* port	178 */
-	{ io_trap, io_trap },		/* port	179 */
-	{ io_trap, io_trap },		/* port	180 */
-	{ io_trap, io_trap },		/* port	181 */
-	{ io_trap, io_trap },		/* port	182 */
-	{ io_trap, io_trap },		/* port	183 */
-	{ io_trap, io_trap },		/* port	184 */
-	{ io_trap, io_trap },		/* port	185 */
-	{ io_trap, io_trap },		/* port	186 */
-	{ io_trap, io_trap },		/* port	187 */
-	{ io_trap, io_trap },		/* port	188 */
-	{ io_trap, io_trap },		/* port	189 */
-	{ io_trap, io_trap },		/* port	190 */
-	{ io_trap, io_trap },		/* port	191 */
-	{ io_trap, io_trap },		/* port	192 */
-	{ io_trap, io_trap },		/* port	193 */
-	{ io_trap, io_trap },		/* port	194 */
-	{ io_trap, io_trap },		/* port	195 */
-	{ io_trap, io_trap },		/* port	196 */
-	{ io_trap, io_trap },		/* port	197 */
-	{ io_trap, io_trap },		/* port	198 */
-	{ io_trap, io_trap },		/* port	199 */
-	{ io_trap, io_trap },		/* port	200 */
-	{ io_trap, io_trap },		/* port 201 */
-	{ io_trap, io_trap },		/* port	202 */
-	{ io_trap, io_trap },		/* port	203 */
-	{ io_trap, io_trap },		/* port	204 */
-	{ io_trap, io_trap },		/* port	205 */
-	{ io_trap, io_trap },		/* port	206 */
-	{ io_trap, io_trap },		/* port	207 */
-	{ io_trap, io_trap },		/* port	208 */
-	{ io_trap, io_trap },		/* port	209 */
-	{ io_trap, io_trap },		/* port	210 */
-	{ io_trap, io_trap },		/* port	211 */
-	{ io_trap, io_trap },		/* port	212 */
-	{ io_trap, io_trap },		/* port	213 */
-	{ io_trap, io_trap },		/* port	214 */
-	{ io_trap, io_trap },		/* port	215 */
-	{ io_trap, io_trap },		/* port	216 */
-	{ io_trap, io_trap },		/* port	217 */
-	{ io_trap, io_trap },		/* port	218 */
-	{ io_trap, io_trap },		/* port	219 */
-	{ io_trap, io_trap },		/* port	220 */
-	{ io_trap, io_trap },		/* port	221 */
-	{ io_trap, io_trap },		/* port	222 */
-	{ io_trap, io_trap },		/* port	223 */
-	{ io_trap, io_trap },		/* port	224 */
-	{ io_trap, io_trap },		/* port	225 */
-	{ io_trap, io_trap },		/* port	226 */
-	{ io_trap, io_trap },		/* port	227 */
-	{ io_trap, io_trap },		/* port	228 */
-	{ io_trap, io_trap },		/* port	229 */
-	{ io_trap, io_trap },		/* port	230 */
-	{ io_trap, io_trap },		/* port	231 */
-	{ io_trap, io_trap },		/* port	232 */
-	{ io_trap, io_trap },		/* port	233 */
-	{ io_trap, io_trap },		/* port	234 */
-	{ io_trap, io_trap },		/* port	235 */
-	{ io_trap, io_trap },		/* port	236 */
-	{ io_trap, io_trap },		/* port	237 */
-	{ io_trap, io_trap },		/* port	238 */
-	{ io_trap, io_trap },		/* port	239 */
-	{ io_trap, io_trap },		/* port	240 */
-	{ io_trap, io_trap },		/* port	241 */
-	{ io_trap, io_trap },		/* port	242 */
-	{ io_trap, io_trap },		/* port	243 */
-	{ io_trap, io_trap },		/* port	244 */
-	{ io_trap, io_trap },		/* port	245 */
-	{ io_trap, io_trap },		/* port	246 */
-	{ io_trap, io_trap },		/* port	247 */
-	{ io_trap, io_trap },		/* port	248 */
-	{ io_trap, io_trap },		/* port	249 */
-	{ io_trap, io_trap },		/* port	250 */
-	{ io_trap, io_trap },		/* port	251 */
-	{ io_trap, io_trap },		/* port	252 */
-	{ io_trap, io_trap },		/* port	253 */
-	{ io_trap, io_trap },		/* port	254 */
-	{ io_trap, io_trap }		/* port	255 */
+static BYTE (*port_in[256]) (void) = {
+	cons_in,		/* port 0 */
+	cond_in,		/* port 1 */
+	prts_in,		/* port 2 */
+	prtd_in,		/* port 3 */
+	auxs_in,		/* port 4 */
+	auxd_in,		/* port 5 */
+	io_trap_in,		/* port 6 */
+	io_trap_in,		/* port 7 */
+	io_trap_in,		/* port 8 */
+	io_trap_in,		/* port 9 */
+	fdcd_in,		/* port 10 */
+	fdct_in,		/* port 11 */
+	fdcs_in,		/* port 12 */
+	fdco_in,		/* port 13 */
+	fdcx_in,		/* port 14 */
+	dmal_in,		/* port 15 */
+	dmah_in,		/* port 16 */
+	fdcsh_in,		/* port 17 */
+	io_trap_in,		/* port 18 */
+	io_trap_in,		/* port 19 */
+	mmui_in,		/* port 20 */
+	mmus_in,		/* port 21 */
+	mmuc_in,		/* port 22 */
+	io_trap_in,		/* port 23 */
+	io_trap_in,		/* port 24 */
+	clkc_in,		/* port 25 */
+	clkd_in,		/* port 26 */
+	time_in,		/* port 27 */
+	delay_in,		/* port 28 */
+	hwctl_in,		/* port 29 */
+	speedl_in,		/* port 30 */
+	speedh_in,		/* port 31 */
+	io_trap_in,		/* port 32 */
+	io_trap_in,		/* port 33 */
+	io_trap_in,		/* port 34 */
+	io_trap_in,		/* port 35 */
+	io_trap_in,		/* port 36 */
+	io_trap_in,		/* port 37 */
+	io_trap_in,		/* port 38 */
+	io_trap_in,		/* port 39 */
+	cons1_in,		/* port 40 */
+	cond1_in,		/* port 41 */
+	cons2_in,		/* port 42 */
+	cond2_in,		/* port 43 */
+	cons3_in,		/* port 44 */
+	cond3_in,		/* port 45 */
+	cons4_in,		/* port 46 */
+	cond4_in,		/* port 47 */
+	io_trap_in,		/* port 48 */
+	io_trap_in,		/* port 49 */
+	nets1_in,		/* port 50 */
+	netd1_in,		/* port 51 */
+	io_trap_in,		/* port 52 */
+	io_trap_in,		/* port 53 */
+	io_trap_in,		/* port 54 */
+	io_trap_in,		/* port	55 */
+	io_trap_in,		/* port	56 */
+	io_trap_in,		/* port	57 */
+	io_trap_in,		/* port	58 */
+	io_trap_in,		/* port	59 */
+	io_trap_in,		/* port	60 */
+	io_trap_in,		/* port	61 */
+	io_trap_in,		/* port	62 */
+	io_trap_in,		/* port	63 */
+	io_trap_in,		/* port	64 */
+	io_trap_in,		/* port	65 */
+	io_trap_in,		/* port	66 */
+	io_trap_in,		/* port	67 */
+	io_trap_in,		/* port	68 */
+	io_trap_in,		/* port	69 */
+	io_trap_in,		/* port	70 */
+	io_trap_in,		/* port	71 */
+	io_trap_in,		/* port	72 */
+	io_trap_in,		/* port	73 */
+	io_trap_in,		/* port	74 */
+	io_trap_in,		/* port	75 */
+	io_trap_in,		/* port	76 */
+	io_trap_in,		/* port	77 */
+	io_trap_in,		/* port	78 */
+	io_trap_in,		/* port	79 */
+	io_trap_in,		/* port	80 */
+	io_trap_in,		/* port	81 */
+	io_trap_in,		/* port	82 */
+	io_trap_in,		/* port	83 */
+	io_trap_in,		/* port	84 */
+	io_trap_in,		/* port	85 */
+	io_trap_in,		/* port	86 */
+	io_trap_in,		/* port	87 */
+	io_trap_in,		/* port	88 */
+	io_trap_in,		/* port	89 */
+	io_trap_in,		/* port	90 */
+	io_trap_in,		/* port	91 */
+	io_trap_in,		/* port	92 */
+	io_trap_in,		/* port	93 */
+	io_trap_in,		/* port	94 */
+	io_trap_in,		/* port	95 */
+	io_trap_in,		/* port	96 */
+	io_trap_in,		/* port	97 */
+	io_trap_in,		/* port	98 */
+	io_trap_in,		/* port	99 */
+	io_trap_in,		/* port	100 */
+	io_trap_in,		/* port 101 */
+	io_trap_in,		/* port	102 */
+	io_trap_in,		/* port	103 */
+	io_trap_in,		/* port	104 */
+	io_trap_in,		/* port	105 */
+	io_trap_in,		/* port	106 */
+	io_trap_in,		/* port	107 */
+	io_trap_in,		/* port	108 */
+	io_trap_in,		/* port	109 */
+	io_trap_in,		/* port	110 */
+	io_trap_in,		/* port	111 */
+	io_trap_in,		/* port	112 */
+	io_trap_in,		/* port	113 */
+	io_trap_in,		/* port	114 */
+	io_trap_in,		/* port	115 */
+	io_trap_in,		/* port	116 */
+	io_trap_in,		/* port	117 */
+	io_trap_in,		/* port	118 */
+	io_trap_in,		/* port	119 */
+	io_trap_in,		/* port	120 */
+	io_trap_in,		/* port	121 */
+	io_trap_in,		/* port	122 */
+	io_trap_in,		/* port	123 */
+	io_trap_in,		/* port	124 */
+	io_trap_in,		/* port	125 */
+	io_trap_in,		/* port	126 */
+	io_trap_in,		/* port	127 */
+	io_trap_in,		/* port	128 */
+	io_trap_in,		/* port	129 */
+	io_trap_in,		/* port	130 */
+	io_trap_in,		/* port	131 */
+	io_trap_in,		/* port	132 */
+	io_trap_in,		/* port	133 */
+	io_trap_in,		/* port	134 */
+	io_trap_in,		/* port	135 */
+	io_trap_in,		/* port	136 */
+	io_trap_in,		/* port	137 */
+	io_trap_in,		/* port	138 */
+	io_trap_in,		/* port	139 */
+	io_trap_in,		/* port	140 */
+	io_trap_in,		/* port	141 */
+	io_trap_in,		/* port	142 */
+	io_trap_in,		/* port	143 */
+	io_trap_in,		/* port	144 */
+	io_trap_in,		/* port	145 */
+	io_trap_in,		/* port	146 */
+	io_trap_in,		/* port	147 */
+	io_trap_in,		/* port	148 */
+	io_trap_in,		/* port	149 */
+	io_trap_in,		/* port	150 */
+	io_trap_in,		/* port	151 */
+	io_trap_in,		/* port	152 */
+	io_trap_in,		/* port	153 */
+	io_trap_in,		/* port	154 */
+	io_trap_in,		/* port	155 */
+	io_trap_in,		/* port	156 */
+	io_trap_in,		/* port	157 */
+	io_trap_in,		/* port	158 */
+	io_trap_in,		/* port	159 */
+	io_trap_in,		/* port	160 */
+	io_trap_in,		/* port	161 */
+	io_trap_in,		/* port	162 */
+	io_trap_in,		/* port	163 */
+	io_trap_in,		/* port	164 */
+	io_trap_in,		/* port	165 */
+	io_trap_in,		/* port	166 */
+	io_trap_in,		/* port	167 */
+	io_trap_in,		/* port	168 */
+	io_trap_in,		/* port	169 */
+	io_trap_in,		/* port	170 */
+	io_trap_in,		/* port	171 */
+	io_trap_in,		/* port	172 */
+	io_trap_in,		/* port	173 */
+	io_trap_in,		/* port	174 */
+	io_trap_in,		/* port	175 */
+	io_trap_in,		/* port	176 */
+	io_trap_in,		/* port	177 */
+	io_trap_in,		/* port	178 */
+	io_trap_in,		/* port	179 */
+	io_trap_in,		/* port	180 */
+	io_trap_in,		/* port	181 */
+	io_trap_in,		/* port	182 */
+	io_trap_in,		/* port	183 */
+	io_trap_in,		/* port	184 */
+	io_trap_in,		/* port	185 */
+	io_trap_in,		/* port	186 */
+	io_trap_in,		/* port	187 */
+	io_trap_in,		/* port	188 */
+	io_trap_in,		/* port	189 */
+	io_trap_in,		/* port	190 */
+	io_trap_in,		/* port	191 */
+	io_trap_in,		/* port	192 */
+	io_trap_in,		/* port	193 */
+	io_trap_in,		/* port	194 */
+	io_trap_in,		/* port	195 */
+	io_trap_in,		/* port	196 */
+	io_trap_in,		/* port	197 */
+	io_trap_in,		/* port	198 */
+	io_trap_in,		/* port	199 */
+	io_trap_in,		/* port	200 */
+	io_trap_in,		/* port 201 */
+	io_trap_in,		/* port	202 */
+	io_trap_in,		/* port	203 */
+	io_trap_in,		/* port	204 */
+	io_trap_in,		/* port	205 */
+	io_trap_in,		/* port	206 */
+	io_trap_in,		/* port	207 */
+	io_trap_in,		/* port	208 */
+	io_trap_in,		/* port	209 */
+	io_trap_in,		/* port	210 */
+	io_trap_in,		/* port	211 */
+	io_trap_in,		/* port	212 */
+	io_trap_in,		/* port	213 */
+	io_trap_in,		/* port	214 */
+	io_trap_in,		/* port	215 */
+	io_trap_in,		/* port	216 */
+	io_trap_in,		/* port	217 */
+	io_trap_in,		/* port	218 */
+	io_trap_in,		/* port	219 */
+	io_trap_in,		/* port	220 */
+	io_trap_in,		/* port	221 */
+	io_trap_in,		/* port	222 */
+	io_trap_in,		/* port	223 */
+	io_trap_in,		/* port	224 */
+	io_trap_in,		/* port	225 */
+	io_trap_in,		/* port	226 */
+	io_trap_in,		/* port	227 */
+	io_trap_in,		/* port	228 */
+	io_trap_in,		/* port	229 */
+	io_trap_in,		/* port	230 */
+	io_trap_in,		/* port	231 */
+	io_trap_in,		/* port	232 */
+	io_trap_in,		/* port	233 */
+	io_trap_in,		/* port	234 */
+	io_trap_in,		/* port	235 */
+	io_trap_in,		/* port	236 */
+	io_trap_in,		/* port	237 */
+	io_trap_in,		/* port	238 */
+	io_trap_in,		/* port	239 */
+	io_trap_in,		/* port	240 */
+	io_trap_in,		/* port	241 */
+	io_trap_in,		/* port	242 */
+	io_trap_in,		/* port	243 */
+	io_trap_in,		/* port	244 */
+	io_trap_in,		/* port	245 */
+	io_trap_in,		/* port	246 */
+	io_trap_in,		/* port	247 */
+	io_trap_in,		/* port	248 */
+	io_trap_in,		/* port	249 */
+	io_trap_in,		/* port	250 */
+	io_trap_in,		/* port	251 */
+	io_trap_in,		/* port	252 */
+	io_trap_in,		/* port	253 */
+	io_trap_in,		/* port	254 */
+	io_trap_in		/* port	255 */
+};
+
+/*
+ *	This array contains function pointers for every
+ *	output port.
+ */
+static void (*port_out[256]) (BYTE) = {
+	cons_out,		/* port 0 */
+	cond_out,		/* port 1 */
+	prts_out,		/* port 2 */
+	prtd_out,		/* port 3 */
+	auxs_out,		/* port 4 */
+	auxd_out,		/* port 5 */
+	io_trap_out,		/* port 6 */
+	io_trap_out,		/* port 7 */
+	io_trap_out,		/* port 8 */
+	io_trap_out,		/* port 9 */
+	fdcd_out,		/* port 10 */
+	fdct_out,		/* port 11 */
+	fdcs_out,		/* port 12 */
+	fdco_out,		/* port 13 */
+	fdcx_out,		/* port 14 */
+	dmal_out,		/* port 15 */
+	dmah_out,		/* port 16 */
+	fdcsh_out,		/* port 17 */
+	io_trap_out,		/* port 18 */
+	io_trap_out,		/* port 19 */
+	mmui_out,		/* port 20 */
+	mmus_out,		/* port 21 */
+	mmuc_out,		/* port 22 */
+	io_trap_out,		/* port 23 */
+	io_trap_out,		/* port 24 */
+	clkc_out,		/* port 25 */
+	clkd_out,		/* port 26 */
+	time_out,		/* port 27 */
+	delay_out,		/* port 28 */
+	hwctl_out,		/* port 29 */
+	speedl_out,		/* port 30 */
+	speedh_out,		/* port 31 */
+	io_trap_out,		/* port 32 */
+	io_trap_out,		/* port 33 */
+	io_trap_out,		/* port 34 */
+	io_trap_out,		/* port 35 */
+	io_trap_out,		/* port 36 */
+	io_trap_out,		/* port 37 */
+	io_trap_out,		/* port 38 */
+	io_trap_out,		/* port 39 */
+	cons1_out,		/* port 40 */
+	cond1_out,		/* port 41 */
+	cons2_out,		/* port 42 */
+	cond2_out,		/* port 43 */
+	cons3_out,		/* port 44 */
+	cond3_out,		/* port 45 */
+	cons4_out,		/* port 46 */
+	cond4_out,		/* port 47 */
+	io_trap_out,		/* port 48 */
+	io_trap_out,		/* port 49 */
+	nets1_out,		/* port 50 */
+	netd1_out,		/* port 51 */
+	io_trap_out,		/* port 52 */
+	io_trap_out,		/* port 53 */
+	io_trap_out,		/* port 54 */
+	io_trap_out,		/* port	55 */
+	io_trap_out,		/* port	56 */
+	io_trap_out,		/* port	57 */
+	io_trap_out,		/* port	58 */
+	io_trap_out,		/* port	59 */
+	io_trap_out,		/* port	60 */
+	io_trap_out,		/* port	61 */
+	io_trap_out,		/* port	62 */
+	io_trap_out,		/* port	63 */
+	io_trap_out,		/* port	64 */
+	io_trap_out,		/* port	65 */
+	io_trap_out,		/* port	66 */
+	io_trap_out,		/* port	67 */
+	io_trap_out,		/* port	68 */
+	io_trap_out,		/* port	69 */
+	io_trap_out,		/* port	70 */
+	io_trap_out,		/* port	71 */
+	io_trap_out,		/* port	72 */
+	io_trap_out,		/* port	73 */
+	io_trap_out,		/* port	74 */
+	io_trap_out,		/* port	75 */
+	io_trap_out,		/* port	76 */
+	io_trap_out,		/* port	77 */
+	io_trap_out,		/* port	78 */
+	io_trap_out,		/* port	79 */
+	io_trap_out,		/* port	80 */
+	io_trap_out,		/* port	81 */
+	io_trap_out,		/* port	82 */
+	io_trap_out,		/* port	83 */
+	io_trap_out,		/* port	84 */
+	io_trap_out,		/* port	85 */
+	io_trap_out,		/* port	86 */
+	io_trap_out,		/* port	87 */
+	io_trap_out,		/* port	88 */
+	io_trap_out,		/* port	89 */
+	io_trap_out,		/* port	90 */
+	io_trap_out,		/* port	91 */
+	io_trap_out,		/* port	92 */
+	io_trap_out,		/* port	93 */
+	io_trap_out,		/* port	94 */
+	io_trap_out,		/* port	95 */
+	io_trap_out,		/* port	96 */
+	io_trap_out,		/* port	97 */
+	io_trap_out,		/* port	98 */
+	io_trap_out,		/* port	99 */
+	io_trap_out,		/* port	100 */
+	io_trap_out,		/* port 101 */
+	io_trap_out,		/* port	102 */
+	io_trap_out,		/* port	103 */
+	io_trap_out,		/* port	104 */
+	io_trap_out,		/* port	105 */
+	io_trap_out,		/* port	106 */
+	io_trap_out,		/* port	107 */
+	io_trap_out,		/* port	108 */
+	io_trap_out,		/* port	109 */
+	io_trap_out,		/* port	110 */
+	io_trap_out,		/* port	111 */
+	io_trap_out,		/* port	112 */
+	io_trap_out,		/* port	113 */
+	io_trap_out,		/* port	114 */
+	io_trap_out,		/* port	115 */
+	io_trap_out,		/* port	116 */
+	io_trap_out,		/* port	117 */
+	io_trap_out,		/* port	118 */
+	io_trap_out,		/* port	119 */
+	io_trap_out,		/* port	120 */
+	io_trap_out,		/* port	121 */
+	io_trap_out,		/* port	122 */
+	io_trap_out,		/* port	123 */
+	io_trap_out,		/* port	124 */
+	io_trap_out,		/* port	125 */
+	io_trap_out,		/* port	126 */
+	io_trap_out,		/* port	127 */
+	io_trap_out,		/* port	128 */
+	io_trap_out,		/* port	129 */
+	io_trap_out,		/* port	130 */
+	io_trap_out,		/* port	131 */
+	io_trap_out,		/* port	132 */
+	io_trap_out,		/* port	133 */
+	io_trap_out,		/* port	134 */
+	io_trap_out,		/* port	135 */
+	io_trap_out,		/* port	136 */
+	io_trap_out,		/* port	137 */
+	io_trap_out,		/* port	138 */
+	io_trap_out,		/* port	139 */
+	io_trap_out,		/* port	140 */
+	io_trap_out,		/* port	141 */
+	io_trap_out,		/* port	142 */
+	io_trap_out,		/* port	143 */
+	io_trap_out,		/* port	144 */
+	io_trap_out,		/* port	145 */
+	io_trap_out,		/* port	146 */
+	io_trap_out,		/* port	147 */
+	io_trap_out,		/* port	148 */
+	io_trap_out,		/* port	149 */
+	io_trap_out,		/* port	150 */
+	io_trap_out,		/* port	151 */
+	io_trap_out,		/* port	152 */
+	io_trap_out,		/* port	153 */
+	io_trap_out,		/* port	154 */
+	io_trap_out,		/* port	155 */
+	io_trap_out,		/* port	156 */
+	io_trap_out,		/* port	157 */
+	io_trap_out,		/* port	158 */
+	io_trap_out,		/* port	159 */
+	io_trap_out,		/* port	160 */
+	io_trap_out,		/* port	161 */
+	io_trap_out,		/* port	162 */
+	io_trap_out,		/* port	163 */
+	io_trap_out,		/* port	164 */
+	io_trap_out,		/* port	165 */
+	io_trap_out,		/* port	166 */
+	io_trap_out,		/* port	167 */
+	io_trap_out,		/* port	168 */
+	io_trap_out,		/* port	169 */
+	io_trap_out,		/* port	170 */
+	io_trap_out,		/* port	171 */
+	io_trap_out,		/* port	172 */
+	io_trap_out,		/* port	173 */
+	io_trap_out,		/* port	174 */
+	io_trap_out,		/* port	175 */
+	io_trap_out,		/* port	176 */
+	io_trap_out,		/* port	177 */
+	io_trap_out,		/* port	178 */
+	io_trap_out,		/* port	179 */
+	io_trap_out,		/* port	180 */
+	io_trap_out,		/* port	181 */
+	io_trap_out,		/* port	182 */
+	io_trap_out,		/* port	183 */
+	io_trap_out,		/* port	184 */
+	io_trap_out,		/* port	185 */
+	io_trap_out,		/* port	186 */
+	io_trap_out,		/* port	187 */
+	io_trap_out,		/* port	188 */
+	io_trap_out,		/* port	189 */
+	io_trap_out,		/* port	190 */
+	io_trap_out,		/* port	191 */
+	io_trap_out,		/* port	192 */
+	io_trap_out,		/* port	193 */
+	io_trap_out,		/* port	194 */
+	io_trap_out,		/* port	195 */
+	io_trap_out,		/* port	196 */
+	io_trap_out,		/* port	197 */
+	io_trap_out,		/* port	198 */
+	io_trap_out,		/* port	199 */
+	io_trap_out,		/* port	200 */
+	io_trap_out,		/* port 201 */
+	io_trap_out,		/* port	202 */
+	io_trap_out,		/* port	203 */
+	io_trap_out,		/* port	204 */
+	io_trap_out,		/* port	205 */
+	io_trap_out,		/* port	206 */
+	io_trap_out,		/* port	207 */
+	io_trap_out,		/* port	208 */
+	io_trap_out,		/* port	209 */
+	io_trap_out,		/* port	210 */
+	io_trap_out,		/* port	211 */
+	io_trap_out,		/* port	212 */
+	io_trap_out,		/* port	213 */
+	io_trap_out,		/* port	214 */
+	io_trap_out,		/* port	215 */
+	io_trap_out,		/* port	216 */
+	io_trap_out,		/* port	217 */
+	io_trap_out,		/* port	218 */
+	io_trap_out,		/* port	219 */
+	io_trap_out,		/* port	220 */
+	io_trap_out,		/* port	221 */
+	io_trap_out,		/* port	222 */
+	io_trap_out,		/* port	223 */
+	io_trap_out,		/* port	224 */
+	io_trap_out,		/* port	225 */
+	io_trap_out,		/* port	226 */
+	io_trap_out,		/* port	227 */
+	io_trap_out,		/* port	228 */
+	io_trap_out,		/* port	229 */
+	io_trap_out,		/* port	230 */
+	io_trap_out,		/* port	231 */
+	io_trap_out,		/* port	232 */
+	io_trap_out,		/* port	233 */
+	io_trap_out,		/* port	234 */
+	io_trap_out,		/* port	235 */
+	io_trap_out,		/* port	236 */
+	io_trap_out,		/* port	237 */
+	io_trap_out,		/* port	238 */
+	io_trap_out,		/* port	239 */
+	io_trap_out,		/* port	240 */
+	io_trap_out,		/* port	241 */
+	io_trap_out,		/* port	242 */
+	io_trap_out,		/* port	243 */
+	io_trap_out,		/* port	244 */
+	io_trap_out,		/* port	245 */
+	io_trap_out,		/* port	246 */
+	io_trap_out,		/* port	247 */
+	io_trap_out,		/* port	248 */
+	io_trap_out,		/* port	249 */
+	io_trap_out,		/* port	250 */
+	io_trap_out,		/* port	251 */
+	io_trap_out,		/* port	252 */
+	io_trap_out,		/* port	253 */
+	io_trap_out,		/* port	254 */
+	io_trap_out		/* port	255 */
 };
 
 /*
@@ -734,7 +1019,7 @@ static void net_client_config(void)
  *	This function stops the I/O handlers:
  *
  *	1. The files emulating the disk drives are closed.
- *	2. The file "printer.com" emulating a printer is closed.
+ *	2. The file "printer.cpm" emulating a printer is closed.
  *	3. The named pipes "auxin" and "auxout" are closed.
  *	4. All connected sockets are closed
  *	5. The receiving process for the aux serial port is stopped.
@@ -799,7 +1084,7 @@ void reset_system(void)
 BYTE io_in(BYTE adr)
 {
 	io_port = adr;
-	return((*port[adr][0]) ());
+	return((*port_in[adr]) ());
 }
 
 /*
@@ -807,26 +1092,38 @@ BYTE io_in(BYTE adr)
  *	CPU emulation. It calls the handler for the port,
  *	to which output is wanted.
  */
-BYTE io_out(BYTE adr, BYTE data)
+void io_out(BYTE adr, BYTE data)
 {
 	io_port = adr;
 
 	busy_loop_cnt[0] = 0;
 
-	(*port[adr][1]) (data);
-	return((BYTE) 0);
+	(*port_out[adr]) (data);
 }
 
 /*
- *	I/O trap handler
+ *	I/O input trap handler
  */
-static BYTE io_trap(void)
+static BYTE io_trap_in(void)
 {
 	if (i_flag) {
-		cpu_error = IOTRAP;
+		cpu_error = IOTRAPIN;
 		cpu_state = STOPPED;
 	}
-	return((BYTE) 0xff);
+	return((BYTE) 0x00);
+}
+
+/*
+ *	I/O output trap handler
+ */
+static void io_trap_out(BYTE data)
+{
+	data++;	/* to avoid compiler warning */
+
+	if (i_flag) {
+		cpu_error = IOTRAPOUT;
+		cpu_state = STOPPED;
+	}
 }
 
 /*
@@ -1182,62 +1479,56 @@ static BYTE nets1_in(void)
 
 /*
  *	I/O handler for write console 0 status:
- *	no reaction
+ *	no function
  */
-static BYTE cons_out(BYTE data)
+static void cons_out(BYTE data)
 {
-	data = data;
-	return((BYTE) 0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
  *	I/O handler for write console 1 status:
- *	no reaction
+ *	no function
  */
-static BYTE cons1_out(BYTE data)
+static void cons1_out(BYTE data)
 {
-	data = data;
-	return((BYTE) 0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
  *	I/O handler for write console 2 status:
- *	no reaction
+ *	no function
  */
-static BYTE cons2_out(BYTE data)
+static void cons2_out(BYTE data)
 {
-	data = data;
-	return((BYTE) 0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
  *	I/O handler for write console 3 status:
- *	no reaction
+ *	no function
  */
-static BYTE cons3_out(BYTE data)
+static void cons3_out(BYTE data)
 {
-	data = data;
-	return((BYTE) 0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
  *	I/O handler for write console 4 status:
- *	no reaction
+ *	no function
  */
-static BYTE cons4_out(BYTE data)
+static void cons4_out(BYTE data)
 {
-	data = data;
-	return((BYTE) 0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
  *	I/O handler for write client socket 1 status:
- *	no reaction
+ *	no function
  */
-static BYTE nets1_out(BYTE data)
+static void nets1_out(BYTE data)
 {
-	data = data;
-	return((BYTE) 0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
@@ -1454,7 +1745,7 @@ static BYTE netd1_in(void)
  *	I/O handler for write console 0 data:
  *	the output is written to the terminal
  */
-static BYTE cond_out(BYTE data)
+static void cond_out(BYTE data)
 {
 again:
 	if (write(fileno(stdout), (char *) &data, 1) != 1) {
@@ -1467,14 +1758,13 @@ again:
 		}
 	}
 	fflush(stdout);
-	return((BYTE) 0);
 }
 
 /*
  *	I/O handler for write console 1 data:
  *	the output is written to the socket
  */
-static BYTE cond1_out(BYTE data)
+static void cond1_out(BYTE data)
 {
 #ifdef NETWORKING
 #ifdef SNETDEBUG
@@ -1495,14 +1785,13 @@ again:
 		}
 	}
 #endif
-	return((BYTE) 0);
 }
 
 /*
  *	I/O handler for write console 2 data:
  *	the output is written to the socket
  */
-static BYTE cond2_out(BYTE data)
+static void cond2_out(BYTE data)
 {
 #ifdef NETWORKING
 #ifdef SNETDEBUG
@@ -1523,14 +1812,13 @@ again:
 		}
 	}
 #endif
-	return((BYTE) 0);
 }
 
 /*
  *	I/O handler for write console 3 data:
  *	the output is written to the socket
  */
-static BYTE cond3_out(BYTE data)
+static void cond3_out(BYTE data)
 {
 #ifdef NETWORKING
 #ifdef SNETDEBUG
@@ -1551,14 +1839,13 @@ again:
 		}
 	}
 #endif
-	return((BYTE) 0);
 }
 
 /*
  *	I/O handler for write console 4 data:
  *	the output is written to the socket
  */
-static BYTE cond4_out(BYTE data)
+static void cond4_out(BYTE data)
 {
 #ifdef NETWORKING
 #ifdef SNETDEBUG
@@ -1579,14 +1866,13 @@ again:
 		}
 	}
 #endif
-	return((BYTE) 0);
 }
 
 /*
  *	I/O handler for write client socket 1 data:
  *	the output is written to the socket
  */
-static BYTE netd1_out(BYTE data)
+static void netd1_out(BYTE data)
 {
 #ifdef NETWORKING
 #ifdef CNETDEBUG
@@ -1607,7 +1893,6 @@ again:
 		}
 	}
 #endif
-	return((BYTE) 0);
 }
 
 /*
@@ -1621,12 +1906,11 @@ static BYTE prts_in(void)
 
 /*
  *	I/O handler for write printer status:
- *	no reaction
+ *	no function
  */
-static BYTE prts_out(BYTE data)
+static void prts_out(BYTE data)
 {
-	data = data;
-	return((BYTE) 0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
@@ -1642,7 +1926,7 @@ static BYTE prtd_in(void)
  *	I/O handler for write printer data:
  *	the output is written to file "printer.cpm"
  */
-static BYTE prtd_out(BYTE data)
+static void prtd_out(BYTE data)
 {
 	if (data != '\r') {
 again:
@@ -1656,7 +1940,6 @@ again:
 			}
 		}
 	}
-	return((BYTE) 0);
 }
 
 /*
@@ -1676,12 +1959,13 @@ static BYTE auxs_in(void)
  *	I/O handler for write aux status:
  *	change EOF status of the aux device
  */
-static BYTE auxs_out(BYTE data)
+static void auxs_out(BYTE data)
 {
 #ifdef PIPES
 	aux_in_eof = data;
+#else
+	data++; /* to avoid compiler warning */
 #endif
-	return((BYTE) 0);
 }
 
 /*
@@ -1733,38 +2017,36 @@ static BYTE auxd_in(void)
  *	I/O handler for write aux data:
  *	write output to pipe "auxout" or to file "auxiliaryout.cpm"
  */
-static BYTE auxd_out(BYTE data)
+static void auxd_out(BYTE data)
 {
 #ifdef PIPES
 	if ((data == 0) || (data == 0x1a))
-		return((BYTE) 0);
+		return;
 
 	if (data != '\r')
 		write(auxout, (char *) &data, 1);
 #else
 	if (data == 0)
-		return((BYTE) 0);
+		return;
 
 	if (aux_out == 0) {
 		if ((aux_out = creat("auxiliaryout.cpm", 0644)) == -1) {
 			perror("open auxiliaryout.cpm");
 			cpu_error = IOERROR;
 			cpu_state = STOPPED;
-			return((BYTE) 0);
+			return;
 		}
 	}
 
 	if (data == 0x1a) {
 		close(aux_out);
 		aux_out = 0;
-		return((BYTE) 0);
+		return;
 	}
 
 	if (data != '\r')
 		write(aux_out, (char *) &data, 1);
 #endif
-
-	return((BYTE) 0);
 }
 
 /*
@@ -1780,10 +2062,9 @@ static BYTE fdcd_in(void)
  *	I/O handler for write FDC drive:
  *	set the current drive
  */
-static BYTE fdcd_out(BYTE data)
+static void fdcd_out(BYTE data)
 {
 	drive = data;
-	return((BYTE) 0);
 }
 
 /*
@@ -1799,10 +2080,9 @@ static BYTE fdct_in(void)
  *	I/O handler for write FDC track:
  *	set the current track
  */
-static BYTE fdct_out(BYTE data)
+static void fdct_out(BYTE data)
 {
 	track = data;
-	return((BYTE) 0);
 }
 
 /*
@@ -1818,10 +2098,9 @@ static BYTE fdcs_in(void)
  *	I/O handler for write FDC sector low
  *	set low byte of the current sector
  */
-static BYTE fdcs_out(BYTE data)
+static void fdcs_out(BYTE data)
 {
 	sector = (sector & 0xff00) + data;
-	return((BYTE) 0);
 }
 
 /*
@@ -1837,10 +2116,9 @@ static BYTE fdcsh_in(void)
  *	I/O handler for write FDC sector high
  *	set high byte of the current sector
  */
-static BYTE fdcsh_out(BYTE data)
+static void fdcsh_out(BYTE data)
 {
 	sector = (sector & 0xff) + (data << 8);
-	return((BYTE) 0);
 }
 
 /*
@@ -1867,25 +2145,25 @@ static BYTE fdco_in(void)
  *	  6 - write error
  *	  7 - illegal command to FDC
  */
-static BYTE fdco_out(BYTE data)
+static void fdco_out(BYTE data)
 {
 	register unsigned long pos;
 	if (disks[drive].fd == NULL) {
 		status = 1;
-		return((BYTE) 0);
+		return;
 	}
 	if (track > disks[drive].tracks) {
 		status = 2;
-		return((BYTE) 0);
+		return;
 	}
 	if (sector > disks[drive].sectors) {
 		status = 3;
-		return((BYTE) 0);
+		return;
 	}
 	pos = (((long)track) * ((long)disks[drive].sectors) + sector - 1) << 7;
 	if (lseek(*disks[drive].fd, pos, SEEK_SET) == -1L) {
 		status = 4;
-		return((BYTE) 0);
+		return;
 	}
 	switch (data) {
 	case 0:			/* read */
@@ -1906,7 +2184,6 @@ static BYTE fdco_out(BYTE data)
 		status = 7;
 		break;
 	}
-	return((BYTE) 0);
 }
 
 /*
@@ -1921,12 +2198,11 @@ static BYTE fdcx_in(void)
 
 /*
  *	I/O handler for write FDC status:
- *	no reaction
+ *	no function
  */
-static BYTE fdcx_out(BYTE data)
+static void fdcx_out(BYTE data)
 {
-	data = data;
-	return((BYTE) 0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
@@ -1942,10 +2218,9 @@ static BYTE dmal_in(void)
  *	I/O handler for write lower byte of DMA address:
  *	set lower byte of DMA address
  */
-static BYTE dmal_out(BYTE data)
+static void dmal_out(BYTE data)
 {
 	dmadl = data;
-	return((BYTE) 0);
 }
 
 /*
@@ -1961,10 +2236,9 @@ static BYTE dmah_in(void)
  *	I/O handler for write higher byte of DMA address:
  *	set higher byte of the DMA address
  */
-static BYTE dmah_out(BYTE data)
+static void dmah_out(BYTE data)
 {
 	dmadh = data;
-	return((BYTE) 0);
 }
 
 /*
@@ -1981,12 +2255,12 @@ static BYTE mmui_in(void)
  *	for the FIRST call the memory for the wanted number of banks
  *	is allocated and pointers to the memory is stored in the MMU array
  */
-static BYTE mmui_out(BYTE data)
+static void mmui_out(BYTE data)
 {
 	register int i;
 
 	if (mmu[0] != NULL)
-		return((BYTE) 0);
+		return;
 	if (data > MAXSEG) {
 		printf("Try to init %d banks, available %d banks\r\n",
 		       data, MAXSEG);
@@ -1999,7 +2273,6 @@ static BYTE mmui_out(BYTE data)
 		}
 	}
 	maxbnk = data;
-	return((BYTE) 0);
 }
 
 /*
@@ -2018,10 +2291,10 @@ static BYTE mmus_in(void)
  *	bank is copied into the CPU address space and this bank is
  *	set to be the current one now.
  */
-static BYTE mmus_out(BYTE data)
+static void mmus_out(BYTE data)
 {
 	if (data == selbnk)
-		return((BYTE) 0);
+		return;
 	if (data > maxbnk) {
 		printf("Try to select unallocated bank %d\r\n", data);
 		exit(1);
@@ -2030,7 +2303,6 @@ static BYTE mmus_out(BYTE data)
 	memcpy(mmu[selbnk], (char *) ram, segsize);
 	memcpy((char *) ram, mmu[data], segsize);
 	selbnk = data;
-	return((BYTE) 0);
 }
 
 /*
@@ -2047,14 +2319,13 @@ static BYTE mmuc_in(void)
  *	set the size of the bank segements in pages a 256 bytes
  *	must be done before any banks are allocated
  */
-static BYTE mmuc_out(BYTE data)
+static void mmuc_out(BYTE data)
 {
 	if (mmu[0] != NULL) {
 		printf("Not possible to resize already allocated segments\r\n");
 		exit(1);
 	}
 	segsize = data << 8;
-	return((BYTE) 0);
 }
 
 /*
@@ -2071,12 +2342,11 @@ static BYTE clkc_in(void)
  *	set the wanted clock command
  *	toggle BCD/decimal format if toggle command (255)
  */
-static BYTE clkc_out(BYTE data)
+static void clkc_out(BYTE data)
 {
 	clkcmd = data;
 	if (data == 255)
 		clkfmt = clkfmt ^ 1;
-	return((BYTE) 0);
 }
 
 /*
@@ -2156,10 +2426,9 @@ static BYTE clkd_in(void)
  *	under UNIX the system clock only can be set by the
  *	super user, so we do nothing here
  */
-static BYTE clkd_out(BYTE data)
+static void clkd_out(BYTE data)
 {
-	data = data;
-	return((BYTE) 0);
+	data++; /* to avoid compiler warning */
 }
 
 /*
@@ -2200,7 +2469,7 @@ static int get_date(struct tm *t)
  *	I/O handler for write timer
  *	start or stop the 10ms interrupt timer
  */
-static BYTE time_out(BYTE data)
+static void time_out(BYTE data)
 {
 	static struct itimerval tim;
 	static struct sigaction newact;
@@ -2222,7 +2491,6 @@ static BYTE time_out(BYTE data)
 		tim.it_value.tv_usec = 0;
 		setitimer(ITIMER_REAL, &tim, NULL);
 	}
-	return((BYTE) 0);
 }
 
 /*
@@ -2239,7 +2507,7 @@ static BYTE time_in(void)
  *	I/O handler for write delay
  *	delay CPU for data * 10ms
  */
-static BYTE delay_out(BYTE data)
+static void delay_out(BYTE data)
 {
 	struct timespec timer;
 
@@ -2250,8 +2518,6 @@ static BYTE delay_out(BYTE data)
 #ifdef CNETDEBUG
 	printf(". ");
 #endif
-
-	return((BYTE) 0);
 }
 
 /*
@@ -2266,22 +2532,20 @@ static BYTE delay_in(void)
 /*
  *	I/O handler for write hardware control:
  *	bit 0 = 1	reset CPU, MMU and reboot
- *	bit 7 = 1	abort emulation with I/O trap
+ *	bit 7 = 1	halt emulation via I/O
  */
-static BYTE hwctl_out(BYTE data)
+static void hwctl_out(BYTE data)
 {
 	if (data & 128) {
-		cpu_error = IOTRAP;
+		cpu_error = IOHALT;
 		cpu_state = STOPPED;
-		return((BYTE) 0);
+		return;
 	}
 
 	if (data & 1) {
 		reset_system();
-		return((BYTE) 0);
+		return;
 	}
-
-	return((BYTE) 0);
 }
 
 /*
@@ -2296,10 +2560,9 @@ static BYTE hwctl_in(void)
 /*
  *	I/O handler for write CPU speed low
  */
-static BYTE speedl_out(BYTE data)
+static void speedl_out(BYTE data)
 {
 	speed = data;
-	return((BYTE) 0);
 }
 
 /*
@@ -2313,12 +2576,11 @@ static BYTE speedl_in(void)
 /*
  *	I/O handler for write CPU speed high
  */
-static BYTE speedh_out(BYTE data)
+static void speedh_out(BYTE data)
 {
 	speed += data << 8;
 	tmax = speed * 10000;
 	f_flag = speed;
-	return((BYTE) 0);
 }
 
 /*

@@ -85,4 +85,4 @@ clean:
 	rm -f *.o core z80sim
 
 install: z80sim
-	cp z80sim ~/bin
+	cp z80sim ${HOME}/bin

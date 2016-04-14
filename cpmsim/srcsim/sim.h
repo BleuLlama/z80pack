@@ -24,6 +24,7 @@
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
  * 24-JAN-14 Release 1.18 some improvments here and there
+ * 02-MAR-14 Release 1.19 source cleanup and improvements
  */
 
 /*
@@ -49,8 +50,12 @@
 /*#define CNETDEBUG*/	/* client network protocol debugger */
 /*#define SNETDEBUG*/	/* server network protocol debugger */
 
+/*
+ * forking and pipes are working now with cygwin in 2014,
+ * but SIGIO on BSD sockets is not yet
+ */
 #ifdef __CYGWIN__
-#undef PIPES		/* forking and pipes not working correct */
+//#undef PIPES		/* forking and pipes was not working correct */
 #undef TCPASYNC		/* SIGIO on BSD sockets not working */
 #endif
 
@@ -58,7 +63,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.18"
+#define RELEASE	"1.19"
 
 #define LENCMD		80		/* length of command buffers etc */
 
@@ -88,12 +93,14 @@
 					/* causes of error */
 #define	NONE		0		/* no error */
 #define	OPHALT		1		/* HALT	op-code	trap */
-#define	IOTRAP		2		/* IN/OUT trap */
-#define IOERROR		3		/* fatal I/O error */
-#define	OPTRAP1		4		/* illegal 1 byte op-code trap */
-#define	OPTRAP2		5		/* illegal 2 byte op-code trap */
-#define	OPTRAP4		6		/* illegal 4 byte op-code trap */
-#define	USERINT		7		/* user	interrupt */
+#define	IOTRAPIN	2		/* I/O trap input */
+#define IOTRAPOUT	3		/* I/O trap output */
+#define IOHALT		4		/* halt system via I/O register */
+#define IOERROR		5		/* fatal I/O error */
+#define	OPTRAP1		6		/* illegal 1 byte op-code trap */
+#define	OPTRAP2		7		/* illegal 2 byte op-code trap */
+#define	OPTRAP4		8		/* illegal 4 byte op-code trap */
+#define	USERINT		9		/* user	interrupt */
 #define POWEROFF	255		/* CPU off, no error */
 
 					/* type of CPU interrupt */

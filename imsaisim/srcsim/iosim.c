@@ -9,288 +9,559 @@
  * History:
  * 20-OCT-08 first version finished
  * 19-JAN-14 unused I/O ports need to return 00 and not FF
+ * 02-MAR-14 source cleanup and improvements
  */
 
+#include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
+#include <signal.h>
+#include <fcntl.h>
 #include "sim.h"
 #include "simglb.h"
 #include "../../iodevices/io_config.h"
 #include "../../iodevices/imsai-sio2.h"
 #include "../../iodevices/imsai-fif.h"
 
-extern WORD address_switch;
-
-BYTE fp_led_output;
+static int printer;		/* fd for file "printer.cpm" */
 
 /*
  *	Forward declarations of the I/O functions
- *	for all port addresses.
+ *	for all used port addresses.
  */
-static BYTE io_trap(void), io_no_card(void);
-static BYTE fp_in(void), fp_out(BYTE);
+static BYTE io_trap_in(void), io_no_card_in(void);
+static void io_trap_out(BYTE), io_no_card_out(BYTE);
+static BYTE fp_in(void);
+static void fp_out(BYTE);
+static void hwctl_out(BYTE);
+static BYTE lpt_in(void);
+static void lpt_out(BYTE);
 
 /*
- *	This two dimensional array contains function pointers
- *	for every I/O port (0 - 255), to do the required I/O.
- *	The first entry is for input, the second for output.
+ *	This array contains function pointers for every
+ *	input I/O port (0 - 255), to do the required I/O.
  */
-static BYTE (*port[256][2]) () = {
-	{ io_trap, io_trap },		/* port 0 */
-	{ io_trap, io_trap },		/* port	1 */
-	{ imsai_sio2_data_in, imsai_sio2_data_out },		/* port 2 */
-	{ imsai_sio2_status_in, imsai_sio2_status_out },	/* port 3 */
-	{ io_no_card, io_no_card },	/* port	4 */ /* SIO 2 not connected */
-	{ io_no_card, io_no_card },	/* port	5 */
-	{ io_trap, io_trap },		/* port	6 */
-	{ io_trap, io_trap },		/* port	7 */
-	{ io_no_card, io_no_card },	/* port	8 */ /* unknown card */
-	{ io_trap, io_trap },		/* port	9 */
-	{ io_trap, io_trap },		/* port	10 */
-	{ io_trap, io_trap },		/* port	11 */
-	{ io_trap, io_trap },		/* port	12 */
-	{ io_trap, io_trap },		/* port	13 */
-	{ io_trap, io_trap },		/* port	14 */
-	{ io_trap, io_trap },		/* port	15 */
-	{ io_trap, io_trap },		/* port	16 */
-	{ io_trap, io_trap },		/* port	17 */
-	{ io_no_card, io_no_card },	/* port	18 */ /* unknown card */
-	{ io_no_card, io_no_card },	/* port	19 */ /* unknown card */
-	{ io_no_card, io_no_card },	/* port	20 */ /* unknown card */
-	{ io_no_card, io_no_card },	/* port	21 */ /* unknown card */
-	{ io_trap, io_trap },		/* port	22 */
-	{ io_trap, io_trap },		/* port	23 */
-	{ io_trap, io_trap },		/* port	24 */
-	{ io_trap, io_trap },		/* port	25 */
-	{ io_trap, io_trap },		/* port	26 */
-	{ io_trap, io_trap },		/* port	27 */
-	{ io_trap, io_trap },		/* port	28 */
-	{ io_trap, io_trap },		/* port	29 */
-	{ io_trap, io_trap },		/* port	30 */
-	{ io_trap, io_trap },		/* port	31 */
-	{ io_trap, io_trap },		/* port	32 */
-	{ io_trap, io_trap },		/* port	33 */
-	{ io_trap, io_trap },		/* port	34 */
-	{ io_trap, io_trap },		/* port	35 */
-	{ io_trap, io_trap },		/* port	36 */
-	{ io_trap, io_trap },		/* port	37 */
-	{ io_trap, io_trap },		/* port	38 */
-	{ io_trap, io_trap },		/* port	39 */
-	{ io_trap, io_trap },		/* port	40 */
-	{ io_trap, io_trap },		/* port	41 */
-	{ io_trap, io_trap },		/* port	42 */
-	{ io_trap, io_trap },		/* port	43 */
-	{ io_trap, io_trap },		/* port	44 */
-	{ io_trap, io_trap },		/* port	45 */
-	{ io_trap, io_trap },		/* port	46 */
-	{ io_trap, io_trap },		/* port	47 */
-	{ io_trap, io_trap },		/* port	48 */
-	{ io_trap, io_trap },		/* port	49 */
-	{ io_trap, io_trap },		/* port	50 */
-	{ io_trap, io_trap },		/* port	51 */
-	{ io_trap, io_trap },		/* port	52 */
-	{ io_trap, io_trap },		/* port	53 */
-	{ io_trap, io_trap },		/* port	54 */
-	{ io_trap, io_trap },		/* port	55 */
-	{ io_trap, io_trap },		/* port	56 */
-	{ io_trap, io_trap },		/* port	57 */
-	{ io_trap, io_trap },		/* port	58 */
-	{ io_trap, io_trap },		/* port	59 */
-	{ io_trap, io_trap },		/* port	60 */
-	{ io_trap, io_trap },		/* port	61 */
-	{ io_trap, io_trap },		/* port	62 */
-	{ io_trap, io_trap },		/* port	63 */
-	{ io_trap, io_trap },		/* port	64 */
-	{ io_trap, io_trap },		/* port	65 */
-	{ io_trap, io_trap },		/* port	66 */
-	{ io_trap, io_trap },		/* port	67 */
-	{ io_trap, io_trap },		/* port	68 */
-	{ io_trap, io_trap },		/* port	69 */
-	{ io_trap, io_trap },		/* port	70 */
-	{ io_trap, io_trap },		/* port	71 */
-	{ io_trap, io_trap },		/* port	72 */
-	{ io_trap, io_trap },		/* port	73 */
-	{ io_trap, io_trap },		/* port	74 */
-	{ io_trap, io_trap },		/* port	75 */
-	{ io_trap, io_trap },		/* port	76 */
-	{ io_trap, io_trap },		/* port	77 */
-	{ io_trap, io_trap },		/* port	78 */
-	{ io_trap, io_trap },		/* port	79 */
-	{ io_trap, io_trap },		/* port	80 */
-	{ io_trap, io_trap },		/* port	81 */
-	{ io_trap, io_trap },		/* port	82 */
-	{ io_trap, io_trap },		/* port	83 */
-	{ io_trap, io_trap },		/* port	84 */
-	{ io_trap, io_trap },		/* port	85 */
-	{ io_trap, io_trap },		/* port	86 */
-	{ io_trap, io_trap },		/* port	87 */
-	{ io_trap, io_trap },		/* port	88 */
-	{ io_trap, io_trap },		/* port	89 */
-	{ io_trap, io_trap },		/* port	90 */
-	{ io_trap, io_trap },		/* port	91 */
-	{ io_trap, io_trap },		/* port	92 */
-	{ io_trap, io_trap },		/* port	93 */
-	{ io_trap, io_trap },		/* port	94 */
-	{ io_trap, io_trap },		/* port	95 */
-	{ io_trap, io_trap },		/* port	96 */
-	{ io_trap, io_trap },		/* port	97 */
-	{ io_trap, io_trap },		/* port	98 */
-	{ io_trap, io_trap },		/* port	99 */
-	{ io_trap, io_trap },		/* port	100 */
-	{ io_trap, io_trap },		/* port 101 */
-	{ io_trap, io_trap },		/* port	102 */
-	{ io_trap, io_trap },		/* port	103 */
-	{ io_trap, io_trap },		/* port	104 */
-	{ io_trap, io_trap },		/* port	105 */
-	{ io_trap, io_trap },		/* port	106 */
-	{ io_trap, io_trap },		/* port	107 */
-	{ io_trap, io_trap },		/* port	108 */
-	{ io_trap, io_trap },		/* port	109 */
-	{ io_trap, io_trap },		/* port	110 */
-	{ io_trap, io_trap },		/* port	111 */
-	{ io_trap, io_trap },		/* port	112 */
-	{ io_trap, io_trap },		/* port	113 */
-	{ io_trap, io_trap },		/* port	114 */
-	{ io_trap, io_trap },		/* port	115 */
-	{ io_trap, io_trap },		/* port	116 */
-	{ io_trap, io_trap },		/* port	117 */
-	{ io_trap, io_trap },		/* port	118 */
-	{ io_trap, io_trap },		/* port	119 */
-	{ io_trap, io_trap },		/* port	120 */
-	{ io_trap, io_trap },		/* port	121 */
-	{ io_trap, io_trap },		/* port	122 */
-	{ io_trap, io_trap },		/* port	123 */
-	{ io_trap, io_trap },		/* port	124 */
-	{ io_trap, io_trap },		/* port	125 */
-	{ io_trap, io_trap },		/* port	126 */
-	{ io_trap, io_trap },		/* port	127 */
-	{ io_trap, io_trap },		/* port	128 */
-	{ io_trap, io_trap },		/* port	129 */
-	{ io_trap, io_trap },		/* port	130 */
-	{ io_trap, io_trap },		/* port	131 */
-	{ io_trap, io_trap },		/* port	132 */
-	{ io_trap, io_trap },		/* port	133 */
-	{ io_trap, io_trap },		/* port	134 */
-	{ io_trap, io_trap },		/* port	135 */
-	{ io_trap, io_trap },		/* port	136 */
-	{ io_trap, io_trap },		/* port	137 */
-	{ io_trap, io_trap },		/* port	138 */
-	{ io_trap, io_trap },		/* port	139 */
-	{ io_trap, io_trap },		/* port	140 */
-	{ io_trap, io_trap },		/* port	141 */
-	{ io_trap, io_trap },		/* port	142 */
-	{ io_trap, io_trap },		/* port	143 */
-	{ io_trap, io_trap },		/* port	144 */
-	{ io_trap, io_trap },		/* port	145 */
-	{ io_trap, io_trap },		/* port	146 */
-	{ io_trap, io_trap },		/* port	147 */
-	{ io_trap, io_trap },		/* port	148 */
-	{ io_trap, io_trap },		/* port	149 */
-	{ io_trap, io_trap },		/* port	150 */
-	{ io_trap, io_trap },		/* port	151 */
-	{ io_trap, io_trap },		/* port	152 */
-	{ io_trap, io_trap },		/* port	153 */
-	{ io_trap, io_trap },		/* port	154 */
-	{ io_trap, io_trap },		/* port	155 */
-	{ io_trap, io_trap },		/* port	156 */
-	{ io_trap, io_trap },		/* port	157 */
-	{ io_trap, io_trap },		/* port	158 */
-	{ io_trap, io_trap },		/* port	159 */
-	{ io_trap, io_trap },		/* port	160 */
-	{ io_trap, io_trap },		/* port	161 */
-	{ io_trap, io_trap },		/* port	162 */
-	{ io_trap, io_trap },		/* port	163 */
-	{ io_trap, io_trap },		/* port	164 */
-	{ io_trap, io_trap },		/* port	165 */
-	{ io_trap, io_trap },		/* port	166 */
-	{ io_trap, io_trap },		/* port	167 */
-	{ io_trap, io_trap },		/* port	168 */
-	{ io_trap, io_trap },		/* port	169 */
-	{ io_trap, io_trap },		/* port	170 */
-	{ io_trap, io_trap },		/* port	171 */
-	{ io_trap, io_trap },		/* port	172 */
-	{ io_trap, io_trap },		/* port	173 */
-	{ io_trap, io_trap },		/* port	174 */
-	{ io_trap, io_trap },		/* port	175 */
-	{ io_trap, io_trap },		/* port	176 */
-	{ io_trap, io_trap },		/* port	177 */
-	{ io_trap, io_trap },		/* port	178 */
-	{ io_trap, io_trap },		/* port	179 */
-	{ io_trap, io_trap },		/* port	180 */
-	{ io_trap, io_trap },		/* port	181 */
-	{ io_trap, io_trap },		/* port	182 */
-	{ io_trap, io_trap },		/* port	183 */
-	{ io_trap, io_trap },		/* port	184 */
-	{ io_trap, io_trap },		/* port	185 */
-	{ io_trap, io_trap },		/* port	186 */
-	{ io_trap, io_trap },		/* port	187 */
-	{ io_trap, io_trap },		/* port	188 */
-	{ io_trap, io_trap },		/* port	189 */
-	{ io_trap, io_trap },		/* port	190 */
-	{ io_trap, io_trap },		/* port	191 */
-	{ io_trap, io_trap },		/* port	192 */
-	{ io_trap, io_trap },		/* port	193 */
-	{ io_trap, io_trap },		/* port	194 */
-	{ io_trap, io_trap },		/* port	195 */
-	{ io_trap, io_trap },		/* port	196 */
-	{ io_trap, io_trap },		/* port	197 */
-	{ io_trap, io_trap },		/* port	198 */
-	{ io_trap, io_trap },		/* port	199 */
-	{ io_trap, io_trap },		/* port	200 */
-	{ io_trap, io_trap },		/* port 201 */
-	{ io_trap, io_trap },		/* port	202 */
-	{ io_trap, io_trap },		/* port	203 */
-	{ io_trap, io_trap },		/* port	204 */
-	{ io_trap, io_trap },		/* port	205 */
-	{ io_trap, io_trap },		/* port	206 */
-	{ io_trap, io_trap },		/* port	207 */
-	{ io_trap, io_trap },		/* port	208 */
-	{ io_trap, io_trap },		/* port	209 */
-	{ io_trap, io_trap },		/* port	210 */
-	{ io_trap, io_trap },		/* port	211 */
-	{ io_trap, io_trap },		/* port	212 */
-	{ io_trap, io_trap },		/* port	213 */
-	{ io_trap, io_trap },		/* port	214 */
-	{ io_trap, io_trap },		/* port	215 */
-	{ io_trap, io_trap },		/* port	216 */
-	{ io_trap, io_trap },		/* port	217 */
-	{ io_trap, io_trap },		/* port	218 */
-	{ io_trap, io_trap },		/* port	219 */
-	{ io_trap, io_trap },		/* port	220 */
-	{ io_trap, io_trap },		/* port	221 */
-	{ io_trap, io_trap },		/* port	222 */
-	{ io_trap, io_trap },		/* port	223 */
-	{ io_trap, io_trap },		/* port	224 */
-	{ io_trap, io_trap },		/* port	225 */
-	{ io_trap, io_trap },		/* port	226 */
-	{ io_trap, io_trap },		/* port	227 */
-	{ io_trap, io_trap },		/* port	228 */
-	{ io_trap, io_trap },		/* port	229 */
-	{ io_trap, io_trap },		/* port	230 */
-	{ io_trap, io_trap },		/* port	231 */
-	{ io_trap, io_trap },		/* port	232 */
-	{ io_trap, io_trap },		/* port	233 */
-	{ io_trap, io_trap },		/* port	234 */
-	{ io_trap, io_trap },		/* port	235 */
-	{ io_trap, io_trap },		/* port	236 */
-	{ io_trap, io_trap },		/* port	237 */
-	{ io_trap, io_trap },		/* port	238 */
-	{ io_no_card, io_no_card },	/* port	239 */ /* unknown card */
-	{ io_trap, io_trap },		/* port	240 */
-	{ io_trap, io_trap },		/* port	241 */
-	{ io_trap, io_trap },		/* port	242 */
-	{ io_no_card, io_no_card },	/* port	243 */ /* unknown card */
-	{ io_trap, io_trap },		/* port	244 */
-	{ io_trap, io_trap },		/* port	245 */
-	{ io_no_card, io_no_card },	/* port	246 */ /* unknown card */
-	{ io_trap, io_trap },		/* port	247 */
-	{ io_trap, io_trap },		/* port	248 */
-	{ io_trap, io_trap },		/* port	249 */
-	{ io_trap, io_trap },		/* port	250 */
-	{ io_trap, io_trap },		/* port	251 */
-	{ io_trap, io_trap },		/* port	252 */
-	{ imsai_fif_in, imsai_fif_out },/* port	253 */
-	{ io_no_card, io_no_card },	/* port	254 */ /* unknown card */
-	{ fp_in, fp_out }		/* port	255 */
+static BYTE (*port_in[256]) (void) = {
+	io_trap_in,		/* port 0 */
+	io_trap_in,		/* port	1 */
+	imsai_sio2_data_in,	/* port 2 */ /* SIO 1 connected to console */
+	imsai_sio2_status_in,	/* port 3 */
+	io_no_card_in,		/* port	4 */ /* SIO 2 not connected */
+	io_no_card_in,		/* port	5 */
+	io_trap_in,		/* port	6 */
+	io_trap_in,		/* port	7 */
+	io_no_card_in,		/* port	8 */ /* SIO C not connected */
+	io_trap_in,		/* port	9 */
+	io_trap_in,		/* port	10 */
+	io_trap_in,		/* port	11 */
+	io_trap_in,		/* port	12 */
+	io_trap_in,		/* port	13 */
+	io_trap_in,		/* port	14 */
+	io_trap_in,		/* port	15 */
+	io_trap_in,		/* port	16 */
+	io_trap_in,		/* port	17 */
+	io_no_card_in,		/* port	18 */ /* unknown card */
+	io_no_card_in,		/* port	19 */ /* unknown card */
+	io_no_card_in,		/* port	20 */ /* unknown card */
+	io_no_card_in,		/* port	21 */ /* unknown card */
+	io_trap_in,		/* port	22 */
+	io_trap_in,		/* port	23 */
+	io_trap_in,		/* port	24 */
+	io_trap_in,		/* port	25 */
+	io_trap_in,		/* port	26 */
+	io_trap_in,		/* port	27 */
+	io_trap_in,		/* port	28 */
+	io_trap_in,		/* port	29 */
+	io_trap_in,		/* port	30 */
+	io_trap_in,		/* port	31 */
+	io_trap_in,		/* port	32 */
+	io_trap_in,		/* port	33 */
+	io_trap_in,		/* port	34 */
+	io_trap_in,		/* port	35 */
+	io_trap_in,		/* port	36 */
+	io_trap_in,		/* port	37 */
+	io_trap_in,		/* port	38 */
+	io_trap_in,		/* port	39 */
+	io_trap_in,		/* port	40 */
+	io_trap_in,		/* port	41 */
+	io_trap_in,		/* port	42 */
+	io_trap_in,		/* port	43 */
+	io_trap_in,		/* port	44 */
+	io_trap_in,		/* port	45 */
+	io_trap_in,		/* port	46 */
+	io_trap_in,		/* port	47 */
+	io_trap_in,		/* port	48 */
+	io_trap_in,		/* port	49 */
+	io_trap_in,		/* port	50 */
+	io_trap_in,		/* port	51 */
+	io_trap_in,		/* port	52 */
+	io_trap_in,		/* port	53 */
+	io_trap_in,		/* port	54 */
+	io_trap_in,		/* port	55 */
+	io_trap_in,		/* port	56 */
+	io_trap_in,		/* port	57 */
+	io_trap_in,		/* port	58 */
+	io_trap_in,		/* port	59 */
+	io_trap_in,		/* port	60 */
+	io_trap_in,		/* port	61 */
+	io_trap_in,		/* port	62 */
+	io_trap_in,		/* port	63 */
+	io_trap_in,		/* port	64 */
+	io_trap_in,		/* port	65 */
+	io_trap_in,		/* port	66 */
+	io_trap_in,		/* port	67 */
+	io_trap_in,		/* port	68 */
+	io_trap_in,		/* port	69 */
+	io_trap_in,		/* port	70 */
+	io_trap_in,		/* port	71 */
+	io_trap_in,		/* port	72 */
+	io_trap_in,		/* port	73 */
+	io_trap_in,		/* port	74 */
+	io_trap_in,		/* port	75 */
+	io_trap_in,		/* port	76 */
+	io_trap_in,		/* port	77 */
+	io_trap_in,		/* port	78 */
+	io_trap_in,		/* port	79 */
+	io_trap_in,		/* port	80 */
+	io_trap_in,		/* port	81 */
+	io_trap_in,		/* port	82 */
+	io_trap_in,		/* port	83 */
+	io_trap_in,		/* port	84 */
+	io_trap_in,		/* port	85 */
+	io_trap_in,		/* port	86 */
+	io_trap_in,		/* port	87 */
+	io_trap_in,		/* port	88 */
+	io_trap_in,		/* port	89 */
+	io_trap_in,		/* port	90 */
+	io_trap_in,		/* port	91 */
+	io_trap_in,		/* port	92 */
+	io_trap_in,		/* port	93 */
+	io_trap_in,		/* port	94 */
+	io_trap_in,		/* port	95 */
+	io_trap_in,		/* port	96 */
+	io_trap_in,		/* port	97 */
+	io_trap_in,		/* port	98 */
+	io_trap_in,		/* port	99 */
+	io_trap_in,		/* port	100 */
+	io_trap_in,		/* port 101 */
+	io_trap_in,		/* port	102 */
+	io_trap_in,		/* port	103 */
+	io_trap_in,		/* port	104 */
+	io_trap_in,		/* port	105 */
+	io_trap_in,		/* port	106 */
+	io_trap_in,		/* port	107 */
+	io_trap_in,		/* port	108 */
+	io_trap_in,		/* port	109 */
+	io_trap_in,		/* port	110 */
+	io_trap_in,		/* port	111 */
+	io_trap_in,		/* port	112 */
+	io_trap_in,		/* port	113 */
+	io_trap_in,		/* port	114 */
+	io_trap_in,		/* port	115 */
+	io_trap_in,		/* port	116 */
+	io_trap_in,		/* port	117 */
+	io_trap_in,		/* port	118 */
+	io_trap_in,		/* port	119 */
+	io_trap_in,		/* port	120 */
+	io_trap_in,		/* port	121 */
+	io_trap_in,		/* port	122 */
+	io_trap_in,		/* port	123 */
+	io_trap_in,		/* port	124 */
+	io_trap_in,		/* port	125 */
+	io_trap_in,		/* port	126 */
+	io_trap_in,		/* port	127 */
+	io_no_card_in,		/* port	128 */ /* virtual hardware control */
+	io_trap_in,		/* port	129 */
+	io_trap_in,		/* port	130 */
+	io_trap_in,		/* port	131 */
+	io_trap_in,		/* port	132 */
+	io_trap_in,		/* port	133 */
+	io_trap_in,		/* port	134 */
+	io_trap_in,		/* port	135 */
+	io_trap_in,		/* port	136 */
+	io_trap_in,		/* port	137 */
+	io_trap_in,		/* port	138 */
+	io_trap_in,		/* port	139 */
+	io_trap_in,		/* port	140 */
+	io_trap_in,		/* port	141 */
+	io_trap_in,		/* port	142 */
+	io_trap_in,		/* port	143 */
+	io_trap_in,		/* port	144 */
+	io_trap_in,		/* port	145 */
+	io_trap_in,		/* port	146 */
+	io_trap_in,		/* port	147 */
+	io_trap_in,		/* port	148 */
+	io_trap_in,		/* port	149 */
+	io_trap_in,		/* port	150 */
+	io_trap_in,		/* port	151 */
+	io_trap_in,		/* port	152 */
+	io_trap_in,		/* port	153 */
+	io_trap_in,		/* port	154 */
+	io_trap_in,		/* port	155 */
+	io_trap_in,		/* port	156 */
+	io_trap_in,		/* port	157 */
+	io_trap_in,		/* port	158 */
+	io_trap_in,		/* port	159 */
+	io_trap_in,		/* port	160 */
+	io_trap_in,		/* port	161 */
+	io_trap_in,		/* port	162 */
+	io_trap_in,		/* port	163 */
+	io_trap_in,		/* port	164 */
+	io_trap_in,		/* port	165 */
+	io_trap_in,		/* port	166 */
+	io_trap_in,		/* port	167 */
+	io_trap_in,		/* port	168 */
+	io_trap_in,		/* port	169 */
+	io_trap_in,		/* port	170 */
+	io_trap_in,		/* port	171 */
+	io_trap_in,		/* port	172 */
+	io_trap_in,		/* port	173 */
+	io_trap_in,		/* port	174 */
+	io_trap_in,		/* port	175 */
+	io_trap_in,		/* port	176 */
+	io_trap_in,		/* port	177 */
+	io_trap_in,		/* port	178 */
+	io_trap_in,		/* port	179 */
+	io_trap_in,		/* port	180 */
+	io_trap_in,		/* port	181 */
+	io_trap_in,		/* port	182 */
+	io_trap_in,		/* port	183 */
+	io_trap_in,		/* port	184 */
+	io_trap_in,		/* port	185 */
+	io_trap_in,		/* port	186 */
+	io_trap_in,		/* port	187 */
+	io_trap_in,		/* port	188 */
+	io_trap_in,		/* port	189 */
+	io_trap_in,		/* port	190 */
+	io_trap_in,		/* port	191 */
+	io_trap_in,		/* port	192 */
+	io_trap_in,		/* port	193 */
+	io_trap_in,		/* port	194 */
+	io_trap_in,		/* port	195 */
+	io_trap_in,		/* port	196 */
+	io_trap_in,		/* port	197 */
+	io_trap_in,		/* port	198 */
+	io_trap_in,		/* port	199 */
+	io_trap_in,		/* port	200 */
+	io_trap_in,		/* port 201 */
+	io_trap_in,		/* port	202 */
+	io_trap_in,		/* port	203 */
+	io_trap_in,		/* port	204 */
+	io_trap_in,		/* port	205 */
+	io_trap_in,		/* port	206 */
+	io_trap_in,		/* port	207 */
+	io_trap_in,		/* port	208 */
+	io_trap_in,		/* port	209 */
+	io_trap_in,		/* port	210 */
+	io_trap_in,		/* port	211 */
+	io_trap_in,		/* port	212 */
+	io_trap_in,		/* port	213 */
+	io_trap_in,		/* port	214 */
+	io_trap_in,		/* port	215 */
+	io_trap_in,		/* port	216 */
+	io_trap_in,		/* port	217 */
+	io_trap_in,		/* port	218 */
+	io_trap_in,		/* port	219 */
+	io_trap_in,		/* port	220 */
+	io_trap_in,		/* port	221 */
+	io_trap_in,		/* port	222 */
+	io_trap_in,		/* port	223 */
+	io_trap_in,		/* port	224 */
+	io_trap_in,		/* port	225 */
+	io_trap_in,		/* port	226 */
+	io_trap_in,		/* port	227 */
+	io_trap_in,		/* port	228 */
+	io_trap_in,		/* port	229 */
+	io_trap_in,		/* port	230 */
+	io_trap_in,		/* port	231 */
+	io_trap_in,		/* port	232 */
+	io_trap_in,		/* port	233 */
+	io_trap_in,		/* port	234 */
+	io_trap_in,		/* port	235 */
+	io_trap_in,		/* port	236 */
+	io_trap_in,		/* port	237 */
+	io_trap_in,		/* port	238 */
+	io_no_card_in,		/* port	239 */ /* unknown card */
+	io_trap_in,		/* port	240 */
+	io_trap_in,		/* port	241 */
+	io_trap_in,		/* port	242 */
+	io_no_card_in,		/* port	243 */ /* IMSAI MPU-B */
+	io_trap_in,		/* port	244 */
+	io_trap_in,		/* port	245 */
+	lpt_in,			/* port	246 */ /* IMSAI PTR-300 line printer */
+	io_trap_in,		/* port	247 */
+	io_trap_in,		/* port	248 */
+	io_trap_in,		/* port	249 */
+	io_trap_in,		/* port	250 */
+	io_trap_in,		/* port	251 */
+	io_trap_in,		/* port	252 */
+	imsai_fif_in,		/* port	253 */ /* FIF disk controller */
+	io_no_card_in,		/* port	254 */ /* memory write protect */
+	fp_in			/* port	255 */ /* frontpanel */
+};
+
+/*
+ *	This array contains function pointers for every
+ *	output I/O port (0 - 255), to do the required I/O.
+ */
+static void (*port_out[256]) (BYTE) = {
+	io_trap_out,		/* port 0 */
+	io_trap_out,		/* port	1 */
+	imsai_sio2_data_out,	/* port 2 */ /* SIO 1 connected to console */
+	imsai_sio2_status_out,	/* port 3 */
+	io_no_card_out,		/* port	4 */ /* SIO 2 not connected */
+	io_no_card_out,		/* port	5 */
+	io_trap_out,		/* port	6 */
+	io_trap_out,		/* port	7 */
+	io_no_card_out,		/* port	8 */ /* SIO C not connected */
+	io_trap_out,		/* port	9 */
+	io_trap_out,		/* port	10 */
+	io_trap_out,		/* port	11 */
+	io_trap_out,		/* port	12 */
+	io_trap_out,		/* port	13 */
+	io_trap_out,		/* port	14 */
+	io_trap_out,		/* port	15 */
+	io_trap_out,		/* port	16 */
+	io_trap_out,		/* port	17 */
+	io_no_card_out,		/* port	18 */ /* unknown card */
+	io_no_card_out,		/* port	19 */ /* unknown card */
+	io_no_card_out,		/* port	20 */ /* unknown card */
+	io_no_card_out,		/* port	21 */ /* unknown card */
+	io_trap_out,		/* port	22 */
+	io_trap_out,		/* port	23 */
+	io_trap_out,		/* port	24 */
+	io_trap_out,		/* port	25 */
+	io_trap_out,		/* port	26 */
+	io_trap_out,		/* port	27 */
+	io_trap_out,		/* port	28 */
+	io_trap_out,		/* port	29 */
+	io_trap_out,		/* port	30 */
+	io_trap_out,		/* port	31 */
+	io_trap_out,		/* port	32 */
+	io_trap_out,		/* port	33 */
+	io_trap_out,		/* port	34 */
+	io_trap_out,		/* port	35 */
+	io_trap_out,		/* port	36 */
+	io_trap_out,		/* port	37 */
+	io_trap_out,		/* port	38 */
+	io_trap_out,		/* port	39 */
+	io_trap_out,		/* port	40 */
+	io_trap_out,		/* port	41 */
+	io_trap_out,		/* port	42 */
+	io_trap_out,		/* port	43 */
+	io_trap_out,		/* port	44 */
+	io_trap_out,		/* port	45 */
+	io_trap_out,		/* port	46 */
+	io_trap_out,		/* port	47 */
+	io_trap_out,		/* port	48 */
+	io_trap_out,		/* port	49 */
+	io_trap_out,		/* port	50 */
+	io_trap_out,		/* port	51 */
+	io_trap_out,		/* port	52 */
+	io_trap_out,		/* port	53 */
+	io_trap_out,		/* port	54 */
+	io_trap_out,		/* port	55 */
+	io_trap_out,		/* port	56 */
+	io_trap_out,		/* port	57 */
+	io_trap_out,		/* port	58 */
+	io_trap_out,		/* port	59 */
+	io_trap_out,		/* port	60 */
+	io_trap_out,		/* port	61 */
+	io_trap_out,		/* port	62 */
+	io_trap_out,		/* port	63 */
+	io_trap_out,		/* port	64 */
+	io_trap_out,		/* port	65 */
+	io_trap_out,		/* port	66 */
+	io_trap_out,		/* port	67 */
+	io_trap_out,		/* port	68 */
+	io_trap_out,		/* port	69 */
+	io_trap_out,		/* port	70 */
+	io_trap_out,		/* port	71 */
+	io_trap_out,		/* port	72 */
+	io_trap_out,		/* port	73 */
+	io_trap_out,		/* port	74 */
+	io_trap_out,		/* port	75 */
+	io_trap_out,		/* port	76 */
+	io_trap_out,		/* port	77 */
+	io_trap_out,		/* port	78 */
+	io_trap_out,		/* port	79 */
+	io_trap_out,		/* port	80 */
+	io_trap_out,		/* port	81 */
+	io_trap_out,		/* port	82 */
+	io_trap_out,		/* port	83 */
+	io_trap_out,		/* port	84 */
+	io_trap_out,		/* port	85 */
+	io_trap_out,		/* port	86 */
+	io_trap_out,		/* port	87 */
+	io_trap_out,		/* port	88 */
+	io_trap_out,		/* port	89 */
+	io_trap_out,		/* port	90 */
+	io_trap_out,		/* port	91 */
+	io_trap_out,		/* port	92 */
+	io_trap_out,		/* port	93 */
+	io_trap_out,		/* port	94 */
+	io_trap_out,		/* port	95 */
+	io_trap_out,		/* port	96 */
+	io_trap_out,		/* port	97 */
+	io_trap_out,		/* port	98 */
+	io_trap_out,		/* port	99 */
+	io_trap_out,		/* port	100 */
+	io_trap_out,		/* port 101 */
+	io_trap_out,		/* port	102 */
+	io_trap_out,		/* port	103 */
+	io_trap_out,		/* port	104 */
+	io_trap_out,		/* port	105 */
+	io_trap_out,		/* port	106 */
+	io_trap_out,		/* port	107 */
+	io_trap_out,		/* port	108 */
+	io_trap_out,		/* port	109 */
+	io_trap_out,		/* port	110 */
+	io_trap_out,		/* port	111 */
+	io_trap_out,		/* port	112 */
+	io_trap_out,		/* port	113 */
+	io_trap_out,		/* port	114 */
+	io_trap_out,		/* port	115 */
+	io_trap_out,		/* port	116 */
+	io_trap_out,		/* port	117 */
+	io_trap_out,		/* port	118 */
+	io_trap_out,		/* port	119 */
+	io_trap_out,		/* port	120 */
+	io_trap_out,		/* port	121 */
+	io_trap_out,		/* port	122 */
+	io_trap_out,		/* port	123 */
+	io_trap_out,		/* port	124 */
+	io_trap_out,		/* port	125 */
+	io_trap_out,		/* port	126 */
+	io_trap_out,		/* port	127 */
+	hwctl_out,		/* port	128 */	/* virtual hardware control */
+	io_trap_out,		/* port	129 */
+	io_trap_out,		/* port	130 */
+	io_trap_out,		/* port	131 */
+	io_trap_out,		/* port	132 */
+	io_trap_out,		/* port	133 */
+	io_trap_out,		/* port	134 */
+	io_trap_out,		/* port	135 */
+	io_trap_out,		/* port	136 */
+	io_trap_out,		/* port	137 */
+	io_trap_out,		/* port	138 */
+	io_trap_out,		/* port	139 */
+	io_trap_out,		/* port	140 */
+	io_trap_out,		/* port	141 */
+	io_trap_out,		/* port	142 */
+	io_trap_out,		/* port	143 */
+	io_trap_out,		/* port	144 */
+	io_trap_out,		/* port	145 */
+	io_trap_out,		/* port	146 */
+	io_trap_out,		/* port	147 */
+	io_trap_out,		/* port	148 */
+	io_trap_out,		/* port	149 */
+	io_trap_out,		/* port	150 */
+	io_trap_out,		/* port	151 */
+	io_trap_out,		/* port	152 */
+	io_trap_out,		/* port	153 */
+	io_trap_out,		/* port	154 */
+	io_trap_out,		/* port	155 */
+	io_trap_out,		/* port	156 */
+	io_trap_out,		/* port	157 */
+	io_trap_out,		/* port	158 */
+	io_trap_out,		/* port	159 */
+	io_trap_out,		/* port	160 */
+	io_trap_out,		/* port	161 */
+	io_trap_out,		/* port	162 */
+	io_trap_out,		/* port	163 */
+	io_trap_out,		/* port	164 */
+	io_trap_out,		/* port	165 */
+	io_trap_out,		/* port	166 */
+	io_trap_out,		/* port	167 */
+	io_trap_out,		/* port	168 */
+	io_trap_out,		/* port	169 */
+	io_trap_out,		/* port	170 */
+	io_trap_out,		/* port	171 */
+	io_trap_out,		/* port	172 */
+	io_trap_out,		/* port	173 */
+	io_trap_out,		/* port	174 */
+	io_trap_out,		/* port	175 */
+	io_trap_out,		/* port	176 */
+	io_trap_out,		/* port	177 */
+	io_trap_out,		/* port	178 */
+	io_trap_out,		/* port	179 */
+	io_trap_out,		/* port	180 */
+	io_trap_out,		/* port	181 */
+	io_trap_out,		/* port	182 */
+	io_trap_out,		/* port	183 */
+	io_trap_out,		/* port	184 */
+	io_trap_out,		/* port	185 */
+	io_trap_out,		/* port	186 */
+	io_trap_out,		/* port	187 */
+	io_trap_out,		/* port	188 */
+	io_trap_out,		/* port	189 */
+	io_trap_out,		/* port	190 */
+	io_trap_out,		/* port	191 */
+	io_trap_out,		/* port	192 */
+	io_trap_out,		/* port	193 */
+	io_trap_out,		/* port	194 */
+	io_trap_out,		/* port	195 */
+	io_trap_out,		/* port	196 */
+	io_trap_out,		/* port	197 */
+	io_trap_out,		/* port	198 */
+	io_trap_out,		/* port	199 */
+	io_trap_out,		/* port	200 */
+	io_trap_out,		/* port 201 */
+	io_trap_out,		/* port	202 */
+	io_trap_out,		/* port	203 */
+	io_trap_out,		/* port	204 */
+	io_trap_out,		/* port	205 */
+	io_trap_out,		/* port	206 */
+	io_trap_out,		/* port	207 */
+	io_trap_out,		/* port	208 */
+	io_trap_out,		/* port	209 */
+	io_trap_out,		/* port	210 */
+	io_trap_out,		/* port	211 */
+	io_trap_out,		/* port	212 */
+	io_trap_out,		/* port	213 */
+	io_trap_out,		/* port	214 */
+	io_trap_out,		/* port	215 */
+	io_trap_out,		/* port	216 */
+	io_trap_out,		/* port	217 */
+	io_trap_out,		/* port	218 */
+	io_trap_out,		/* port	219 */
+	io_trap_out,		/* port	220 */
+	io_trap_out,		/* port	221 */
+	io_trap_out,		/* port	222 */
+	io_trap_out,		/* port	223 */
+	io_trap_out,		/* port	224 */
+	io_trap_out,		/* port	225 */
+	io_trap_out,		/* port	226 */
+	io_trap_out,		/* port	227 */
+	io_trap_out,		/* port	228 */
+	io_trap_out,		/* port	229 */
+	io_trap_out,		/* port	230 */
+	io_trap_out,		/* port	231 */
+	io_trap_out,		/* port	232 */
+	io_trap_out,		/* port	233 */
+	io_trap_out,		/* port	234 */
+	io_trap_out,		/* port	235 */
+	io_trap_out,		/* port	236 */
+	io_trap_out,		/* port	237 */
+	io_trap_out,		/* port	238 */
+	io_no_card_out,		/* port	239 */ /* unknown card */
+	io_trap_out,		/* port	240 */
+	io_trap_out,		/* port	241 */
+	io_trap_out,		/* port	242 */
+	io_no_card_out,		/* port	243 */ /* IMSAI MPU-B */
+	io_trap_out,		/* port	244 */
+	io_trap_out,		/* port	245 */
+	lpt_out,		/* port	246 */ /* IMSAI PTR-300 line printer */
+	io_trap_out,		/* port	247 */
+	io_trap_out,		/* port	248 */
+	io_trap_out,		/* port	249 */
+	io_trap_out,		/* port	250 */
+	io_trap_out,		/* port	251 */
+	io_trap_out,		/* port	252 */
+	imsai_fif_out,		/* port	253 */ /* FIF disk controller */
+	io_no_card_out,		/* port	254 */ /* memory write protect */
+	fp_out			/* port	255 */ /* frontpanel */
 };
 
 /*
@@ -300,17 +571,22 @@ static BYTE (*port[256][2]) () = {
  */
 void init_io(void)
 {
-	io_config();
+	io_config();		/* configure I/O from iodev.conf */
+
+	/* create and open the file for line printer */
+	if ((printer = creat("printer.cpm", 0644)) == -1) {
+		perror("file printer.cpm");
+		exit(1);
+	}
 }
 
 /*
  *	This function is to stop the I/O devices. It is
  *	called from the CPU simulation on exit.
- *
- *	Nothing to do here.
  */
 void exit_io(void)
 {
+	close(printer);		/* close line printer file */
 }
 
 /*
@@ -321,7 +597,7 @@ void exit_io(void)
 BYTE io_in(BYTE adr)
 {
 	io_port = adr;
-	return((*port[adr][0]) ());
+	return((*port_in[adr]) ());
 }
 
 /*
@@ -332,19 +608,19 @@ BYTE io_in(BYTE adr)
 void io_out(BYTE adr, BYTE data)
 {
 	io_port = adr;
-	(*port[adr][1])	(data);
+	(*port_out[adr]) (data);
 }
 
 /*
- *	I/O trap function
+ *	I/O input trap function
  *	This function should be added into all unused
- *	entrys of the port array. It stops the emulation
- *	with an I/O error.
+ *	entrys of the input port array. It stops the
+ *	emulation with an I/O error.
  */
-static BYTE io_trap(void)
+static BYTE io_trap_in(void)
 {
 	if (i_flag) {
-		cpu_error = IOTRAP;
+		cpu_error = IOTRAPIN;
 		cpu_state = STOPPED;
 	}
 	return((BYTE) 0x00);
@@ -352,11 +628,38 @@ static BYTE io_trap(void)
 
 /*
  *	Same as above, but don't trap as I/O error.
- *	Used for ports where I/O cards might be installed, but haven't.
+ *	Used for input ports where I/O cards might be
+ *	installed, but haven't.
  */
-static BYTE io_no_card(void)
+static BYTE io_no_card_in(void)
 {
 	return((BYTE) 0x00);
+}
+
+/*
+ *	I/O output trap function
+ *	This function should be added into all unused
+ *	entrys of the output port array. It stops the
+ *	emulation with an I/O error.
+ */
+static void io_trap_out(BYTE data)
+{
+	data++; /* to avoid compiler warning */
+
+	if (i_flag) {
+		cpu_error = IOTRAPOUT;
+		cpu_state = STOPPED;
+	}
+}
+
+/*
+ *	Same as above, but don't trap as I/O error.
+ *	Used for output ports where I/O cards might be
+ *	installed, but haven't.
+ */
+static void io_no_card_out(BYTE data)
+{
+	data++; /* to avoid compiler warning */
 }
 
 /*
@@ -370,8 +673,52 @@ static BYTE fp_in(void)
 /*
  *	Write output to front panel lights
  */
-static BYTE fp_out(BYTE data)
+static void fp_out(BYTE data)
 {
 	fp_led_output = data;
-	return(0);
+}
+
+/*
+ *	Virtual hardware control output.
+ *	Doesn't exist in the real machine, used to shutdown.
+ *
+ *	bit 7 = 1	halt emulation via I/O
+ */
+static void hwctl_out(BYTE data)
+{
+        if (data & 128) {
+                cpu_error = IOHALT;
+                cpu_state = STOPPED;
+                return;
+        }
+}
+
+/*
+ *	Print into the printer file any data with bit 7 = 0.
+ *	Data with bit 7 = 1 are commands which we ignore here.
+ */
+static void lpt_out(BYTE data)
+{
+	if ((data != '\r') && !(data & 0x80)) {
+again:
+		if (write(printer, (char *) &data, 1) != 1) {
+			if (errno == EINTR) {
+				goto again;
+			} else {
+				perror("write printer");
+				cpu_error = IOERROR;
+				cpu_state = STOPPED;
+			}
+		}
+	}
+}
+
+/*
+ *	I/O handler for line printer in:
+ *	The IMSAI line printer returns F4 for ready and F0 for busy.
+ *	Our printer files never is busy, so always return ready.
+ */
+static BYTE lpt_in(void)
+{
+	return((BYTE) 0xf4);
 }

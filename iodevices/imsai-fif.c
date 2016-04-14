@@ -12,6 +12,7 @@
  *
  * History:
  * 18-JAN-14 first working version finished
+ * 02-MAR-14 improvements
  */
 
 #include <unistd.h>
@@ -44,18 +45,20 @@
 //#define DEBUG		/* so we can see what the FIF is asked to do */
 
 /* this are our disk drives */
-static char *disks[2] = {
+static char *disks[4] = {
 	"disks/drivea.dsk",
-	"disks/driveb.dsk"
+	"disks/driveb.dsk",
+	"disks/drivec.dsk",
+	"disks/drived.dsk"
 };
 
 BYTE imsai_fif_in(void)
 {
-	printf("FIF: input wanted?\r\n");
+	//printf("FIF: input wanted?\r\n");
 	return(0);
 }
 
-BYTE imsai_fif_out(BYTE data)
+void imsai_fif_out(BYTE data)
 {
 	static int fdstate = 0;		/* state of the fd */
 	static int fdaddr[16];		/* address of disk descriptors */
@@ -93,7 +96,7 @@ BYTE imsai_fif_out(BYTE data)
 	
 		default:
 			printf("FIFO: cmd %02x?\r\n", data);
-			return(0);
+			return;
 		}
 		break;
 
@@ -113,10 +116,26 @@ BYTE imsai_fif_out(BYTE data)
 		cpu_state = STOPPED;
 		break;
 	}
-
-	return(0);
 }
 
+/*
+ *	Here we do the disk I/O.
+ *
+ *	The status byte in the disk descriptor is set as follows:
+ *	0 - ok
+ *	1 - ok
+ *	2 - illegal drive
+ *	3 - no disk in drive
+ *	4 - illegal track
+ *	5 - illegal sector
+ *	6 - seek error
+ *	7 - read error
+ *	8 - write error
+ *	15 - other error
+ *
+ *	The error codes will abort disk I/O, but I don't know which
+ *	error codes the real controller would set.
+ */
 void disk_io(int addr)
 {
 	register int i;
@@ -169,8 +188,8 @@ void disk_io(int addr)
 		break;
 
 	default: /* fatal error for all other drives */
-		 /* the OS sends unit 3 for drive C: and D: */
-		 /* probably a bug, for now we use only 2 working drives */
+		 /* IMDOS sends odd unit/cmd for drive C: & D: */
+		 /* for now we use only 2 working drives */
 		//printf("FIF: disk unit no. is %02x?\r\n", unit);
 		*(ram + addr + DD_RESULT) = 2;
 		return;
@@ -179,32 +198,71 @@ void disk_io(int addr)
 	/* try to open disk image for the wanted operation */
 	if ((fd = open(disks[disk], O_RDWR)) == -1) {
 		//printf("FIF: no disk in unit %d\r\n", unit);
-		*(ram + addr + DD_RESULT) = 2;
+		*(ram + addr + DD_RESULT) = 3;
 		return;
 	}
 
 	/* we have a disk, try wanted disk operation */
 	switch(cmd) {
 	case WRITE_SEC:
+		if (track >= TRK) {
+			*(ram + addr + DD_RESULT) = 4;
+			goto done;
+		}
+		if (sector > SPT) {
+			*(ram + addr + DD_RESULT) = 5;
+			goto done;
+		}
 		pos = (track * SPT + sector - 1) * SEC_SZ;
-		lseek(fd, pos, SEEK_SET);
-		write(fd, ram + dma_addr, SEC_SZ);
+		if (lseek(fd, pos, SEEK_SET) == -1L) {
+			*(ram + addr + DD_RESULT) = 6;
+			goto done;
+		}
+		if (write(fd, ram + dma_addr, SEC_SZ) != SEC_SZ) {
+			*(ram + addr + DD_RESULT) = 8;
+			goto done;
+		}
 		*(ram + addr + DD_RESULT) = 1;
 		break;
 
 	case READ_SEC:
+		if (track >= TRK) {
+			*(ram + addr + DD_RESULT) = 4;
+			goto done;
+		}
+		if (sector > SPT) {
+			*(ram + addr + DD_RESULT) = 5;
+			goto done;
+		}
 		pos = (track * SPT + sector - 1) * SEC_SZ;
-		lseek(fd, pos, SEEK_SET);
-		read(fd, ram + dma_addr, SEC_SZ);
+		if (lseek(fd, pos, SEEK_SET) == -1L) {
+			*(ram + addr + DD_RESULT) = 6;
+			goto done;
+		}
+		if (read(fd, ram + dma_addr, SEC_SZ) != SEC_SZ) {
+			*(ram + addr + DD_RESULT) = 7;
+			goto done;
+		}
 		*(ram + addr + DD_RESULT) = 1;
 		break;
 
 	case FMT_TRACK:
 		memset(&blksec, 0, SEC_SZ);
+		if (track >= TRK) {
+			*(ram + addr + DD_RESULT) = 4;
+			goto done;
+		}
 		pos = track * SPT * SEC_SZ;
-		lseek(fd, pos, SEEK_SET);
-		for (i = 0; i < SPT; i++)
-			write(fd, &blksec, SEC_SZ);
+		if (lseek(fd, pos, SEEK_SET) == -1L) {
+			*(ram + addr + DD_RESULT) = 6;
+			goto done;
+		}
+		for (i = 0; i < SPT; i++) {
+			if (write(fd, &blksec, SEC_SZ) != SEC_SZ) {
+				*(ram + addr + DD_RESULT) = 8;
+				goto done;
+			}
+		}
 		*(ram + addr + DD_RESULT) = 1;
 		break;
 
@@ -213,11 +271,11 @@ void disk_io(int addr)
 		break;
 
 	default:
-		printf("FIF: unknown cmd %02x\r\n", cmd);
-		*(ram + addr + DD_RESULT) = 2;
+		//printf("FIF: unknown cmd %02x\r\n", cmd);
+		*(ram + addr + DD_RESULT) = 15;
 		break;
 	}
 
-
+done:
 	close(fd);
 }

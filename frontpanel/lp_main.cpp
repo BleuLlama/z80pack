@@ -24,7 +24,9 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/signal.h>
+#ifdef __linux__
 #include <sys/prctl.h>
+#endif
 #include <sys/stat.h>
 
 #include "lpanel.h"

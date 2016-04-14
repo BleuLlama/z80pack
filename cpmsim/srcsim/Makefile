@@ -39,6 +39,11 @@ OBJ =   sim0.o \
 all: ../auxin ../auxout ../cpmsim
 	@echo "done."
 
+#
+# HINTS:
+# Under Solaris mknod was moved to /usr/sbin/mknod
+# Under BSD named pipes are created with mkfifo
+#
 ../auxin:
 	test -f ../auxin || mknod ../auxin p
 
@@ -100,4 +105,5 @@ clean:
 allclean:
 	make clean
 	rm -f ../auxin ../auxout ../cpmsim ../cpmsim.exe
+	rm -f ../auxiliaryin.cpm ../auxiliaryout.cpm ../printer.cpm
 	rm -f ../disks/drive*.cpm

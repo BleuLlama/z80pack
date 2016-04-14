@@ -1,6 +1,6 @@
 /*
  *	Z80 - Assembler
- *	Copyright (C) 1987-2008 by Udo Munk
+ *	Copyright (C) 1987-2014 by Udo Munk
  *
  *	History:
  *	17-SEP-1987 Development under Digital Research CP/M 2.2
@@ -9,6 +9,7 @@
  *	03-FEB-2007 more ANSI C conformance and reduced compiler warnings
  *	18-MAR-2007 use default output file extension dependend on format
  *	04-OCT-2008 fixed comment bug, ';' string argument now working
+ *	22-FEB-2014 fixed is...() compiler warnings
  */
 
 /*
@@ -105,7 +106,7 @@ hyp_error:
 		if (isari(*s))
 			*p++ = *s++;
 		else
-			while (!isspace(*s) && !isari(*s) && (*s != '\0'))
+			while (!isspace((int)*s) && !isari(*s) && (*s != '\0'))
 				*p++ = *s++;
 		*p = '\0';
 		switch (get_type(word)) {
@@ -181,8 +182,8 @@ hyp_error:
  */
 int get_type(char *s)
 {
-	if (isdigit(*s)) {		/* numerical operand */
-		if (isdigit(*(s + strlen(s) - 1)))	/* decimal number */
+	if (isdigit((int)*s)) {		/* numerical operand */
+		if (isdigit((int)*(s + strlen(s) - 1)))	/* decimal number */
 			return(OPEDEC);
 		else if (*(s + strlen(s) - 1) == 'H')	/* hexadecimal number */
 			return(OPEHEX);
@@ -236,7 +237,7 @@ int axtoi(char *str)
 	register int num;
 
 	num = 0;
-	while (isxdigit(*str)) {
+	while (isxdigit((int)*str)) {
 		num *= 16;
 		num += *str - ((*str <= '9') ? '0' : '7');
 		str++;

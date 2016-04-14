@@ -8,6 +8,8 @@
  * History:
  * 20-OCT-08 first version finished
  * 26-OCT-08 corrected LED status while RESET is hold in upper position
+ * 27-JAN-14 set IFF=0 when powered off, so that LED goes off
+ * 02-MAR-14 source cleanup and improvements
  */
 
 #include <unistd.h>
@@ -24,9 +26,6 @@
 extern int load_file(char *);
 extern int load_core(void);
 extern void cpu(void);
-
-BYTE fp_led_output = 0xff;
-WORD address_switch;
 
 static BYTE fp_led_wait;
 static int cpu_switch;
@@ -81,6 +80,8 @@ void mon(void)
 	fp_addSwitchCallback("SW_DEPOSIT", deposit_clicked, 0);
 	fp_addSwitchCallback("SW_PWR", power_clicked, 0);
 
+	fp_led_output = 0xff;
+
 	/* load memory from file */
 	load();
 
@@ -117,6 +118,7 @@ void mon(void)
 
 	/* all LED's off and update frontpanel */
 	cpu_bus = 0;
+	IFF = 0;
 	fp_led_wait = 0;
 	fp_led_output = 0xff;
 	fp_led_address = 0;
@@ -125,6 +127,10 @@ void mon(void)
 
 	/* wait a bit before termination */
 	sleep(1);
+
+	if (cpu_error == POWEROFF)
+		printf("System powered off, bye.\n");
+
 	fp_quit();
 }
 
@@ -157,12 +163,19 @@ void run_cpu(void)
 	case NONE:
 		break;
 	case OPHALT:
-		printf("\r\nHALT Op-Code reached at %04x\r\n",
+		printf("\r\nINT disabled and HALT Op-Code reached at %04x\r\n",
 		       (unsigned int)(PC - ram - 1));
 		break;
-	case IOTRAP:
-		printf("\r\nI/O Trap at %04x, port %02x\r\n",
-			(unsigned int)(PC - ram), io_port);
+	case IOTRAPIN:
+		printf("\r\nI/O input Trap at %04x, port %02x\r\n",
+		       (unsigned int)(PC - ram), io_port);
+		break;
+	case IOTRAPOUT:
+		printf("\r\nI/O output Trap at %04x, port %02x\r\n",
+		       (unsigned int)(PC - ram), io_port);
+		break;
+	case IOHALT:
+		printf("\nSystem halted, bye.\n");
 		break;
 	case IOERROR:
 		printf("\r\nFatal I/O Error at %04x\r\n",
@@ -208,11 +221,19 @@ void step_cpu(void)
 	case NONE:
 		break;
 	case OPHALT:
-		printf("\r\nHALT Op-Code reached at %04x\r\n",
+		printf("\r\nINT disabled and HALT Op-Code reached at %04x\r\n",
 		       (unsigned int)(PC - ram - 1));
 		break;
-	case IOTRAP:
-		printf("\r\nI/O Trap at %04x\r\n", (unsigned int)(PC - ram));
+	case IOTRAPIN:
+		printf("\r\nI/O input Trap at %04x\r\n",
+		       (unsigned int)(PC - ram));
+		break;
+	case IOTRAPOUT:
+		printf("\r\nI/O output Trap at %04x\r\n",
+		       (unsigned int)(PC - ram));
+		break;
+	case IOHALT:
+		printf("\nSystem halted, bye.\n");
 		break;
 	case IOERROR:
 		printf("\r\nFatal I/O Error at %04x\r\n",

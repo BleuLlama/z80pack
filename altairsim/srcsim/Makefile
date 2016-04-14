@@ -28,7 +28,7 @@ OBJ =   sim0.o \
 	simglb.o \
 	unix_terminal.o \
 	io_config.o \
-	altair-88sio2.o
+	altair-88-2sio.o
 
 FP =    ../../frontpanel/libfrontpanel.so
 
@@ -86,8 +86,8 @@ unix_terminal.o : ../../iodevices/unix_terminal.c
 io_config.o : ../../iodevices/io_config.c
 	$(CC) $(CFLAGS) ../../iodevices/io_config.c
 
-altair-88sio2.o: ../../iodevices/altair-88sio2.c
-	$(CC) $(CFLAGS) -I./ ../../iodevices/altair-88sio2.c
+altair-88-2sio.o: ../../iodevices/altair-88-2sio.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/altair-88-2sio.c
 
 clean:
 	rm -f *.o

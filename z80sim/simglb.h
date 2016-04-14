@@ -24,6 +24,7 @@
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
  * 24-JAN-14 Release 1.18 bug fixes and improvements
+ * 02-MAR-14 Release 1.19 source cleanup and improvements
  */
 
 /*
@@ -76,4 +77,6 @@ extern BYTE	*t_start, *t_end;
 extern unsigned long long fp_clock;
 extern WORD fp_led_address;
 extern BYTE fp_led_data;
+extern WORD address_switch;
+extern BYTE fp_led_output;
 #endif

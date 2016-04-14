@@ -24,6 +24,7 @@
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
  * 24-JAN-14 Release 1.18 some improvments here and there
+ * 02-MAR-14 Release 1.19 source cleanup and improvements
  */
 
 #include <unistd.h>
@@ -69,12 +70,19 @@ void mon(void)
 	case NONE:
 		break;
 	case OPHALT:
-		printf("\nHALT Op-Code reached at %04x\n",
+		printf("\nINT disabled and HALT Op-Code reached at %04x\n",
 		       (unsigned int)(PC - ram - 1));
 		break;
-	case IOTRAP:
-		printf("\nI/O Trap at %04x, port %02x\n",
+	case IOTRAPIN:
+		printf("\nI/O input Trap at %04x, port %02x\n",
 			(unsigned int)(PC - ram), io_port);
+		break;
+	case IOTRAPOUT:
+		printf("\nI/O output Trap at %04x, port %02x\n",
+			(unsigned int)(PC - ram), io_port);
+		break;
+	case IOHALT:
+		printf("\nSystem halted, bye.\n");
 		break;
 	case IOERROR:
 		printf("\nFatal I/O Error at %04x\n", (unsigned int)(PC - ram));

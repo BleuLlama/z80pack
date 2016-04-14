@@ -3,7 +3,7 @@
  *
  * Common I/O devices used by various simulated machines
  *
- * Copyright (C) 2008 by Udo Munk
+ * Copyright (C) 2008-2014 by Udo Munk
  *
  * Partial emulation of an IMSAI SIO-2 S100 board
  *
@@ -12,6 +12,6 @@
  */
 
 extern BYTE imsai_sio2_status_in(void);
-extern BYTE imsai_sio2_status_out(BYTE);
+extern void imsai_sio2_status_out(BYTE);
 extern BYTE imsai_sio2_data_in(void);
-extern BYTE imsai_sio2_data_out(BYTE);
+extern void imsai_sio2_data_out(BYTE);

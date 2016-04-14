@@ -11,9 +11,10 @@ INCLUDE =
 DEFINES = 
 
 CFLAGS = -c -O3 -fPIC -Wno-deprecated $(INCLUDE) $(DEFINES) $(LIB)
+LDFLAGS = -shared
 
 default: $(OBJS) 
-	g++ -shared $(LDFLAGS) $(OBJS) -o libfrontpanel.so
+	g++ $(LDFLAGS) $(OBJS) -o libfrontpanel.so
 
 jpeg.o: jpeg.cpp cdjpeg.h
 	$(CC) $(CFLAGS) jpeg.cpp -o jpeg.o

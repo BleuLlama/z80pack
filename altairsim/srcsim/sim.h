@@ -7,6 +7,7 @@
  *
  * History:
  * 20-OCT-08 first version finished
+ * 02-MAR-14 source cleanup and improvements
  */
 
 /*
@@ -36,10 +37,10 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.18"
+#define RELEASE	"1.19"
 
 #define USR_COM	"Altair 8800 Simulation"
-#define USR_REL	"1.1"
+#define USR_REL	"1.2"
 #define USR_CPR	"Copyright (C) 2008-2014 by Udo Munk"
 
 #define LENCMD		80		/* length of command buffers etc */
@@ -70,12 +71,14 @@
 					/* causes of error */
 #define	NONE		0		/* no error */
 #define	OPHALT		1		/* HALT	op-code	trap */
-#define	IOTRAP		2		/* IN/OUT trap */
-#define IOERROR		3		/* fatal I/O error */
-#define	OPTRAP1		4		/* illegal 1 byte op-code trap */
-#define	OPTRAP2		5		/* illegal 2 byte op-code trap */
-#define	OPTRAP4		6		/* illegal 4 byte op-code trap */
-#define	USERINT		7		/* user	interrupt */
+#define	IOTRAPIN	2		/* I/O trap input */
+#define	IOTRAPOUT	3		/* I/O trap output */
+#define IOHALT		4		/* halt system via I/O register */
+#define IOERROR		5		/* fatal I/O error */
+#define	OPTRAP1		6		/* illegal 1 byte op-code trap */
+#define	OPTRAP2		7		/* illegal 2 byte op-code trap */
+#define	OPTRAP4		8		/* illegal 4 byte op-code trap */
+#define	USERINT		9		/* user	interrupt */
 #define POWEROFF	255		/* CPU off, no error */
 
 					/* type of CPU interrupt */

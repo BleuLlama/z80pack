@@ -1,6 +1,6 @@
 /*
  *	Z80 - Assembler
- *	Copyright (C) 1987-2008 by Udo Munk
+ *	Copyright (C) 1987-2014 by Udo Munk
  *
  *	History:
  *	17-SEP-1987 Development under Digital Research CP/M 2.2
@@ -9,6 +9,7 @@
  *	03-FEB-2007 more ANSI C conformance and reduced compiler warnings
  *	18-MAR-2007 use default output file extension dependend on format
  *	04-OCT-2008 fixed comment bug, ';' string argument now working
+ *	22-FEB-2014 fixed is...() compiler warnings
  */
 
 /*
@@ -283,13 +284,13 @@ int op_misc(int op_code, int dummy)
 		incnest++;
 		p = line;
 		d = fn;
-		while(isspace(*p))	/* ignore white space until INCLUDE */
+		while(isspace((int)*p))	/* ignore white space until INCLUDE */
 			p++;
-		while(!isspace(*p))	/* ignore INCLUDE */
+		while(!isspace((int)*p))/* ignore INCLUDE */
 			p++;
-		while(isspace(*p))	/* ignore white space until filename */
+		while(isspace((int)*p))	/* ignore white space until filename */
 			p++;
-		while(!isspace(*p) && *p != COMMENT) /* get filename */
+		while(!isspace((int)*p) && *p != COMMENT) /* get filename */
 			*d++ = *p++;
 		*d = '\0';
 		if (pass == 1) {	/* PASS 1 */
@@ -318,11 +319,11 @@ int op_misc(int op_code, int dummy)
 		if (pass == 2) {
 			p = line;
 			d = title;
-			while (isspace(*p)) /* ignore white space until TITLE */
+			while (isspace((int)*p)) /* ignore white space until TITLE */
 				p++;
-			while (!isspace(*p))	/* ignore TITLE */
+			while (!isspace((int)*p))/* ignore TITLE */
 				p++;
-			while (isspace(*p)) /* ignore white space until text */
+			while (isspace((int)*p)) /* ignore white space until text */
 				p++;
 			if (*p == STRSEP)
 				p++;

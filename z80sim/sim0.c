@@ -24,6 +24,7 @@
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
  * 24-JAN-14 Release 1.18 bug fixes and improvements
+ * 02-MAR-14 Release 1.19 source cleanup and improvements
  */
 
 /*
@@ -329,7 +330,7 @@ static int load_hex(char *fn)
 
 	while (fgets(&buf[0], BUFSIZE, fd) != NULL) {
 		s = &buf[0];
-		while (isspace(*s))
+		while (isspace((int)*s))
 			s++;
 		if (*s != ':')
 			continue;

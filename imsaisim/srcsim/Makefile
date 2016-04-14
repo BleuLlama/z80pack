@@ -3,12 +3,6 @@ CC = gcc
 # Platform independend compiler optimization
 CFLAGS = -O3 -c -Wall
 
-# Intel Pentium M (Centrino) and gcc 4.1.1
-#CFLAGS = -O3 -march=i686 -minline-all-stringops -funroll-loops -c -Wall
-
-# AMD Opteron and gcc 3.3.5
-#CFLAGS = -O3 -mcpu=i686 -minline-all-stringops -c -Wall
-
 # Linux, BSD
 LFLAGS = -s -L../../frontpanel -lfrontpanel -ljpeg -lGL -lGLU \
 	 -lXext -lXmu -lXt -lX11 -lm -lpthread
@@ -101,3 +95,4 @@ allclean:
 	make clean
 	rm -f ../imsaisim ../imsaisim.exe
 	rm -f ../disks/drive*.dsk
+	rm -f ../printer.cpm

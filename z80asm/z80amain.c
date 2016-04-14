@@ -1,6 +1,6 @@
 /*
  *	Z80 - Assembler
- *	Copyright (C) 1987-2008 by Udo Munk
+ *	Copyright (C) 1987-2014 by Udo Munk
  *
  *	History:
  *	17-SEP-1987 Development under Digital Research CP/M 2.2
@@ -9,6 +9,7 @@
  *	03-FEB-2007 more ANSI C conformance and reduced compiler warnings
  *	18-MAR-2007 use default output file extension dependend on format
  *	04-OCT-2008 fixed comment bug, ';' string argument now working
+ *	22-FEB-2014 fixed is...() compiler warnings
  */
 
 /*
@@ -168,8 +169,8 @@ void options(int argc, char *argv[])
 				}
 				t = tmp;
 				while (*s)
-					*t++ = islower(*s) ? toupper(*s++)
-							   : *s++;
+					*t++ = islower((int)*s) ?
+						toupper((int)*s++) : *s++;
 				s--;
 				*t = '\0';
 				if (put_sym(tmp, 0))
@@ -452,8 +453,9 @@ char *get_label(char *s, char *l)
 	i = 0;
 	if (*l == LINCOM)
 		goto comment;
-	while (!isspace(*l) && *l != COMMENT && *l != LABSEP && i < SYMSIZE) {
-		*s++ = islower(*l) ? toupper(*l++) : *l++;
+	while (!isspace((int)*l) && *l != COMMENT && *l != LABSEP
+	       && i < SYMSIZE) {
+		*s++ = islower((int)*l) ? toupper((int)*l++) : *l++;
 		i++;
 	}
 comment:
@@ -469,14 +471,14 @@ char *get_opcode(char *s, char *l)
 {
 	if (*l == LINCOM)
 		goto comment;
-	while (!isspace(*l) && *l != COMMENT && *l != LABSEP)
+	while (!isspace((int)*l) && *l != COMMENT && *l != LABSEP)
 		l++;
 	if (*l == LABSEP)
 		l++;
 	while (*l == ' ' || *l == '\t')
 		l++;
-	while (!isspace(*l) && *l != COMMENT)
-		*s++ = islower(*l) ? toupper(*l++) : *l++;
+	while (!isspace((int)*l) && *l != COMMENT)
+		*s++ = islower((int)*l) ? toupper((int)*l++) : *l++;
 comment:
 	*s = '\0';
 	return(l);
@@ -494,12 +496,12 @@ char *get_arg(char *s, char *l)
 	while (*l == ' ' || *l == '\t')
 		l++;
 	while (*l != '\n' && *l != COMMENT) {
-		if (isspace(*l)) {
+		if (isspace((int)*l)) {
 			l++;
 			continue;
 		}
 		if (*l != STRSEP) {
-			*s++ = islower(*l) ? toupper(*l) : *l;
+			*s++ = islower((int)*l) ? toupper((int)*l) : *l;
 			l++;
 			continue;
 		}

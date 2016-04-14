@@ -43,4 +43,4 @@ clean:
 	rm -f core *.o z80asm
 
 install: z80asm
-	cp z80asm ~/bin
+	cp z80asm ${HOME}/bin
