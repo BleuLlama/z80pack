@@ -28,7 +28,8 @@ OBJ =   sim0.o \
 	simglb.o \
 	unix_terminal.o \
 	io_config.o \
-	altair-88-2sio.o
+	altair-88-2sio.o \
+	tarbell.o
 
 FP =    ../../frontpanel/libfrontpanel.so
 
@@ -89,6 +90,9 @@ io_config.o : ../../iodevices/io_config.c
 altair-88-2sio.o: ../../iodevices/altair-88-2sio.c
 	$(CC) $(CFLAGS) -I./ ../../iodevices/altair-88-2sio.c
 
+tarbell.o: ../../iodevices/tarbell.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/tarbell.c
+
 clean:
 	rm -f *.o
 	./ulnsrc
@@ -96,3 +100,5 @@ clean:
 allclean:
 	make clean
 	rm -f ../altairsim ../altairsim.exe
+	rm -f ../disks/drive*.dsk
+	rm -f ../printer.cpm

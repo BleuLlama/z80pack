@@ -25,6 +25,7 @@
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
  * 24-JAN-14 Release 1.18 some improvments here and there
  * 02-MAR-14 Release 1.19 source cleanup and improvements
+ * 14-MAR-14 Release 1.20 added Tarbell SD FDC and printer port to Altair
  */
 
 /*
@@ -63,7 +64,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.19"
+#define RELEASE	"1.20"
 
 #define LENCMD		80		/* length of command buffers etc */
 

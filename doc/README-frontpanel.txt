@@ -7,6 +7,9 @@ sources are unmodified but the makefile is different for the integration.
 It should be possible to integrate later releases of the library without
 problems, as long as the z80pack makefile is used and updated appropriate.
 
+Update: the frontpanel sources got a few bug fixes, they are not identical
+anymore with the release 2.0 sources at sourceforge.
+
 Also the frontpanel configuration files have small modifications from
 the released version at sourceforge, due to somewhat different directory
 structure of the packages.

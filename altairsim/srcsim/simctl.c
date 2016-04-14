@@ -10,6 +10,7 @@
  * 26-OCT-08 corrected LED status while RESET is hold in upper position
  * 27-JAN-14 set IFF=0 when powered off, so that LED goes off
  * 02-MAR-14 source cleanup and improvements
+ * 14-MAR-14 added Tarbell SD FDC and printer port
  */
 
 #include <unistd.h>

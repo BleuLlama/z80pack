@@ -1,0 +1,335 @@
+1
+ 8080 MACRO ASSEMBLER, VER 3.0        ERRORS = 0      
++                                                      19:59  02/06/2014
++                                                                                      PAGE 1
+      
+
+
+                   ;******************************************************************
+                   ;       PROM BASED BOOT ROUTINE FOR TARBELL SINGLE DENSITY CP/M
+                   ;******************************************************************
+                   ;
+                   ;       THIS PROGRAM IS DESIGNED TO BOOT SECTOR 1 OF TRACK 0
+                   ;       ON A TARBELL DISK USING THE TARBELL SINGLE DENSITY
+                   ;       DISK CONTROLLER BOARD. TRACK 0 IS FORMATTED SINGLE
+                   ;       DENSITY SO THE CPU CAN DO THE DATA TRANSFER. THE BOOT
+                   ;       ROUTINE LOADS A PROGRAM FROM DISK INTO MEMORY AND THEN
+                   ;       JUMPS TO THAT ROUTINE. THE PROGRAM LOADED STARTS AT
+                   ;       MEMORY ADDRESS 0000H.
+                   ;               THE PART OF THIS PROGRAM THAT ACTUALLY DOES THE
+                   ;       THE BOOT OPERATION IS MOVED FROM A DATA AREA IN THE 1702A
+                   ;       TURNKEY PROMS AT ADDRESS 0FE00H TO BE EXECUTED FROM WITHIN
+                   ;       CPU RAM AT ADDRESS 01000H. THIS IS NECESSARY DUE TO THE
+                   ;       EXTENDED WAITSTATE TIME AFFORDED BY THE TURNKEY MODULE
+                   ;       WHICH COULD RESULT IN DATA LOST ERRORS AT THE DISK CONTROLLER
+                   ;       BOARD. THE FIRST PROM ONLY CONTAINS A BLOCK MOVE ROUTINE
+                   ;       TO TRANSFER THE DATA TO THE EXECUTION AREA AT 01000H.
+                   ;
+                   ;               MICHAEL J. KARAS
+                   ;               MICRO RESOURCES
+                   ; THESE DAYS MIKE CAN BE REACHED AT MKARAS@CAROUSEL-DESIGN.COM (MARCH 23, 2009)
+                   ;
+                   ; FOR Z80PACK DONT USE THE MOVE ROUTINE BUT ONLY THE BOOT LOADER.
+                   ; MARCH 2014, UDO MUNK
+                   ;
+                   ;******************************************************************
+                   ;
+                   ;MAKE A BLOCK MOVE ROUTINE TO SEND EXECUTABLE CODE INTO
+                   ;SYSTEM RAM AT 1000H
+                   ;
+                   ;       ORG     0FE00H          ;PUT THE MOVE ROUTINE HERE
+                   ;
+                   ;       DI                      ;NO INTERRUPTS
+                   ;       LXI     H,0FE80H        ;POINT TO BLOCK TO BE MOVED
+                   ;       LXI     B,0180H         ;SET COUNT FOR ONE AND A HALF 1702'S
+                   ;       LXI     D,01000H        ;POINT TO DESTINATION OF MOVE
+                   ;MOVE:
+                   ;       MOV     A,M             ;GET A BYTE OF CODE FROM PROM
+                   ;       STAX    D               ;STORE IT INTO RAM
+                   ;       INX     H               ;INCREMENT PROM POINTER
+                   ;       INX     D               ;INCREMENT RAM POINTER
+                   ;       DCX     B               ;DECREMENT BYTE COUNT
+                   ;       MOV     A,C             ;CHECK IF DONE
+                   ;       ORA     B
+                   ;       JNZ     MOVE            ;IF NOT DONE GO DO IT AGAIN
+                   ;
+                   ;       JMP     01000H          ;TRANSFER CONTROL TO ROUTINE
+                                                   ;JUST MOVED TO RAM
+                   ;
+1
+ 8080 MACRO ASSEMBLER, VER 3.0        ERRORS = 0      
++                                                      19:59  02/06/2014
++                                                                                      PAGE 2
+      
+
+
+                   ;
+                   ;BASE THIS ROUTINE INTO SYSTEM RAM AT 1000H
+                   ;
+   1000                    ORG     01000H
+   1000   F3               DI                      ;DISABLE INTERRUPTS
+   1001   315611           LXI     SP,STACK        ;SET THE STACK DUMMY?
+   1004   C34210           JMP     INIT            ;GO INITIALIZE THIS BUGGER
+                   ;
+                   ;
+                   ;SYSTEM EQUATES FOR TARBELL CONTROLLER
+                   ;
+   00FC            DWAIT   EQU     0FCH            ;WAIT FOR DISK PORT
+   00F8            DCOM    EQU     0F8H            ;DISK COMMAND PORT
+   00FB            DDATA   EQU     0FBH            ;DISK DATA PORT
+   00F8            DSTAT   EQU     0F8H            ;DISK STATUS PORT
+   00FA            DSEC    EQU     0FAH            ;DISK SECTOR PORT
+   00F9            DTRK    EQU     0F9H            ;DISK TRACK PORT
+   00FC            DSEL    EQU     0FCH            ;DISK SELECT PORT
+                   ;
+                   ;
+                   ;SYSTEM VARIABLES AND ADDRESS POINTERS
+                   ;
+   007D            SBOOT   EQU     007DH           ;SINGLE DENSITY BOOT ENTRY
+   008C            RDCMD   EQU     008CH           ;READ COMMAND FOR 1791 CONTROLLER
+                   ;
+                   ;
+                   ;DEFINE SI/O RS-232 CONSOLE I/O PARAMETERS
+                   ;
+   0010            CCTRL   EQU     010H            ;CONSOLE COMMAND/STATUS PORT
+   0011            CDATA   EQU     011H            ;CONSOLE DATA PORT
+   0001            CRRDY   EQU     001H            ;RECEIVER READY BIT
+   0002            CTRDY   EQU     002H            ;TRANSMITTER READY BIT
+                   ;
+                   ;
+                   ;COLD BOOT LOADER CONSOLE I/O INTERFACE ROUTINES
+                   ;
+                   ;
+                   ;       CONSOLE  OUTPUT ROUTINE
+                   ;
+   1007            CO:
+   1007   DB10             IN      CCTRL
+   1009   E602             ANI     CTRDY
+   100B   CA0710           JZ      CO
+   100E   79               MOV     A,C
+   100F   D311             OUT     CDATA
+   1011   C9               RET
+                   ;
+                   ;       BYTE PRINT CONVERSION ROUTINE
+                   ;
+   1012            BYTEO:
+   1012   F5               PUSH    PSW
+1
+ 8080 MACRO ASSEMBLER, VER 3.0        ERRORS = 0      
++                                                      19:59  02/06/2014
++                                                                                      PAGE 3
+      
+
+
+   1013   CD2210           CALL    BYTO1
+   1016   4F               MOV     C,A
+   1017   CD0710           CALL    CO
+   101A   F1               POP     PSW
+   101B   CD2610           CALL    BYTO2
+   101E   4F               MOV     C,A
+   101F   C30710           JMP     CO
+                   ;
+                   ;
+                   ;
+   1022            BYTO1:
+   1022   0F               RRC
+   1023   0F               RRC
+   1024   0F               RRC
+   1025   0F               RRC
+   1026            BYTO2:
+   1026   E60F             ANI     0FH
+   1028   FE0A             CPI     0AH
+   102A   FA2F10           JM      BYTO3
+   102D   C607             ADI     7
+   102F            BYTO3:
+   102F   C630             ADI     30H
+   1031   C9               RET
+                   ;
+                   ;       MESSAGE PRINTING ROUTINE
+                   ;
+   1032            MSG:
+   1032   F5               PUSH    PSW             ;FOLLOWING OUTPUTS MESSAGES
+   1033   C5               PUSH    B               ;  TO CONSOLE
+   1034   46               MOV     B,M
+   1035   23               INX     H
+   1036            MSGA:
+   1036   4E               MOV     C,M
+   1037   CD0710           CALL    CO
+   103A   23               INX     H
+   103B   05               DCR     B
+   103C   C23610           JNZ     MSGA
+   103F   C1               POP     B
+   1040   F1               POP     PSW
+   1041   C9               RET
+                   ;
+                   ;
+                   ;INITIALIZE
+                   ;
+   1042            INIT:
+   1042   21FF0F           LXI     H,00FFFH        ;DELAY SI/O INIT FOR
+                                                   ; MESSAGE IN PROGRESS
+   1045            LOOP:
+   1045   2B               DCX     H
+   1046   7C               MOV     A,H
+   1047   B5               ORA     L
+1
+ 8080 MACRO ASSEMBLER, VER 3.0        ERRORS = 0      
++                                                      19:59  02/06/2014
++                                                                                      PAGE 4
+      
+
+
+   1048   C24510           JNZ     LOOP
+   104B   3E03             MVI     A,003H          ;INITIALIZE SI/O WITH RESET
+   104D   D310             OUT     CCTRL
+   104F   3E11             MVI     A,011H          ;INITIALIZE SIO WITH 16X,8 BITS, NO PAR
+                                                   ;2 STOP BITS
+   1051   D310             OUT     CCTRL
+                   ;
+                   ;
+                   ;START OF COLD BOOT LOADER CODE
+                   ;
+   1053            START:
+   1053   21C510           LXI     H,CBMSG         ;OUTPUT "CP/M COLD BOOT" TO THE CONSOLE
+   1056   CD3210           CALL    MSG
+   1059   3EF2             MVI     A,0F2H          ;SELECT DISK A: AT SINGLE DENSITY
+   105B   D3FC             OUT     DSEL
+   105D   3ED0             MVI     A,0D0H          ;CLEAR ANY PENDING COMMAND
+   105F   D3F8             OUT     DCOM
+   1061   00               NOP                     ;ALLOW TIME FOR COMMAND SETTLING
+   1062   00               NOP
+   1063   00               NOP
+   1064   00               NOP
+   1065            HOME:
+   1065   DBF8             IN      DSTAT           ;GET STATUS
+   1067   0F               RRC
+   1068   DA6510           JC      HOME            ;WAIT FOR NOT BUSY COMPLETION
+   106B   3E02             MVI     A,002H          ;ISSUE RESTORE CMND (10 MSEC. STEP RATE)
+   106D   D3F8             OUT     DCOM
+   106F   00               NOP                     ;ALLOW TIME FOR COMMAND SETTLING
+   1070   00               NOP
+   1071   00               NOP
+   1072   00               NOP
+   1073   DBFC             IN      DWAIT           ;WAIT FOR COMPLETION
+   1075   B7               ORA     A               ;SET FLAGS FOR ERROR ON "DRQ",NOT "INTRQ"
+   1076   FAA810           JM      DRQER
+   1079   DBF8             IN      DSTAT           ;GET DISK STATUS
+   107B   E604             ANI     004H            ;MASK FOR TRACK 00 STATUS BIT
+   107D   CAAF10           JZ      TK0ER
+   1080   AF               XRA     A               ;ZERO ACCUMULATOR
+   1081   6F               MOV     L,A             ;SETUP MEMORY LOAD ADDRESS 0000H
+   1082   67               MOV     H,A
+   1083   3C               INR     A               ;SETUP FOR SECTOR 01
+   1084   D3FA             OUT     DSEC
+   1086   3E8C             MVI     A,RDCMD         ;SETUP READ COMMAND
+   1088   D3F8             OUT     DCOM
+   108A   00               NOP                     ;ALLOW TIME FOR COMMAND SETTLING
+   108B   00               NOP
+   108C   00               NOP
+   108D   00               NOP
+   108E            RLOOP:
+   108E   DBFC             IN      DWAIT           ;WAIT FOR DISK CONTROLLER
+   1090   B7               ORA     A               ;SET FLAGS
+1
+ 8080 MACRO ASSEMBLER, VER 3.0        ERRORS = 0      
++                                                      19:59  02/06/2014
++                                                                                      PAGE 5
+      
+
+
+   1091   F29B10           JP      RDONE           ;ARE WE DONE YET
+   1094   DBFB             IN      DDATA           ;GET DATA FORM DISK
+   1096   77               MOV     M,A             ;MOVE IT INTO MEMORY
+   1097   23               INX     H               ;INCREMENT MEMORY POINTER
+   1098   C38E10           JMP     RLOOP           ;GO GET NEXT BYTE
+   109B            RDONE:
+   109B   DBF8             IN      DSTAT           ;GET DISK READ STATUS
+   109D   B7               ORA     A               ;CHECK FOR ERRORS
+   109E   CA7D00           JZ      SBOOT           ;NO ERRORS?
+                                                   ;THEN GO BOOT SINGLE DENSITY CP/M
+   10A1   F5               PUSH    PSW             ;OOPS...GOT AN ERROR,SAVE STATUS
+   10A2   21D610           LXI     H,LEMSG         ;OUTPUT "BOOT LOAD ERROR=" TO CONSOLE
+   10A5   C3B310           JMP     LERR
+   10A8   F5       DRQER:  PUSH    PSW             ;SAVE ERROR STATUS
+   10A9   21E910           LXI     H,RQMSG         ;OUTPUT "COMMAND COMPLETION ERROR=" TO CONSOLE
+   10AC   C3B310           JMP     LERR
+   10AF   F5       TK0ER:  PUSH    PSW             ;SAVE ERROR STATUS
+   10B0   210511           LXI     H,REMSG         ;OUTPUT "RESTORE ERROR=" TO CONSOLE
+   10B3   CD3210   LERR:   CALL    MSG
+   10B6   F1               POP     PSW             ;GET ERROR STATUS BACK
+   10B7   CD1210           CALL    BYTEO           ;INDICATE ERROR AND DO CRLF
+   10BA   0E0A             MVI     C,0AH
+   10BC   CD0710           CALL    CO
+   10BF   0E0D             MVI     C,0DH
+   10C1   CD0710           CALL    CO
+                   ;
+   10C4            HERE:
+                   ;       JMP     START           ;GO TRY BOOTING AGAIN
+   10C4   76               HLT                     ;OR HALT SYSTEM
+                   ;
+                   ;
+                   ;COLD BOOT ROUTINE MESSAGES
+                   ;
+                   ;
+   10C5   1043502F CBMSG:  DB      16,'CP/M COLD BOOT',0AH,0DH
+   10C9   4D20434F
+   10CD   4C442042
+   10D1   4F4F540A
+   10D5   0D      
+                   ;
+   10D6   120D0A42 LEMSG:  DB      18,0DH,0AH,'BOOT LOAD ERROR='
+   10DA   4F4F5420
+   10DE   4C4F4144
+   10E2   20455252
+   10E6   4F523D  
+                   ;
+   10E9   1B0D0A43 RQMSG:  DB      27,0DH,0AH,'COMMAND COMPLETION ERROR='
+   10ED   4F4D4D41
+   10F1   4E442043
+   10F5   4F4D504C
+   10F9   4554494F
+1
+ 8080 MACRO ASSEMBLER, VER 3.0        ERRORS = 0      
++                                                      19:59  02/06/2014
++                                                                                      PAGE 6
+      
+
+
+   10FD   4E204552
+   1101   524F523D
+                   ;
+   1105   100D0A52 REMSG:  DB      16,0DH,0AH,'RESTORE ERROR='
+   1109   4553544F
+   110D   52452045
+   1111   52524F52
+   1115   3D      
+                   ;
+   1116                    DS      64      ;SETUP STORAGE FOR A RAM BASED STACK
+   1156            STACK   EQU     $
+                   ;
+                           END
+ NO PROGRAM ERRORS
+1
+ 8080 MACRO ASSEMBLER, VER 3.0        ERRORS = 0      
++                                                      19:59  02/06/2014
++                                                                                      PAGE 7
+      
+
+
+                        SYMBOL TABLE
+
+  * 01
+
+  A      0007      B      0000      BYTEO  1012      BYTO1  1022      
+  BYTO2  1026      BYTO3  102F      C      0001      CBMSG  10C5      
+  CCTRL  0010      CDATA  0011      CO     1007      CRRDY  0001 *    
+  CTRDY  0002      D      0002      DCOM   00F8      DDATA  00FB      
+  DRQER  10A8      DSEC   00FA      DSEL   00FC      DSTAT  00F8      
+  DTRK   00F9 *    DWAIT  00FC      E      0003      H      0004      
+  HERE   10C4 *    HOME   1065      INIT   1042      L      0005      
+  LEMSG  10D6      LERR   10B3      LOOP   1045      M      0006      
+  MSG    1032      MSGA   1036      PSW    0006      RDCMD  008C      
+  RDONE  109B      REMSG  1105      RLOOP  108E      RQMSG  10E9      
+  SBOOT  007D      SP     0006      STACK  1156      START  1053 *    
+  TK0ER  10AF      
+

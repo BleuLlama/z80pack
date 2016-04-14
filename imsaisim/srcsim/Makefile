@@ -7,6 +7,10 @@ CFLAGS = -O3 -c -Wall
 LFLAGS = -s -L../../frontpanel -lfrontpanel -ljpeg -lGL -lGLU \
 	 -lXext -lXmu -lXt -lX11 -lm -lpthread
 
+# Solaris 10
+#LFLAGS = -s -L../../frontpanel -L/opt/csw/X11/lib -lfrontpanel -ljpeg \
+#	-lGL -lGLU -lXext -lXmu -lXt -lX11 -lm -lpthread -lrt
+
 OBJ =   sim0.o \
 	sim1.o \
 	sim2.o \

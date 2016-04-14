@@ -16,6 +16,8 @@
 
 */
 
+/* Fixed portability problems, March 2014, Udo Munk */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,12 +101,14 @@ lp_mainloop_thread(void *n)
 
 int start_threads(void)
 {
-  static pthread_attr_t attr;
+  // don't use unitialised attr, use NULL pointer instead. **UM**
+  //static pthread_attr_t attr;
   int n;
 
   pthread_mutex_init(&data_lock,NULL);
   thread_info.run = 1;
-  n = pthread_create(&thread_info.thread_id, &attr, lp_mainloop_thread, &thread_info.thread_no);
+  //n = pthread_create(&thread_info.thread_id, &attr, lp_mainloop_thread, &thread_info.thread_no);
+  n = pthread_create(&thread_info.thread_id, NULL, lp_mainloop_thread, &thread_info.thread_no);
   if(n)
    { fprintf(stderr,"error %d starting mainloop thread\n",n);
      return 0;

@@ -97,7 +97,7 @@ int main(int argc,char *argv[])/*Main routine*/
   }
 
   fstat(fileno(inp), &statbuf);
-  if (quiet == 0) printf("Input file size=%ld\n",statbuf.st_size);
+  if (quiet == 0) printf("Input file size=%ld\n",(long)statbuf.st_size);
   if (foffset > statbuf.st_size) {
     printf("ERROR: Input offset > input file length\n");
   }
@@ -153,7 +153,7 @@ int main(int argc,char *argv[])/*Main routine*/
   fflush (outp);
 
   fstat(fileno(outp), &statbuf);
-  if (quiet == 0) printf("Output file size=%ld\n",statbuf.st_size);
+  if (quiet == 0) printf("Output file size=%ld\n",(long)statbuf.st_size);
 
   fclose(inp);
   fclose(outp);

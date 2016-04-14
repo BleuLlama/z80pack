@@ -869,8 +869,8 @@ void init_io(void)
 	case 0:
 		execlp("./receive", "receive", "auxiliaryout.cpm",
 		       (char *) NULL);
-		puts("can't exec receive process");
-		exit(1);
+		puts("can't exec receive process, compile the tools dude");
+		kill(0, SIGQUIT);
 	}
 	if ((auxin = open("auxin", O_RDONLY | O_NDELAY)) == -1) {
 		perror("pipe auxin");

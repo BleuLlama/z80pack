@@ -8,6 +8,7 @@
  * History:
  * 20-OCT-08 first version finished
  * 02-MAR-14 source cleanup and improvements
+ * 14-MAR-14 added Tarbell SD FDC and printer port
  */
 
 /*
@@ -37,10 +38,10 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.19"
+#define RELEASE	"1.20"
 
 #define USR_COM	"Altair 8800 Simulation"
-#define USR_REL	"1.2"
+#define USR_REL	"1.3"
 #define USR_CPR	"Copyright (C) 2008-2014 by Udo Munk"
 
 #define LENCMD		80		/* length of command buffers etc */

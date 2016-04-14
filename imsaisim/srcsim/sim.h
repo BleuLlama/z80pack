@@ -37,7 +37,7 @@
  *	The following lines of this file should not be modified by user
  */
 #define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
-#define RELEASE	"1.19"
+#define RELEASE	"1.20"
 
 #define USR_COM	"IMSAI 8080 Simulation"
 #define USR_REL	"1.2"

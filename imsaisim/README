@@ -20,11 +20,6 @@ and so on. With r 0 1 it will read track 0 sector 1 into memory. The w command
 writes a sector to the disk! Become familar with this before trying,
 because writing some random bytes to the boot disk will make it unusable.
 
-If you boot IMDOS you'll notice that all input is translated to upper case.
-This is the default configuration for the SIO port, because some of the old
-software won't accept lower case commands. The SIO can be configured in
-conf/iodev.conf, so that lower case input works for IMDOS.
-
 On disk A: there are two BIOSnn.SYS files that were included on the IMDOS
 disk images. I don't know for which I/O devices they were assembled, the OS
 is build from BIOS.MAC on disk B:, so that the line printer port is used

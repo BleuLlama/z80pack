@@ -10,13 +10,22 @@
  * 20-OCT-08 first version finished
  * 19-JAN-14 unused I/O ports need to return 00 and not FF
  * 02-MAR-14 source cleanup and improvements
+ * 14-MAR-14 added Tarbell SD FDC and printer port
+ * 15-MAR-14 modified printer port for Tarbell CP/M 1.4 BIOS
  */
 
+#include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
 #include "sim.h"
 #include "simglb.h"
 #include "../../iodevices/io_config.h"
 #include "../../iodevices/altair-88-2sio.h"
+#include "../../iodevices/tarbell.h"
+
+static int printer;		/* fd for file "printer.cpm" */
 
 /*
  *	Forward declarations of the I/O functions
@@ -26,6 +35,8 @@ static BYTE io_trap_in(void), io_no_card_in(void);
 static void io_trap_out(BYTE), io_no_card_out(BYTE);
 static BYTE fp_in(void);
 static void hwctl_out(BYTE);
+static BYTE lpt_in(void);
+static void lpt_out(BYTE);
 
 /*
  *	This array contains function pointers for every
@@ -98,8 +109,8 @@ static BYTE (*port_in[256]) (void) = {
 	io_trap_in,		/* port	63 */
 	io_trap_in,		/* port	64 */
 	io_trap_in,		/* port	65 */
-	io_trap_in,		/* port	66 */
-	io_trap_in,		/* port	67 */
+	lpt_in,			/* port	66 */ /* printer status */
+	io_no_card_in,		/* port	67 */ /* printer data */
 	io_trap_in,		/* port	68 */
 	io_trap_in,		/* port	69 */
 	io_trap_in,		/* port	70 */
@@ -280,11 +291,11 @@ static BYTE (*port_in[256]) (void) = {
 	io_trap_in,		/* port	245 */
 	io_trap_in,		/* port	246 */
 	io_trap_in,		/* port	247 */
-	io_trap_in,		/* port	248 */
-	io_trap_in,		/* port	249 */
-	io_trap_in,		/* port	250 */
-	io_trap_in,		/* port	251 */
-	io_trap_in,		/* port	252 */
+	tarbell_stat_in,	/* port	248 */ /* Tarbell 1011D status */
+	tarbell_track_in,	/* port	249 */ /* Tarbell 1011D track */
+	tarbell_sec_in,		/* port	250 */ /* Tarbell 1011D sector */
+	tarbell_data_in,	/* port	251 */ /* Tarbell 1011D data */
+	tarbell_wait_in,	/* port	252 */ /* Tarbell 1011D wait */
 	io_trap_in,		/* port	253 */
 	io_trap_in,		/* port	254 */
 	fp_in			/* port	255 */ /* frontpanel */
@@ -361,8 +372,8 @@ static void (*port_out[256]) (BYTE) = {
 	io_trap_out,		/* port	63 */
 	io_trap_out,		/* port	64 */
 	io_trap_out,		/* port	65 */
-	io_trap_out,		/* port	66 */
-	io_trap_out,		/* port	67 */
+	io_no_card_out,		/* port	66 */ /* printer status */
+	lpt_out,		/* port	67 */ /* printer data */
 	io_trap_out,		/* port	68 */
 	io_trap_out,		/* port	69 */
 	io_trap_out,		/* port	70 */
@@ -543,11 +554,11 @@ static void (*port_out[256]) (BYTE) = {
 	io_trap_out,		/* port	245 */
 	io_trap_out,		/* port	246 */
 	io_trap_out,		/* port	247 */
-	io_trap_out,		/* port	248 */
-	io_trap_out,		/* port	249 */
-	io_trap_out,		/* port	250 */
-	io_trap_out,		/* port	251 */
-	io_trap_out,		/* port	252 */
+	tarbell_cmd_out,	/* port	248 */ /* Tarbell 1011D command */
+	tarbell_track_out,	/* port	249 */ /* Tarbell 1011D track */
+	tarbell_sec_out,	/* port	250 */ /* Tarbell 1011D sector */
+	tarbell_data_out,	/* port	251 */ /* Tarbell 1011D data */
+	tarbell_ext_out,	/* port	252 */ /* Tarbell 1011D extended cmd */
 	io_trap_out,		/* port	253 */
 	io_trap_out,		/* port	254 */
 	io_no_card_out		/* port	255 */ /* frontpanel */
@@ -561,16 +572,21 @@ static void (*port_out[256]) (BYTE) = {
 void init_io(void)
 {
 	io_config();		/* configure I/O from iodev.conf */
+
+	/* create and open the file for line printer */
+	if ((printer = creat("printer.cpm", 0644)) == -1) {
+		perror("file printer.cpm");
+		exit(1);
+	}
 }
 
 /*
  *	This function is to stop the I/O devices. It is
  *	called from the CPU simulation on exit.
- *
- *	Nothing to do here.
  */
 void exit_io(void)
 {
+	close(printer);		/* close line printer file */
 }
 
 /*
@@ -666,4 +682,32 @@ static void hwctl_out(BYTE data)
 		cpu_error = IOHALT;
 		cpu_state = STOPPED;
 	}
+}
+
+/*
+ *	Print data into the printer file
+ */
+static void lpt_out(BYTE data)
+{
+	if ((data != '\r') && (data != 0x00)) {
+again:
+		if (write(printer, (char *) &data, 1) != 1) {
+			if (errno == EINTR) {
+				goto again;
+			} else {
+				perror("write printer");
+				cpu_error = IOERROR;
+				cpu_state = STOPPED;
+			}
+		}
+	}
+}
+
+/*
+ *	I/O handler for line printer status in:
+ *	Our printer files never is busy, so always return ready.
+ */
+static BYTE lpt_in(void)
+{
+	return((BYTE) 3);
 }
