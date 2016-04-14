@@ -171,7 +171,7 @@ jinit_write_pixels (j_decompress_ptr cinfo)
     else
       dest->pub.put_pixel_rows = put_pixel_rows;
   } else {
-    ERREXIT(cinfo, JERR_BMP_COLORSPACE);
+      ERREXIT(cinfo, JERR_BMP_COLORSPACE);
   }
 
   /* Calculate output image dimensions so we can allocate space */

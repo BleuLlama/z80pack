@@ -1,6 +1,6 @@
 CC = gcc
 
-CFLAGS = -c -O -Wall
+CFLAGS = -c -O3 -Wall
 LFLAGS = -s
 
 OBJ =   z80amain.o \
@@ -41,3 +41,6 @@ z80aglb.o : z80aglb.c z80a.h
 
 clean:
 	rm -f core *.o z80asm
+
+install: z80asm
+	cp z80asm ~/bin

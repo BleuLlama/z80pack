@@ -1,13 +1,14 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 2008 by Udo Munk
+ * Copyright (C) 2008-2014 by Udo Munk
  *
  * This modul of the simulator contains the I/O simlation
  * for an Altair 8800 system
  *
  * History:
  * 20-OCT-08 first version finished
+ * 19-JAN-14 unused I/O ports need to return 00 and not FF
  */
 
 #include <stdio.h>
@@ -31,8 +32,8 @@ static BYTE fp_in(void);
  *	The first entry is for input, the second for output.
  */
 static BYTE (*port[256][2]) () = {
-	{ io_no_card, io_no_card },	/* port 0 */
-	{ io_no_card, io_no_card },	/* port	1 */
+	{ io_no_card, io_no_card },	/* port 0 */ /* no SIO card */
+	{ io_no_card, io_no_card },	/* port	1 */ /* we got a SIO-2 */
 	{ io_trap, io_trap },		/* port	2 */
 	{ io_trap, io_trap },		/* port	3 */
 	{ io_trap, io_trap },		/* port	4 */
@@ -49,7 +50,7 @@ static BYTE (*port[256][2]) () = {
 	{ io_trap, io_trap },		/* port	15 */
 	{ altair_sio2_status_in, altair_sio2_status_out },	/* port	16 */
 	{ altair_sio2_data_in, altair_sio2_data_out },		/* port	17 */
-	{ io_no_card, io_no_card },	/* port	18 */
+	{ io_no_card, io_no_card },	/* port	18 */ /* SIO 2 not connected */
 	{ io_no_card, io_no_card },	/* port	19 */
 	{ io_trap, io_trap },		/* port	20 */
 	{ io_trap, io_trap },		/* port	21 */
@@ -316,6 +317,7 @@ void exit_io(void)
  */
 BYTE io_in(BYTE adr)
 {
+	io_port = adr;
 	return((*port[adr][0]) ());
 }
 
@@ -326,6 +328,7 @@ BYTE io_in(BYTE adr)
  */
 void io_out(BYTE adr, BYTE data)
 {
+	io_port = adr;
 	(*port[adr][1])	(data);
 }
 
@@ -341,7 +344,7 @@ static BYTE io_trap(void)
 		cpu_error = IOTRAP;
 		cpu_state = STOPPED;
 	}
-	return((BYTE) 0xff);
+	return((BYTE) 0x00);
 }
 
 /*
@@ -350,7 +353,7 @@ static BYTE io_trap(void)
  */
 static BYTE io_no_card(void)
 {
-	return((BYTE) 0xff);
+	return((BYTE) 0x00);
 }
 
 /*

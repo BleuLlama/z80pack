@@ -3,6 +3,9 @@ CC = gcc
 # Platform independend compiler optimization
 CFLAGS = -O3 -c -Wall
 
+# Use this to build 64 bit version under Solaris 10
+#CFLAGS = -O3 -m64 -c -Wall
+
 # Intel Pentium M (Centrino) and gcc 4.1.1
 #CFLAGS = -O3 -march=i686 -minline-all-stringops -funroll-loops -c -Wall
 
@@ -12,8 +15,11 @@ CFLAGS = -O3 -c -Wall
 # Linux, BSD
 LFLAGS = -s
 
-# Solaris 9
+# Solaris 9, Soaris 10
 #LFLAGS = -s -lrt
+
+# Soaris 10 64 bit version
+#LFLAGS = -m64 -s -lrt
 
 OBJ =	sim0.o \
 	sim1.o \
@@ -77,3 +83,6 @@ simglb.o : simglb.c sim.h
 
 clean:
 	rm -f *.o core z80sim
+
+install: z80sim
+	cp z80sim ~/bin

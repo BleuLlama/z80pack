@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 1987-2008 by Udo Munk
+ * Copyright (C) 1987-2014 by Udo Munk
  *
  * This modul of the simulator contains a simple terminal I/O
  * simulation as an example.
@@ -26,6 +26,7 @@
  * 06-AUG-08 Release 1.15 many improvements and Windows support via Cygwin
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
+ * 24-JAN-14 Release 1.18 bug fixes and improvements
  */
 
 /*

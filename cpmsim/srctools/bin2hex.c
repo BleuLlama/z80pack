@@ -107,12 +107,12 @@ int main(int argc,char *argv[])/*Main routine*/
 //  fprintf(outp,":020000020000FC\n");/*Start Header*/
   fsub = fsize - fpoint;
   if (fsub > 0x20) {
-  	fprintf(outp,":20%04X00",adrs);/*Hex line Header*/
+  	fprintf(outp,":20%04X00",(unsigned int) adrs);/*Hex line Header*/
     csum = 0x20 + (adrs>>8) + (adrs & 0xFF);
     adrs += 0x20;
   }
   else {
-  	fprintf(outp, ":%02X%04X00", fsub,adrs);/*Hex line Header*/
+  	fprintf(outp, ":%02X%04X00", (unsigned int) fsub, (unsigned int) adrs);/*Hex line Header*/
     csum = fsub + (adrs>>8) + (adrs & 0xFF);
     adrs += fsub;
   }
@@ -136,13 +136,13 @@ int main(int argc,char *argv[])/*Main routine*/
       }
       adrs = 0xFFFF & adrs;
 	  if (fsub > 0x20) {
-  		fprintf(outp,":20%04X00",adrs);/*Next Hex line Header*/
+  		fprintf(outp,":20%04X00", (unsigned int) adrs);/*Next Hex line Header*/
     	csum = 0x20 + (adrs>>8) + (adrs & 0xFF);
         adrs += 0x20;
       }
       else {
       	if(fsub > 0){
-  			fprintf(outp, ":%02X%04X00", fsub,adrs);/*Next Hex line Header*/
+  			fprintf(outp, ":%02X%04X00", (unsigned int) fsub, (unsigned int) adrs);/*Next Hex line Header*/
     		csum = fsub + (adrs>>8) + (adrs & 0xFF);
         	adrs += fsub;
         }

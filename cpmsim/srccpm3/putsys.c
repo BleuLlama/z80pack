@@ -1,13 +1,14 @@
 /*
  * Write the CP/M 3 systemfiles to system tracks of drive A
  *
- * Copyright (C) 1988-2007 by Udo Munk
+ * Copyright (C) 1988-2014 by Udo Munk
  *
  * History:
  * 29-APR-88 Development on TARGON/35 with AT&T Unix System V.3
  * 11-MAR-93 comments in english and ported to COHERENT 4.0
  * 02-OCT-06 modified to compile on modern POSIX OS's
  * 15-SEP-07 also write ccp to system tracks
+ * 10-JAN-14 lseek POSIX conformance
  */
 
 #include <unistd.h>

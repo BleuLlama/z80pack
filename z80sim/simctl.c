@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 1987-2008 by Udo Munk
+ * Copyright (C) 1987-2014 by Udo Munk
  *
  * This modul contains the user interface, a full qualified ICE,
  * for the Z80-CPU simulation.
@@ -26,6 +26,7 @@
  * 06-AUG-08 Release 1.15 many improvements and Windows support via Cygwin
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
+ * 24-JAN-14 Release 1.18 bug fixes and improvements
  */
 
 /*
@@ -437,7 +438,7 @@ static void do_port(char *s)
 {
 	register BYTE port;
 	static char nv[LENCMD];
-	extern BYTE io_out(), io_in();
+	extern BYTE io_out(BYTE, BYTE), io_in(BYTE);
 
 	while (isspace((int)*s))
 		s++;

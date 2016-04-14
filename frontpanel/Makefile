@@ -46,6 +46,7 @@ clean:
 	rm -f *.o
 
 allclean:
+	make clean
 	rm -f libfrontpanel.so
 
 all: clean default

@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 2008 by Udo Munk
+ * Copyright (C) 2008-2014 by Udo Munk
  *
  * Configuration for an IMSAI 8080 system
  *
@@ -35,12 +35,12 @@
 /*
  *	The following lines of this file should not be modified by user
  */
-#define COPYR	"Copyright (C) 1987-2008 by Udo Munk"
-#define RELEASE	"1.17"
+#define COPYR	"Copyright (C) 1987-2014 by Udo Munk"
+#define RELEASE	"1.18"
 
 #define USR_COM	"Altair 8800 Simulation"
-#define USR_REL	"1.0"
-#define USR_CPR	"Copyright (C) 2008 by Udo Munk"
+#define USR_REL	"1.1"
+#define USR_CPR	"Copyright (C) 2008-2014 by Udo Munk"
 
 #define LENCMD		80		/* length of command buffers etc */
 

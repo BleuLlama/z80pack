@@ -30,10 +30,12 @@ OBJ =   sim0.o \
 	io_config.o \
 	altair-88sio2.o
 
+FP =    ../../frontpanel/libfrontpanel.so
+
 all:  ../altairsim
 	@echo "done."
 
-../altairsim : $(OBJ)
+../altairsim : $(OBJ) $(FP)
 	$(CC) $(OBJ) $(LFLAGS) -o ../altairsim
 
 sim0.c:

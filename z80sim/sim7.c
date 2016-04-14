@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 1987-2008 by Udo Munk
+ * Copyright (C) 1987-2014 by Udo Munk
  *
  * History:
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
@@ -23,6 +23,7 @@
  * 06-AUG-08 Release 1.15 many improvements and Windows support via Cygwin
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
+ * 24-JAN-14 Release 1.18 bug fixes and improvements
  */
 
 /*
@@ -470,7 +471,19 @@ static int op_tb7iyd(int data)		/* BIT 7,(IY+d) */
 
 static int op_rb0iyd(int data)		/* RES 0,(IY+d) */
 {
+#ifdef BUS_8080
+	cpu_bus = CPU_WO | CPU_MEMR;
+#endif
+#ifdef FRONTPANEL
+	fp_sampleLightGroup(0, 0);
+#endif
 	*(ram +	IY + data) &= ~1;
+#ifdef BUS_8080
+	cpu_bus = 0;
+#endif
+#ifdef FRONTPANEL
+	fp_sampleLightGroup(0, 0);
+#endif
 	return(23);
 }
 

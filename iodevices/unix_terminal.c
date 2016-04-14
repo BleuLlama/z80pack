@@ -3,7 +3,7 @@
  *
  * Common I/O devices used by various simulated machines
  *
- * Copyright (C) 2008 by Udo Munk
+ * Copyright (C) 2008-2014 by Udo Munk
  *
  * This modul contains initialization and reset functions for
  * the POSIX line discipline, so that stdin/stdout can be used
@@ -11,6 +11,7 @@
  *
  * History:
  * 24-SEP-08 first version finished
+ * 16-JAN-14 discard input at reset
  */
 
 #include <unistd.h>
@@ -44,7 +45,7 @@ void reset_unix_terminal(void)
 	if (!init_flag)
 		return;
 
-	tcsetattr(0, TCSADRAIN, &old_term);
+	tcsetattr(0, TCSAFLUSH, &old_term);
 
 	init_flag--;
 }

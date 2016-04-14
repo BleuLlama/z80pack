@@ -28,7 +28,8 @@ OBJ =   sim0.o \
 	simglb.o \
 	unix_terminal.o \
 	io_config.o \
-	imsai-sio2.o
+	imsai-sio2.o \
+	imsai-fif.o
 
 FP =	../../frontpanel/libfrontpanel.so
 
@@ -89,6 +90,9 @@ io_config.o : ../../iodevices/io_config.c
 imsai-sio2.o: ../../iodevices/imsai-sio2.c
 	$(CC) $(CFLAGS) -I./ ../../iodevices/imsai-sio2.c
 
+imsai-fif.o: ../../iodevices/imsai-fif.c
+	$(CC) $(CFLAGS) -I./ ../../iodevices/imsai-fif.c
+
 clean:
 	rm -f *.o
 	./ulnsrc
@@ -96,3 +100,4 @@ clean:
 allclean:
 	make clean
 	rm -f ../imsaisim ../imsaisim.exe
+	rm -f ../disks/drive*.dsk

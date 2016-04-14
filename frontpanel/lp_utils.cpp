@@ -697,7 +697,7 @@ void framerate_wait(void)
 #include <string.h>
 #include <stdlib.h>
 
-static char *parser_errmsgs[] = {
+static const char *parser_errmsgs[] = {
 "No error.",
 "No variable",
 "No value.",

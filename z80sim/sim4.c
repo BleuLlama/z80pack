@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 1987-2008 by Udo Munk
+ * Copyright (C) 1987-2014 by Udo Munk
  *
  * History:
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
@@ -23,6 +23,7 @@
  * 06-AUG-08 Release 1.15 many improvements and Windows support via Cygwin
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
+ * 24-JAN-14 Release 1.18 bug fixes and improvements
  */
 
 /*
@@ -428,7 +429,7 @@ static int op_neg(void)			/* NEG */
 
 static int op_inaic(void)		/* IN A,(C) */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -446,7 +447,7 @@ static int op_inaic(void)		/* IN A,(C) */
 
 static int op_inbic(void)		/* IN B,(C) */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -464,7 +465,7 @@ static int op_inbic(void)		/* IN B,(C) */
 
 static int op_incic(void)		/* IN C,(C) */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -482,7 +483,7 @@ static int op_incic(void)		/* IN C,(C) */
 
 static int op_indic(void)		/* IN D,(C) */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -500,7 +501,7 @@ static int op_indic(void)		/* IN D,(C) */
 
 static int op_ineic(void)		/* IN E,(C) */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -518,7 +519,7 @@ static int op_ineic(void)		/* IN E,(C) */
 
 static int op_inhic(void)		/* IN H,(C) */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -536,7 +537,7 @@ static int op_inhic(void)		/* IN H,(C) */
 
 static int op_inlic(void)		/* IN L,(C) */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -554,7 +555,7 @@ static int op_inlic(void)		/* IN L,(C) */
 
 static int op_outca(void)		/* OUT (C),A */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;
@@ -568,7 +569,7 @@ static int op_outca(void)		/* OUT (C),A */
 
 static int op_outcb(void)		/* OUT (C),B */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;
@@ -582,7 +583,7 @@ static int op_outcb(void)		/* OUT (C),B */
 
 static int op_outcc(void)		/* OUT (C),C */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;
@@ -596,7 +597,7 @@ static int op_outcc(void)		/* OUT (C),C */
 
 static int op_outcd(void)		/* OUT (C),D */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;
@@ -610,7 +611,7 @@ static int op_outcd(void)		/* OUT (C),D */
 
 static int op_outce(void)		/* OUT (C),E */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;
@@ -624,7 +625,7 @@ static int op_outce(void)		/* OUT (C),E */
 
 static int op_outch(void)		/* OUT (C),H */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;
@@ -638,7 +639,7 @@ static int op_outch(void)		/* OUT (C),H */
 
 static int op_outcl(void)		/* OUT (C),L */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;
@@ -652,7 +653,7 @@ static int op_outcl(void)		/* OUT (C),L */
 
 static int op_ini(void)			/* INI */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -680,7 +681,7 @@ static int op_inir(void)		/* INIR */
 {
 	register int t	= -21;
 	register BYTE *d;
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 	d = ram	+ (H <<	8) + L;
 	do {
@@ -708,7 +709,7 @@ static int op_inir(void)		/* INIR */
 
 static int op_ind(void)			/* IND */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -736,7 +737,7 @@ static int op_indr(void)		/* INDR */
 {
 	register int t	= -21;
 	register BYTE *d;
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 	d = ram	+ (H <<	8) + L;
 	do {
@@ -764,7 +765,7 @@ static int op_indr(void)		/* INDR */
 
 static int op_outi(void)		/* OUTI */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_MEMR;
@@ -792,7 +793,7 @@ static int op_otir(void)		/* OTIR */
 {
 	register int t	= -21;
 	register BYTE *d;
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 	d = ram	+ (H <<	8) + L;
 	do {
@@ -820,7 +821,7 @@ static int op_otir(void)		/* OTIR */
 
 static int op_outd(void)		/* OUTD */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_MEMR;
@@ -848,7 +849,7 @@ static int op_otdr(void)		/* OTDR */
 {
 	register int t	= -21;
 	register BYTE *d;
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 	d = ram	+ (H <<	8) + L;
 	do {
@@ -1329,7 +1330,7 @@ static int op_cpi(void)		/* CPI */
 	fp_sampleLightGroup(0, 0);
 #endif
 	i = *(ram + ((H << 8) + L));
-	((i & 0xf) > (A & 0xF)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	((i & 0xf) > (A & 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
 	i = A -	i;
 	L++;
 	if (!L)
@@ -1345,12 +1346,12 @@ static int op_cpi(void)		/* CPI */
 }
 
 static int op_cpir(void)	/* CPIR */
-				/* H Flag not set!!! */
 {
 	register int t	= -21;
 	register BYTE *s;
 	register BYTE d;
 	register WORD i;
+	register BYTE tmp;
 
 	i = (B << 8) + C;
 	s = ram	+ (H <<	8) + L;
@@ -1361,7 +1362,9 @@ static int op_cpir(void)	/* CPIR */
 #ifdef FRONTPANEL
 		fp_sampleLightGroup(0, 0);
 #endif
-		d = A -	*s++;
+		tmp = *s++;
+		((tmp & 0xf) > (A & 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+		d = A -	tmp;
 		t += 21;
 	} while	(--i &&	d);
 	F |= N_FLAG;
@@ -1386,7 +1389,7 @@ static int op_cpdop(void)	/* CPD */
 	fp_sampleLightGroup(0, 0);
 #endif
 	i = *(ram + ((H << 8) + L));
-	((i & 0xf) > (A & 0xF)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+	((i & 0xf) > (A & 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
 	i = A -	i;
 	L--;
 	if (L == 0xff)
@@ -1402,12 +1405,12 @@ static int op_cpdop(void)	/* CPD */
 }
 
 static int op_cpdr(void)	/* CPDR */
-				/* H Flag not set!!! */
 {
 	register int t	= -21;
 	register BYTE *s;
 	register BYTE d;
 	register WORD i;
+	register BYTE tmp;
 
 	i = (B << 8) + C;
 	s = ram	+ (H <<	8) + L;
@@ -1418,7 +1421,9 @@ static int op_cpdr(void)	/* CPDR */
 #ifdef FRONTPANEL
 		fp_sampleLightGroup(0, 0);
 #endif
-		d = A -	*s--;
+		tmp = *s--;
+		((tmp & 0xf) > (A & 0xf)) ? (F |= H_FLAG) : (F &= ~H_FLAG);
+		d = A -	tmp;
 		t += 21;
 	} while	(--i &&	d);
 	F |= N_FLAG;

@@ -3,10 +3,11 @@
  *
  * This module allows operation of the system from an Altair 8800 front panel
  *
- * Copyright (C) 2008 by Udo Munk
+ * Copyright (C) 2008-2014 by Udo Munk
  *
  * History:
  * 20-OCT-08 first version finished
+ * 26-OCT-08 corrected LED status while RESET is hold in upper position
  */
 
 #include <unistd.h>
@@ -30,6 +31,7 @@ static BYTE fp_led_wait;
 static int cpu_switch;
 static BYTE power_switch = 1;
 static int power;
+static int reset;
 
 static int load(void);
 static void run_cpu(void), step_cpu(void);
@@ -90,6 +92,8 @@ void mon(void)
 
 	/* operate machine from frontpanel */
 	while (cpu_error == NONE) {
+		if (reset)
+			cpu_bus = 0xff;
 		fp_sampleData();
 
 		switch (cpu_switch) {
@@ -159,7 +163,8 @@ void run_cpu(void)
 		       (unsigned int)(PC - ram - 1));
 		break;
 	case IOTRAP:
-		printf("\r\nI/O Trap at %04x\r\n", (unsigned int)(PC - ram));
+		printf("\r\nI/O Trap at %04x, port %02x\r\n",
+			(unsigned int)(PC - ram), io_port);
 		break;
 	case IOERROR:
 		printf("\r\nFatal I/O Error at %04x\r\n",
@@ -299,14 +304,26 @@ void reset_clicked(int state, int val)
 
 	switch (state) {
 	case FP_SW_UP:
+		reset = 1;
 		cpu_state = STOPPED;
-		PC = ram;
-		STACK = ram + 0xffff;
+		cpu_switch = 0;
 		IFF = 0;
-		int_mode = 0;
-		fp_led_wait = 1;
-		fp_led_address = 0;
-		fp_led_data = *ram;
+		fp_led_address = 0xffff;
+		fp_led_data = 0xff;
+		fp_led_wait = 0;
+		cpu_bus = 0xff;
+		break;
+	case FP_SW_CENTER:
+		if (reset) {
+			reset = 0;
+			PC = ram;
+			STACK = ram + 0xffff;
+			int_mode = 0;
+			fp_led_wait = 1;
+			fp_led_address = 0;
+			fp_led_data = *ram;
+			cpu_bus = CPU_WO | CPU_M1 | CPU_MEMR;
+		}
 		break;
 	case FP_SW_DOWN:
 		break;

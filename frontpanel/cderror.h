@@ -38,7 +38,9 @@ typedef enum {
 
 JMESSAGE(JMSG_FIRSTADDONCODE=1000, NULL) /* Must be first entry! */
 
-#ifdef BMP_SUPPORTED
+// unconditional define this because of some broken jpeg setups
+// January 2014, Udo Munk
+//#ifdef BMP_SUPPORTED
 JMESSAGE(JERR_BMP_BADCMAP, "Unsupported BMP colormap format")
 JMESSAGE(JERR_BMP_BADDEPTH, "Only 8- and 24-bit BMP files are supported")
 JMESSAGE(JERR_BMP_BADHEADER, "Invalid BMP file: bad header length")
@@ -50,7 +52,7 @@ JMESSAGE(JTRC_BMP, "%ux%u 24-bit BMP image")
 JMESSAGE(JTRC_BMP_MAPPED, "%ux%u 8-bit colormapped BMP image")
 JMESSAGE(JTRC_BMP_OS2, "%ux%u 24-bit OS2 BMP image")
 JMESSAGE(JTRC_BMP_OS2_MAPPED, "%ux%u 8-bit colormapped OS2 BMP image")
-#endif /* BMP_SUPPORTED */
+//#endif /* BMP_SUPPORTED */
 
 #ifdef GIF_SUPPORTED
 JMESSAGE(JERR_GIF_BUG, "GIF output got confused")

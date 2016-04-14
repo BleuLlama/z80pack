@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 1987-2008 by Udo Munk
+ * Copyright (C) 1987-2014 by Udo Munk
  *
  * This is the configuration I'm using for software testing and debugging
  *
@@ -25,6 +25,7 @@
  * 06-AUG-08 Release 1.15 many improvements and Windows support via Cygwin
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
+ * 24-JAN-14 Release 1.18 bug fixes and improvements
  */
 
 /*
@@ -58,8 +59,8 @@
 /*
  *	The following lines of this file should not be modified by user
  */
-#define	COPYR	"Copyright (C) 1987-2008 by Udo Munk"
-#define	RELEASE	"1.17"
+#define	COPYR	"Copyright (C) 1987-2014 by Udo Munk"
+#define	RELEASE	"1.18"
 
 #define	LENCMD		80		/* length of command buffers etc */
 

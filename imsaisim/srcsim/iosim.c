@@ -1,13 +1,14 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 2008 by Udo Munk
+ * Copyright (C) 2008-2014 by Udo Munk
  *
- * This modul of the simulator contains the I/O simlation
+ * This module of the simulator contains the I/O simlation
  * for an IMSAI 8080 system
  *
  * History:
  * 20-OCT-08 first version finished
+ * 19-JAN-14 unused I/O ports need to return 00 and not FF
  */
 
 #include <stdio.h>
@@ -15,6 +16,7 @@
 #include "simglb.h"
 #include "../../iodevices/io_config.h"
 #include "../../iodevices/imsai-sio2.h"
+#include "../../iodevices/imsai-fif.h"
 
 extern WORD address_switch;
 
@@ -37,11 +39,11 @@ static BYTE (*port[256][2]) () = {
 	{ io_trap, io_trap },		/* port	1 */
 	{ imsai_sio2_data_in, imsai_sio2_data_out },		/* port 2 */
 	{ imsai_sio2_status_in, imsai_sio2_status_out },	/* port 3 */
-	{ io_no_card, io_no_card },	/* port	4 */
+	{ io_no_card, io_no_card },	/* port	4 */ /* SIO 2 not connected */
 	{ io_no_card, io_no_card },	/* port	5 */
 	{ io_trap, io_trap },		/* port	6 */
 	{ io_trap, io_trap },		/* port	7 */
-	{ io_trap, io_trap },		/* port	8 */
+	{ io_no_card, io_no_card },	/* port	8 */ /* unknown card */
 	{ io_trap, io_trap },		/* port	9 */
 	{ io_trap, io_trap },		/* port	10 */
 	{ io_trap, io_trap },		/* port	11 */
@@ -51,10 +53,10 @@ static BYTE (*port[256][2]) () = {
 	{ io_trap, io_trap },		/* port	15 */
 	{ io_trap, io_trap },		/* port	16 */
 	{ io_trap, io_trap },		/* port	17 */
-	{ io_trap, io_trap },		/* port	18 */
-	{ io_trap, io_trap },		/* port	19 */
-	{ io_trap, io_trap },		/* port	20 */
-	{ io_trap, io_trap },		/* port	21 */
+	{ io_no_card, io_no_card },	/* port	18 */ /* unknown card */
+	{ io_no_card, io_no_card },	/* port	19 */ /* unknown card */
+	{ io_no_card, io_no_card },	/* port	20 */ /* unknown card */
+	{ io_no_card, io_no_card },	/* port	21 */ /* unknown card */
 	{ io_trap, io_trap },		/* port	22 */
 	{ io_trap, io_trap },		/* port	23 */
 	{ io_trap, io_trap },		/* port	24 */
@@ -272,22 +274,22 @@ static BYTE (*port[256][2]) () = {
 	{ io_trap, io_trap },		/* port	236 */
 	{ io_trap, io_trap },		/* port	237 */
 	{ io_trap, io_trap },		/* port	238 */
-	{ io_trap, io_trap },		/* port	239 */
+	{ io_no_card, io_no_card },	/* port	239 */ /* unknown card */
 	{ io_trap, io_trap },		/* port	240 */
 	{ io_trap, io_trap },		/* port	241 */
 	{ io_trap, io_trap },		/* port	242 */
-	{ io_trap, io_trap },		/* port	243 */
+	{ io_no_card, io_no_card },	/* port	243 */ /* unknown card */
 	{ io_trap, io_trap },		/* port	244 */
 	{ io_trap, io_trap },		/* port	245 */
-	{ io_trap, io_trap },		/* port	246 */
+	{ io_no_card, io_no_card },	/* port	246 */ /* unknown card */
 	{ io_trap, io_trap },		/* port	247 */
 	{ io_trap, io_trap },		/* port	248 */
 	{ io_trap, io_trap },		/* port	249 */
 	{ io_trap, io_trap },		/* port	250 */
 	{ io_trap, io_trap },		/* port	251 */
 	{ io_trap, io_trap },		/* port	252 */
-	{ io_trap, io_trap },		/* port	253 */
-	{ io_trap, io_trap },		/* port	254 */
+	{ imsai_fif_in, imsai_fif_out },/* port	253 */
+	{ io_no_card, io_no_card },	/* port	254 */ /* unknown card */
 	{ fp_in, fp_out }		/* port	255 */
 };
 
@@ -318,6 +320,7 @@ void exit_io(void)
  */
 BYTE io_in(BYTE adr)
 {
+	io_port = adr;
 	return((*port[adr][0]) ());
 }
 
@@ -328,6 +331,7 @@ BYTE io_in(BYTE adr)
  */
 void io_out(BYTE adr, BYTE data)
 {
+	io_port = adr;
 	(*port[adr][1])	(data);
 }
 
@@ -343,7 +347,7 @@ static BYTE io_trap(void)
 		cpu_error = IOTRAP;
 		cpu_state = STOPPED;
 	}
-	return((BYTE) 0xff);
+	return((BYTE) 0x00);
 }
 
 /*
@@ -352,7 +356,7 @@ static BYTE io_trap(void)
  */
 static BYTE io_no_card(void)
 {
-	return((BYTE) 0xff);
+	return((BYTE) 0x00);
 }
 
 /*

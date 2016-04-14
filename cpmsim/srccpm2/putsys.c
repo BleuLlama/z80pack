@@ -1,12 +1,13 @@
 /*
  * Write the CP/M systemfiles to system tracks of drive A
  *
- * Copyright (C) 1988-2006 by Udo Munk
+ * Copyright (C) 1988-2014 by Udo Munk
  *
  * History:
  * 29-APR-88 Development on TARGON/35 with AT&T Unix System V.3
  * 11-MAR-93 comments in english and ported to COHERENT 4.0
  * 02-OCT-06 modified to compile on modern POSIX OS's
+ * 10-JAN-14 lseek POSIX conformance
  */
 
 #include <unistd.h>
@@ -62,7 +63,7 @@ int main(void)
 		exit(1);
 	}
 	/* position to CCP in cpm.bin, needed if created with SAVE or similar */
-	lseek(fd, (long) 17 * 128, 0);
+	lseek(fd, (long) 17 * 128, SEEK_SET);
 	/* read CCP and BDOS from cpm.bin and write them to disk in drive A */
 	for (i = 0; i < 44; i++) {
 		if ((readed = read(fd, (char *) sector, 128)) != 128) {

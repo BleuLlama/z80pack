@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 1987-2008 by Udo Munk
+ * Copyright (C) 1987-2014 by Udo Munk
  *
  * History:
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
@@ -23,6 +23,7 @@
  * 06-AUG-08 Release 1.15 many improvements and Windows support via Cygwin
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
+ * 24-JAN-14 Release 1.18 bug fixes and improvements
  */
 
 #include <unistd.h>
@@ -402,6 +403,7 @@ void cpu(void)
 #ifdef BUS_8080
 		cpu_bus = CPU_WO | CPU_M1 | CPU_MEMR;
 #endif
+
 #ifdef FRONTPANEL
 		fp_clock += 7;
 		fp_sampleLightGroup(0, 0);
@@ -642,7 +644,7 @@ static int op_di(void)			/* DI */
 
 static int op_in(void)			/* IN A,(n) */
 {
-	BYTE io_in();
+	BYTE io_in(BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_WO | CPU_INP;
@@ -656,7 +658,7 @@ static int op_in(void)			/* IN A,(n) */
 
 static int op_out(void)			/* OUT (n),A */
 {
-	BYTE io_out();
+	BYTE io_out(BYTE, BYTE);
 
 #ifdef BUS_8080
 	cpu_bus = CPU_OUT;

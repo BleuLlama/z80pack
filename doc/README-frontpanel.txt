@@ -46,7 +46,7 @@ cd ~/z80pack-x.y/imsaisim
 rm conf
 ln -s conf_2d conf
 
-Ruuning the Altair emulation is the same, just change to directory
+Running the Altair emulation is the same, just change to directory
 ~/z80pack-x.y and run program altairsim. The Altair emulation comes
 with 2D model only.
 

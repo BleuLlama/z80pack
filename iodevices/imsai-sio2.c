@@ -3,7 +3,7 @@
  *
  * Common I/O devices used by various simulated machines
  *
- * Copyright (C) 2008 by Udo Munk
+ * Copyright (C) 2008-2014 by Udo Munk
  *
  * Partial emulation of an IMSAI SIO-2 S100 board
  *
@@ -57,8 +57,8 @@ BYTE imsai_sio2_status_out(BYTE data)
 /*
  * read data register
  *
- * translate to upper case, most of the old software written for tty's
- * won't accept lower case characters
+ * can be configured to translate to upper case, most of the old software
+ * written for tty's won't accept lower case characters
  */
 BYTE imsai_sio2_data_in(void)
 {
@@ -72,6 +72,8 @@ BYTE imsai_sio2_data_in(void)
 
 /*
  * write data register
+ *
+ * can be configured to strip parity bit, because some old software won't
  */
 BYTE imsai_sio2_data_out(BYTE data)
 {
@@ -79,7 +81,6 @@ BYTE imsai_sio2_data_out(BYTE data)
 	if ((data == 127) || (data == 255) || (data == 0))
 		return(0);
 
-	/* strip parity bit, some old software won't */
 	if (sio_strip_parity)
 		data &= 0x7f;
 

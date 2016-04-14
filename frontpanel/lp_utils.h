@@ -73,7 +73,7 @@ enum parser_error_nums_enums
 
 typedef struct
 {
- char *cmd;
+ const char *cmd;
  int  minvals,
       maxvals,
       valtype;

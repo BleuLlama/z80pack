@@ -1,9 +1,9 @@
 /*
  * Z80SIM  -  a Z80-CPU simulator
  *
- * Copyright (C) 1987-2008 by Udo Munk
+ * Copyright (C) 1987-2014 by Udo Munk
  *
- * This modul contains a complex I/O-simulation for running
+ * This module contains a complex I/O-simulation for running
  * CP/M, MP/M, UCSD p-System...
  *
  * Please note this doesn't emulate any hardware which
@@ -36,6 +36,7 @@
  * 13-AUG-08 work on console I/O busy waiting detection
  * 24-AUG-08 changed terminal line discipline to not add CR if LF send
  * xx-OCT-08 some improvments here and there
+ * xx-JAN-14 some improvments here and there
  */
 
 /*
@@ -221,7 +222,7 @@ static struct dskdef disks[16] = {
  *      | bank 0 |  | bank 1 |              | bank n |
  *      +--------+  +--------+  ..........  +--------+
  *
- * This is an example for 48KB segements as it was implemented originaly.
+ * This is an example for 48KB segments as it was implemented originaly.
  * The segment size now can be configured via port 22.
  * If the segment size isn't configured the default is 48KB as it was
  * before, to maintain compatibility.
@@ -797,6 +798,7 @@ void reset_system(void)
  */
 BYTE io_in(BYTE adr)
 {
+	io_port = adr;
 	return((*port[adr][0]) ());
 }
 
@@ -807,6 +809,8 @@ BYTE io_in(BYTE adr)
  */
 BYTE io_out(BYTE adr, BYTE data)
 {
+	io_port = adr;
+
 	busy_loop_cnt[0] = 0;
 
 	(*port[adr][1]) (data);
@@ -1879,7 +1883,7 @@ static BYTE fdco_out(BYTE data)
 		return((BYTE) 0);
 	}
 	pos = (((long)track) * ((long)disks[drive].sectors) + sector - 1) << 7;
-	if (lseek(*disks[drive].fd, pos, 0) == -1L) {
+	if (lseek(*disks[drive].fd, pos, SEEK_SET) == -1L) {
 		status = 4;
 		return((BYTE) 0);
 	}

@@ -3,6 +3,9 @@ CC = gcc
 # Platform independend compiler optimization
 CFLAGS = -O3 -c -Wall
 
+# Use this to build 64 bit version under Solaris 10
+#CFLAGS = -O3 -m64 -c -Wall
+
 # Intel Pentium M (Centrino) and gcc 4.1.1
 #CFLAGS = -O3 -march=i686 -minline-all-stringops -funroll-loops -c -Wall
 
@@ -12,8 +15,11 @@ CFLAGS = -O3 -c -Wall
 # Linux, BSD, Cygwin
 LFLAGS = -s
 
-# Solaris 9
+# Solaris 9, Solaris 10
 #LFLAGS = -s -lsocket -lnsl -lrt
+
+# Soaris 10 64 bit version
+#LFLAGS = -m64 -s -lsocket -lnsl -lrt
 
 OBJ =   sim0.o \
 	sim1.o \
@@ -94,3 +100,4 @@ clean:
 allclean:
 	make clean
 	rm -f ../auxin ../auxout ../cpmsim ../cpmsim.exe
+	rm -f ../disks/drive*.cpm

@@ -1,10 +1,11 @@
 /*
  * Write the UCSD pSystem IV boot and BIOS code to system tracks of drive A
  *
- * Copyright (C) 2008 by Udo Munk
+ * Copyright (C) 2008-2014 by Udo Munk
  *
  * History:
  * 12-AUG-08 initial version
+ * 10-JAN-14 lseek POSIX conformance
  */
 
 #include <unistd.h>
@@ -43,7 +44,7 @@ int main(void)
 	/* and write it to disk in drive A */
 	write(drivea, (char *) sector, 128);
 	/* seek to sector 19 on drive A */
-	lseek(drivea, (long) 18 * 128, 0);
+	lseek(drivea, (long) 18 * 128, SEEK_SET);
 	/* open BIOS (bios.bin) for reading */
 	if ((fd = open("bios.bin", O_RDONLY)) == -1) {
 		perror("file bios.bin");

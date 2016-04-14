@@ -1,7 +1,7 @@
 /*
  * Z80SIM  -  a	Z80-CPU	simulator
  *
- * Copyright (C) 1987-2008 by Udo Munk
+ * Copyright (C) 1987-2014 by Udo Munk
  *
  * History:
  * 28-SEP-87 Development on TARGON/35 with AT&T Unix System V.3
@@ -23,6 +23,7 @@
  * 06-AUG-08 Release 1.15 many improvements and Windows support via Cygwin
  * 25-AUG-08 Release 1.16 console status I/O loop detection and line discipline
  * 20-OCT-08 Release 1.17 frontpanel integrated and Altair/IMSAI emulations
+ * 24-JAN-14 Release 1.18 bug fixes and improvements
  */
 
 /*
@@ -34,6 +35,7 @@ extern BYTE	A, B, C, D, E, H, L, A_, B_, C_, D_, E_, H_, L_,
 extern WORD	IX, IY;
 extern int	F, F_;
 extern long	R;
+extern BYTE	io_port;
 extern BYTE	mem_wp;
 
 #ifdef BUS_8080

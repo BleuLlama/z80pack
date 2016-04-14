@@ -1,4 +1,21 @@
 For more downloads of operation manuals and other or updated software
 please check:
 
-	ftp://ftp.unix4fun.org/z80pack/imsai/
+	http://www.autometer.de/unix4fun/z80pack/ftp/imsai/
+
+
+The bootloader (bootrom.hex) is a full featured monitor program. It first
+checks if there is a disk in drive A:. If a disk is present it loads the
+first sector and executes it, which will boot IMDOS.
+
+If there is no file disks/drivea.dsk present, the program loops on all
+possible input ports. Type a space character to get it's greeting and
+prompt:
+
+IMSAI IEEE MONITOR    VERS 1.0
+?
+
+The monitor has lots of commands, b will try to boot from disk, d dumps memory
+and so on. With r 0 1 it will read track 0 sector 1 into memory. The w command
+writes a sector to the disk! Become familar with this before trying,
+because writing some random bytes to the boot disk will make it unusable.
