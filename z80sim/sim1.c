@@ -33,6 +33,7 @@
  * 18-FEB-15 Release 1.25 bugfixes, improvements, added Cromemco Z-1
  * 18-APR-15 Release 1.26 bugfixes and improvements
  * 18-JAN-16 Release 1.27 bugfixes and improvements
+ * 11-MAY-16           LL POLL_IO hooks added
  */
 
 #include <unistd.h>
@@ -48,6 +49,10 @@
 
 #ifdef WANT_GUI
 void check_gui_break(void);
+#endif
+
+#ifdef POLL_IO
+extern void io_poll();
 #endif
 
 static int op_nop(void), op_halt(void), op_scf(void);
@@ -402,6 +407,9 @@ void cpu_z80(void)
 	gettimeofday(&t1, NULL);
 
 	do {
+#ifdef POLL_IO
+                io_poll();
+#endif
 
 #ifdef FRONTPANEL	/* update frontpanel */
 		fp_led_address = PC - ram;
