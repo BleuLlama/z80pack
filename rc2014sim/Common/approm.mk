@@ -3,6 +3,8 @@
 
 TARGROM := $(TARGBASE).rom
 
+ROMSDIR := ../ROMs
+
 GENFILES := \
 		$(TARGROM) \
 		$(TARGBASE).lst \
@@ -12,19 +14,19 @@ GENFILES := \
 ################################################################################
 # build rules
 
-all: $(TARGROM) $(TARGBASE).hex romdirs
+all: $(TARGROM) $(TARGBASE).hex $(ROMSDIR)
 	@echo "+ copy $(TARGROM) to ROMs directory"
-	@cp $(TARGROM) ../ROMs
-	@cp $(TARGBASE).hex ../ROMs
+	@cp $(TARGROM) $(ROMSDIR)
+	@cp $(TARGBASE).hex $(ROMSDIR)
 
 $(TARGROM): $(TARGBASE).ihx
 	@echo "+ genroms $<"
 	@genroms ../Common/rc2014.roms $<
 	@mv rc2014.rom $@
 
-romdirs:
-	@echo "+ Creating rom directory"
-	@-mkdir ../ROMs
+$(ROMSDIR):
+	@echo "+ Creating roms directory"
+	@-mkdir $(ROMSDIR)
 
 %.hex: %.ihx
 	@echo "+ rename IHX as HEX"
@@ -41,5 +43,5 @@ romdirs:
 ################################################################################
 
 clean:
-	@echo "+ Cleaning directory"
+	@echo "+ Cleaning directory " $(TARGBASE)
 	@-rm $(GENFILES) 2>/dev/null || true

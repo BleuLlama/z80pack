@@ -1,6 +1,7 @@
 rc2014sim
 
 .DS_Store
+*.swp
 
 ROMs
 BASIC/rc2014.rom
@@ -12,7 +13,7 @@ basic.32gen.hex
 *.hex
 *.rom
 
-
+*.o
 
 srcsim/sim0.c
 srcsim/sim1.c
