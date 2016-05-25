@@ -27,8 +27,7 @@ hex files (IHX, HEX) to binary ROM files.
 # To use
 
 To use this, i have provided a precompiled ROM file, built from the
-provided
-.HEX files. The emulator will load this ROM on startup.
+provided .HEX files. The emulator will load this ROM on startup.
 
 The makefile in this directory will build all of the roms.  If you
 have my bleu-romtools installed as above, it will assemble some
