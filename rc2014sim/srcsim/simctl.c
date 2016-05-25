@@ -153,8 +153,7 @@ int load_rom( const char * filename )
 	return 0;
 }
 
-
-#define kBootRom  "ROMs/lloader.rom"
+#define kBootRom  "ROMs/basic.32.rom"
 
 int loadBootRom( void )
 {
